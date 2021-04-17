@@ -5,13 +5,6 @@
 >
   <piece
     *ngFor="let piece of pieces"
-    class="piece"
     [pieceProperties]="piece"
-    [ngClass]="[piece.type]"
-    [style.transform]="
-      'translate(' + piece.yPos + '00%, ' + piece.xPos + '00%)'
-    "
-    [draggable]
-    [draggableBounds]="boardWidth"
   ></piece>
 </div>
