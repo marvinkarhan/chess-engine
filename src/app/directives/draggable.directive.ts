@@ -6,12 +6,21 @@ import { filter, switchMap, take, takeUntil, tap } from 'rxjs/operators';
   selector: '[draggable]',
 })
 export class DraggableDirective {
-  @Input() draggableBounds!: number;
+  private _draggableBounds!: number;
+  @Input() set draggableBounds(draggableBounds: number) {
+    this.elDim = draggableBounds / 8;
+    this._draggableBounds = draggableBounds;
+  }
+  get draggableBounds() {
+    return this._draggableBounds;
+  }
 
+  elDim: number = 0;
   initPos!: { top: number; left: number; x: number; y: number };
   pos = { top: 0, left: 0, x: 0, y: 0 };
 
   constructor(elementRef: ElementRef) {
+    this.elDim = this.draggableBounds / 8;
     // Drag and drop for navigation
     const element = elementRef.nativeElement as HTMLElement;
     element.style.cursor = 'grab';
@@ -21,7 +30,6 @@ export class DraggableDirective {
         tap((event) => {
           this.centerElFromEventOnCursor(element, event);
           element.style.cursor = 'grabbing';
-          element.style.userSelect = 'none';
           element.style.zIndex = '1000';
           const matrix = this.getMatrix(element);
           // set current posistins
@@ -47,9 +55,11 @@ export class DraggableDirective {
                 const dy = event.clientY - this.pos.y;
 
                 // Scroll the element
-                element.style.transform = `translate(${this.pos.left + dx}%, ${
+                this.setTranslate(
+                  element,
+                  this.pos.left + dx,
                   this.pos.top + dy
-                }%)`;
+                );
               })
             )
             .subscribe();
@@ -67,7 +77,6 @@ export class DraggableDirective {
 
   private resetStyle(element: HTMLElement) {
     element.style.cursor = 'grab';
-    element.style.removeProperty('user-select');
     element.style.zIndex = '';
     this.checkBounds(element);
     this.centerOnCell(element);
@@ -76,10 +85,10 @@ export class DraggableDirective {
   private checkBounds(element: HTMLElement) {
     const matrix = this.getMatrix(element);
     if (
-      +matrix[4] > this.draggableBounds - element.offsetWidth / 2 ||
-      +matrix[5] > this.draggableBounds - element.offsetHeight / 2 ||
-      +matrix[4] < 0 - element.offsetHeight / 2 ||
-      +matrix[5] < 0 - element.offsetHeight / 2
+      +matrix[4] > this.draggableBounds - this.elDim / 2 ||
+      +matrix[5] > this.draggableBounds - this.elDim / 2 ||
+      +matrix[4] < 0 - this.elDim / 2 ||
+      +matrix[5] < 0 - this.elDim / 2
     ) {
       this.setTranslate(element, this.initPos?.left, this.initPos?.top);
     }
@@ -89,14 +98,14 @@ export class DraggableDirective {
     const matrix = this.getMatrix(element);
     this.setTranslate(
       element,
-      (((+matrix[4] + element.offsetWidth / 2) / 100) | 0) * 100,
-      (((+matrix[5] + element.offsetHeight / 2) / 100) | 0) * 100
+      (((+matrix[4] + this.elDim / 2) / this.elDim) | 0) * this.elDim,
+      (((+matrix[5] + this.elDim / 2) / this.elDim) | 0) * this.elDim
     );
   }
 
   private centerElFromEventOnCursor(element: HTMLElement, event: MouseEvent) {
-    let xDiff = event.offsetX - element.offsetWidth / 2;
-    let yDiff = event.offsetY - element.offsetHeight / 2;
+    let xDiff = event.offsetX - this.elDim / 2;
+    let yDiff = event.offsetY - this.elDim / 2;
     const matrix = this.getMatrix(element);
     this.setTranslate(element, +matrix[4] + xDiff, +matrix[5] + yDiff);
   }
@@ -107,6 +116,6 @@ export class DraggableDirective {
   }
 
   setTranslate(element: HTMLElement, x: number, y: number) {
-    element.style.transform = `translate(${x}%, ${y}%)`;
+    element.style.transform = `translate(${x}px, ${y}px)`;
   }
 }

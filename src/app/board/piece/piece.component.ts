@@ -8,6 +8,7 @@ import { Piece } from '../interfaces/Piece';
 })
 export class PieceComponent implements OnInit {
   @Input() pieceProperties!: Piece;
+  @Input() boardWidth = 800;
 
   constructor() {}
 
