@@ -137,13 +137,13 @@
     "use-lifecycle-interface": true,
     "use-pipe-transform-interface": true,
     "directive-selector": [
-      true,
+      false,
       "attribute",
       "app",
       "camelCase"
     ],
     "component-selector": [
-      true,
+      false,
       "element",
       "app",
       "kebab-case"

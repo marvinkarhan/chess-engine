@@ -1,0 +1,34 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+#board {
+  background-size: 100%;
+  user-select: none;
+  background-image: url('../../assets/chess_board.png');
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+
+// piece styles
+$piece-types: 'br', 'bn', 'bb', 'bq', 'bk', 'bp', 'wr', 'wn', 'wb', 'wq', 'wk', 'wp';
+
+@each $type in $piece-types {
+  .#{$type} {background-image: url('../../assets/pieces/#{$type}.png');}
+}
+
+.piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  background-size: cover;
+  z-index: 2;
+  will-change: transform;
+  pointer-events: none;
+}

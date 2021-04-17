@@ -1,0 +1,15 @@
+<div
+  id="board"
+  [style.width]="boardWidth + 'px'"
+  [style.height]="boardWidth + 'px'"
+>
+  <piece
+    *ngFor="let piece of pieces"
+    class="piece"
+    [pieceProperties]="piece"
+    [ngClass]="[piece.type]"
+    [style.transform]="
+      'translate(' + piece.yPos + '00%, ' + piece.xPos + '00%)'
+    "
+  ></piece>
+</div>
