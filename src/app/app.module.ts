@@ -1,15 +1,12 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { BoardComponent } from './board/board.component';
-import { PieceComponent } from './board/piece/piece.component';
-import { DirectivesModule } from './directives/directives.module';
+import { BoardModule } from './board/board.module';
 
 @NgModule({
-  declarations: [AppComponent, BoardComponent, PieceComponent],
-  imports: [BrowserModule, AppRoutingModule, DirectivesModule],
+  declarations: [AppComponent],
+  imports: [BrowserModule, AppRoutingModule, BoardModule],
   providers: [],
   bootstrap: [AppComponent],
 })
