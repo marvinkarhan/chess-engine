@@ -19,5 +19,13 @@
   background-repeat: no-repeat;
   position: relative;
   border-radius: 3px;
-  @include futuristic-shadow(10);
+  animation: rippling-shadow 2s ease-in-out infinite alternate;
+}
+
+@keyframes rippling-shadow {
+  @for $i from 0 through 100 {
+    @if $i % 20 == 0 {
+      #{$i}% { @include futuristic-shadow($i / 10 + 5) }
+    }
+  }
 }
