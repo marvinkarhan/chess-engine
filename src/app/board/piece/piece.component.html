@@ -1,8 +1,7 @@
 <div
-[ngClass]="[pieceProperties.type]"
-class="piece"
-[style.transform]="
-  'translate(' + pieceProperties.yPos + '00%, ' + pieceProperties.xPos + '00%)'"
-  [draggable]
-  [draggableBounds]="boardWidth"
+  #piece
+  [ngClass]="[pieceProperties.type]"
+  class="piece"
+  [style.transform]="
+    'translate(' + pieceProperties.yPos + '00%, ' + pieceProperties.xPos + '00%)'"
 ></div>
