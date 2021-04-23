@@ -24,7 +24,7 @@
 
 @keyframes rippling-shadow {
   @for $i from 0 through 100 {
-    @if $i % 20 == 0 {
+    @if $i % 10 == 0 {
       #{$i}% { @include futuristic-shadow($i / 10 + 5) }
     }
   }
