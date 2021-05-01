@@ -1,0 +1,146 @@
+from constants import *
+
+
+def set_bit_on_bb(bb: int, index: int, value):
+    bb_mask = 1 << index
+    # remove potential bit
+    bb &= ~bb_mask
+    # add bit if value is true
+    if value:
+        bb |= bb_mask
+    return bb
+
+
+"""
+following functions are helper functions
+they take a bitboard (bb)
+the bb must only contain one piece
+the piece (bit) is then shifted
+if a shift results in a piece wrapping the board (going from line A to H) it gets returned as 0
+"""
+
+
+def move_left(bb: int):
+    return (bb << 1 & ~H) & FULL_BB_MASK
+
+
+def move_right(bb: int):
+    return bb >> 1 & ~A
+
+
+def move_up(bb: int):
+    return bb << 8 & FULL_BB_MASK
+
+
+def move_down(bb: int):
+    return bb >> 8
+
+
+# castle optimizations
+def move_leftx2(bb: int):
+    return ((bb << 2 & ~H) & ~G) & FULL_BB_MASK
+
+
+def move_rightx2(bb: int):
+    return ((bb >> 2 & ~A) & ~ B)
+
+
+# pawn optimizations
+def move_downx2(bb: int):
+    return bb >> 16
+
+
+def move_upx2(bb: int):
+    return bb << 16 & FULL_BB_MASK
+
+
+def move_left_up(bb: int):
+    return (bb << 9 & ~H) & FULL_BB_MASK
+
+
+def move_left_down(bb: int):
+    return bb >> 7 & ~H
+
+
+def move_right_up(bb: int):
+    return (bb << 7 & ~A) & FULL_BB_MASK
+
+
+def move_right_down(bb: int):
+    return bb >> 9 & ~A
+
+
+"""
+following functions move generator functions
+they take a bitboard (bb) containing one pice
+the bb must only contain one piece
+"""
+HORIZONTAL_VERTICAL_MOVES = [move_left, move_right, move_up, move_down]
+DIAGONALS_MOVES = [move_left_up, move_left_down,
+                   move_right_up, move_right_down]
+DIRECTIONS = HORIZONTAL_VERTICAL_MOVES + DIAGONALS_MOVES
+KNIGHT_MOVES = [
+    lambda x: move_leftx2(move_up(x)),
+    lambda x: move_leftx2(move_down(x)),
+    lambda x: move_upx2(move_left(x)),
+    lambda x: move_upx2(move_right(x)),
+    lambda x: move_rightx2(move_up(x)),
+    lambda x: move_rightx2(move_down(x)),
+    lambda x: move_downx2(move_left(x)),
+    lambda x: move_downx2(move_right(x))
+]
+
+
+def traverse_bb(bb: int, directions, friendlies_bb: int, enemies_bb: int):
+    result_bb = 0
+    for move_func in directions:
+        square_bb = bb
+        while True:
+            square_bb = move_func(square_bb)
+            if square_bb & friendlies_bb:
+                break
+            result_bb |= square_bb
+            if square_bb & enemies_bb or square_bb == 0:
+                break
+    return result_bb
+
+
+def king_moves(bb: int, friendlies_bb: int):
+    moves_bb = 0
+    for moves_func in DIRECTIONS:
+        moves_bb |= moves_func(bb)
+    return moves_bb & ~friendlies_bb
+
+
+def queen_moves(bb: int, friendlies_bb: int, enemies_bb: int):
+    return traverse_bb(bb, DIRECTIONS, friendlies_bb, enemies_bb)
+
+
+def rook_moves(bb: int, friendlies_bb: int, enemies_bb: int):
+    return traverse_bb(bb, HORIZONTAL_VERTICAL_MOVES, friendlies_bb, enemies_bb)
+
+
+def bishop_moves(bb: int, friendlies_bb: int, enemies_bb: int):
+    return traverse_bb(bb, DIAGONALS_MOVES, friendlies_bb, enemies_bb)
+
+
+def knight_moves(bb: int, friendlies_bb: int):
+    moves_bb = 0
+    for move_func in KNIGHT_MOVES:
+        moves_bb |= move_func(bb)
+    return moves_bb & ~friendlies_bb
+
+
+def pawn_moves(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
+    if active_side:
+        return ((move_up(bb) | move_upx2(bb & R2)) & ~enemies_bb) & ~friendlies_bb
+    return ((move_down(bb) | move_downx2(bb & R7)) & ~enemies_bb) & ~friendlies_bb
+
+
+def pawn_attacks(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
+    if active_side:
+        return ((move_left_up(bb) | move_right_up(bb)) & enemies_bb) & ~friendlies_bb
+    return ((move_left_down(bb) | move_right_down(bb)) & enemies_bb) & ~friendlies_bb
+
+
+SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
