@@ -133,8 +133,14 @@ def knight_moves(bb: int, friendlies_bb: int):
 
 def pawn_moves(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
     if active_side:
-        return ((move_up(bb) | move_upx2(bb & R2)) & ~enemies_bb) & ~friendlies_bb
-    return ((move_down(bb) | move_downx2(bb & R7)) & ~enemies_bb) & ~friendlies_bb
+        first_step = (move_up(bb) & ~enemies_bb) & ~friendlies_bb
+        if first_step:
+            return ((first_step | move_upx2(bb & R2)) & ~enemies_bb) & ~friendlies_bb
+        return 0
+    first_step = (move_down(bb) & ~enemies_bb) & ~friendlies_bb
+    if first_step:
+        return ((move_down(bb) | move_downx2(bb & R7)) & ~enemies_bb) & ~friendlies_bb
+    return 0
 
 
 def pawn_attacks(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):

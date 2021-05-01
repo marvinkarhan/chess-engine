@@ -4,9 +4,6 @@ from move import *
 import time
 
 
-START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-
-
 def get_msb_generator(bb: int):
     while bb > 0:
         msb_index = bb.bit_length() - 1
@@ -46,13 +43,18 @@ class Board:
     def __init__(self) -> None:
         self.parse_FEN_string(
             # 'rnb1kbnr/1ppp2p1/p3pQ1p/1B3p2/4Pq2/7P/PPPP1PPR/RNB1K1N1 w Q - 0 9')
-            'rnbqkbnr/ppppp2p/6p1/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3')
-        sum = 0
-        for x in self.pseudo_legal_moves_generator(self.active_side):
-            sum |= x.target_square_bb
-        self.print_bitboard(sum)
+            '3k4/8/8/8/4b3/7p/6NP/4r1NK w - - 0 1') # stalemate
+            # '3r2k1/p4pp1/1pp3bp/3p4/8/2P2n2/PPNQ2Pq/R4B1K w - - 0 3')  # checkmate
+        # START_POS_FEN)
+        # sum = 0
+        # for x in self.legal_moves_generator(self.active_side):
+        #     sum |= x.target_square_bb
+        # self.print_bitboard(sum)
         # self.print_bitboard(self.pieces['Q'])
-        # print(len([x for x in self.pseudo_legal_moves_generator(self.active_side)]))
+        print(len([x for x in self.legal_moves_generator(self.active_side)]))
+        print(f'Stalemate: {self.stalemate(self.active_side)}')
+        print(f'Checkmate: {self.checkmate(self.active_side)}')
+        # print(self.stalemate(self.active_side))
         pass
 
     def print_bitboard(self, bb: int):
@@ -116,6 +118,9 @@ class Board:
         friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
         if not enemies_bb:
             enemies_bb = self.b_pieces_bb() if active_side else self.w_pieces_bb()
+        else:
+            # override firendlies (incase an enemy took a piece, used in legal move gen)
+            friendlies_bb = friendlies_bb & ~enemies_bb
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
             active_side)
 
@@ -182,11 +187,36 @@ class Board:
                 if way_bb & ~friendlies_bb & ~attacked_squares_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
+    def legal_moves_generator(self, active_side):
+        friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
+        king_bb = self.pieces['K' if active_side else 'k']
+
+        for pseudo_legal_move in self.pseudo_legal_moves_generator(active_side):
+            friendlies_bb_copy = friendlies_bb
+            # check if piece moving is king and update his position (other pieces are in this case the same)
+            king_bb_copy = king_bb
+            if pseudo_legal_move.origin_square_bb == king_bb:
+                king_bb_copy = pseudo_legal_move.target_square_bb
+            # make move on copy
+            friendlies_bb_copy = friendlies_bb_copy & ~pseudo_legal_move.origin_square_bb
+            friendlies_bb_copy = friendlies_bb_copy | pseudo_legal_move.target_square_bb
+            # check if king is attacked on changed board, if not move is valid
+            if not (self.attacked_squares(not active_side, friendlies_bb_copy) & king_bb_copy):
+                yield pseudo_legal_move
+
     def stalemate(self, active_side):
-        pass
+        is_king_attacked = self.attacked_squares(
+            not active_side) & self.pieces['K' if active_side else 'k']
+        has_legal_moves = len(
+            [x for x in self.legal_moves_generator(active_side)])
+        return bool(not has_legal_moves and not is_king_attacked)
 
     def checkmate(self, active_side):
-        pass
+        is_king_attacked = self.attacked_squares(
+            not active_side) & self.pieces['K' if active_side else 'k']
+        has_legal_moves = len(
+            [x for x in self.legal_moves_generator(active_side)])
+        return bool(not has_legal_moves and is_king_attacked)
 
     def make_move(self, move):
         """
