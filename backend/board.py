@@ -46,11 +46,13 @@ class Board:
     def __init__(self) -> None:
         self.parse_FEN_string(
             # 'rnb1kbnr/1ppp2p1/p3pQ1p/1B3p2/4Pq2/7P/PPPP1PPR/RNB1K1N1 w Q - 0 9')
-            'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2')
-        # for x in self.pseudo_legal_moves_generator(self.active_side):
-        #     print(x)
-        self.print_bitboard(self.pieces['Q'])
-        print(len([x for x in self.pseudo_legal_moves_generator(self.active_side)]))
+            'rnbqkbnr/ppppp2p/6p1/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3')
+        sum = 0
+        for x in self.pseudo_legal_moves_generator(self.active_side):
+            sum |= x.target_square_bb
+        self.print_bitboard(sum)
+        # self.print_bitboard(self.pieces['Q'])
+        # print(len([x for x in self.pseudo_legal_moves_generator(self.active_side)]))
         pass
 
     def print_bitboard(self, bb: int):
@@ -131,15 +133,19 @@ class Board:
     def pseudo_legal_moves_generator(self, active_side):
         friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
         enemies_bb = self.b_pieces_bb() if active_side else self.w_pieces_bb()
+        attacked_squares_bb = self.attacked_squares(not active_side)
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
             active_side)
-        move_bbs = []
         # pawn moves
         for pawn in get_msb_generator(pawn_bb):
             for move in get_msb_generator(pawn_attacks(pawn, active_side, friendlies_bb, enemies_bb) | pawn_moves(pawn, active_side, friendlies_bb, enemies_bb)):
                 yield Move(pawn, move)
-
-        # TODO: en passant
+            # en passant
+            if self.ep_square_bb:
+                move = pawn_attacks(
+                    pawn, active_side, friendlies_bb, self.ep_square_bb) & self.ep_square_bb
+                if move:
+                    yield Move(pawn, move)
 
         # rook moves
         for rook in get_msb_generator(rook_bb):
@@ -162,14 +168,19 @@ class Board:
                 yield Move(knight, move)
 
         # king moves (there is always only one king)
-        for move in get_msb_generator(king_moves(king_bb, friendlies_bb)):
+        for move in get_msb_generator(king_moves(king_bb, friendlies_bb) & ~attacked_squares_bb):
             yield Move(king_bb, move)
 
-        # TODO: Castle
-
-        # yield moves
-
-        pass
+        # king castle
+        if king_bb & ~attacked_squares_bb:
+            if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
+                way_bb = (move_right(king_bb) | move_rightx2(king_bb))
+                if way_bb & ~friendlies_bb & ~attacked_squares_bb:
+                    yield Move(king_bb, move_rightx2(king_bb))
+            if active_side and self.castle_w_queen_side or not active_side and self.castle_b_queen_side:
+                way_bb = (move_left(king_bb) | move_leftx2(king_bb))
+                if way_bb & ~friendlies_bb & ~attacked_squares_bb:
+                    yield Move(king_bb, move_leftx2(king_bb))
 
     def stalemate(self, active_side):
         pass
