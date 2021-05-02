@@ -1,4 +1,6 @@
 from constants import *
+from move import *
+import re
 
 
 def set_bit_on_bb(bb: int, index: int, value):
@@ -150,3 +152,20 @@ def pawn_attacks(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int)
 
 
 SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
+
+
+def uci_to_Move(uci: str):
+    uci = uci.lower()
+    m = re.match('([a-h][1-8])([a-h][1-8])(.)?', uci)
+
+    if m is None:
+        print('Invalid uci')
+        return
+
+    promotion = m.group(3)
+    if promotion is not None and promotion not in PROMOTION_OPTIONS:
+        print('Invalid Promotion in uci')
+        return
+    origin_square_bb = set_bit_on_bb(0, ALGEBRAIC_TO_INDEX[m.group(1)], 1)
+    target_square_bb = set_bit_on_bb(0, ALGEBRAIC_TO_INDEX[m.group(2)], 1)
+    return Move(origin_square_bb, target_square_bb, bool(promotion))

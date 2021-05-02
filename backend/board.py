@@ -40,22 +40,9 @@ class Board:
 
     ep_square_bb = 0
 
-    def __init__(self) -> None:
-        self.parse_FEN_string(
-            # 'rnb1kbnr/1ppp2p1/p3pQ1p/1B3p2/4Pq2/7P/PPPP1PPR/RNB1K1N1 w Q - 0 9')
-            '3k4/8/8/8/4b3/7p/6NP/4r1NK w - - 0 1') # stalemate
-            # '3r2k1/p4pp1/1pp3bp/3p4/8/2P2n2/PPNQ2Pq/R4B1K w - - 0 3')  # checkmate
-        # START_POS_FEN)
-        # sum = 0
-        # for x in self.legal_moves_generator(self.active_side):
-        #     sum |= x.target_square_bb
-        # self.print_bitboard(sum)
-        # self.print_bitboard(self.pieces['Q'])
-        print(len([x for x in self.legal_moves_generator(self.active_side)]))
-        print(f'Stalemate: {self.stalemate(self.active_side)}')
-        print(f'Checkmate: {self.checkmate(self.active_side)}')
-        # print(self.stalemate(self.active_side))
-        pass
+    def __init__(self, fen=None) -> None:
+        fen = fen if fen else START_POS_FEN
+        self.parse_FEN_string(fen)
 
     def print_bitboard(self, bb: int):
         print('\n'.join(['{0:064b}'.format(bb)[i:i + 8]
@@ -86,6 +73,11 @@ class Board:
 
     def get_active_pieces(self, active_side):
         return [v for k, v in self.pieces.items() if (k.isupper() if active_side else k.islower())]
+
+    def get_piece_on_square(self, bb):
+        for k, v in self.pieces.items():
+            if bb & v:
+                return k
 
     def parse_FEN_string(self, fen: str):
         # for example: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
@@ -208,29 +200,107 @@ class Board:
         is_king_attacked = self.attacked_squares(
             not active_side) & self.pieces['K' if active_side else 'k']
         has_legal_moves = len(
-            [x for x in self.legal_moves_generator(active_side)])
+            list(self.legal_moves_generator(active_side)))
         return bool(not has_legal_moves and not is_king_attacked)
 
-    def checkmate(self, active_side):
+    def checkmate(self):
         is_king_attacked = self.attacked_squares(
-            not active_side) & self.pieces['K' if active_side else 'k']
+            not self.active_side) & self.pieces['K' if self.active_side else 'k']
         has_legal_moves = len(
-            [x for x in self.legal_moves_generator(active_side)])
+            list(self.legal_moves_generator(self.active_side)))
         return bool(not has_legal_moves and is_king_attacked)
 
-    def make_move(self, move):
-        """
-        checks:
-        - checking if move is legal
-        - checking castling rights
-        - change pos of target piece
-        - replace hostile pieces (if any)
-        - check for ep and castle
-        If illegal reset to init state
-        """
-        pass
+    def make_move(self, move: Move):
+        if move not in list(self.legal_moves_generator(self.active_side)):
+            print('Invalid Move')
+            return
+
+        # track if capture for half_moves
+        capture = False
+
+        origin_piece = self.get_piece_on_square(move.origin_square_bb)
+        target_piece = self.get_piece_on_square(move.target_square_bb)
+
+        # update bitboards to represent change
+        self.pieces[origin_piece] &= ~move.origin_square_bb
+        self.pieces[origin_piece] |= move.target_square_bb
+        # target piece only exists on capture
+        if target_piece:
+            self.pieces[target_piece] &= ~move.target_square_bb
+            capture = True
+
+        # en passant
+        if origin_piece in ['P', 'p']:
+            # complete ep move
+            if self.ep_square_bb:
+                captured_pawn_bb = move_down(
+                    self.ep_square_bb) if self.active_side else move_up(self.ep_square_bb)
+                captured_pawn = self.get_piece_on_square(captured_pawn_bb)
+                self.pieces[captured_pawn] &= ~captured_pawn_bb
+                self.ep_square_bb = 0
+                capture = True
+            # check for resulting en passant
+            moved_upx2 = move.origin_square_bb & R2 and move.target_square_bb & R4
+            moved_downx2 = move.origin_square_bb & R7 and move.target_square_bb & R5
+            if moved_upx2 or moved_downx2:
+                left_square_piece = self.get_piece_on_square(
+                    move_left(move.target_square_bb))
+                right_square_piece = self.get_piece_on_square(
+                    move_right(move.target_square_bb))
+                enemy_pawn_key = 'p' if self.active_side else 'P'
+                if left_square_piece == enemy_pawn_key or right_square_piece == enemy_pawn_key:
+                    self.ep_square_bb = move_down(move.target_square_bb & R4) | move_up(
+                        move.target_square_bb & R5)
+
+        # castles
+        # check rook moves
+        if origin_piece == 'R':
+            if move.origin_square_bb == (H & R1):
+                self.castle_w_king_side = False
+            elif move.origin_square_bb == (A & R1):
+                self.castle_w_queen_side = False
+        elif origin_piece == 'r':
+            if move.origin_square_bb == (H & R8):
+                self.castle_b_king_side = False
+            elif move.origin_square_bb == (A & R8):
+                self.castle_b_queen_side = False
+        # king moves
+        if origin_piece in ['K', 'k']:
+            if self.active_side:
+                self.castle_w_king_side = False
+                self.castle_w_queen_side = False
+            else:
+                self.castle_b_king_side = False
+                self.castle_b_queen_side = False
+            # check if king move was castle
+            if not king_moves(move.origin_square_bb) & move.target_square_bb:
+                # castle king side
+                if move.target_square_bb & move_rightx2(move.origin_square_bb):
+                    # get rook
+                    rook_square = (H & R1) if self.active_side else (H & R8)
+                    rook_piece = self.get_piece_on_square(rook_square)
+                    # move rook
+                    self.pieces[rook_piece] &= ~rook_square
+                    self.pieces[rook_piece] |= move_leftx2(rook_square)
+                # castle queen side
+                else:
+                    # get rook
+                    rook_square = (A & R1) if self.active_side else (A & R8)
+                    rook_piece = self.get_piece_on_square(rook_square)
+                    # move rook
+                    self.pieces[rook_piece] &= ~rook_square
+                    self.pieces[rook_piece] |= move_rightx2(
+                        move_right(rook_square))
+
+        # update board properties
+        self.active_side = not self.active_side
+        if capture:
+            self.half_moves = 0
+        if self.active_side:
+            self.full_moves += 1
 
 
-start_time = time.time()
-Board()
-print(f'--- total runtime: {time.time() - start_time} seconds ---')
+if __name__ == '__main__':
+    start_time = time.time()
+    Board()
+    print(f'--- total runtime: {time.time() - start_time} seconds ---')
