@@ -1,4 +1,4 @@
-import { AfterViewInit, asNativeElements, Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, asNativeElements, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { fromEvent } from 'rxjs';
 import { filter, tap, takeUntil, take, switchMap } from 'rxjs/operators';
 import { Piece, Position } from '../interfaces/Piece';
@@ -12,6 +12,8 @@ export class PieceComponent implements AfterViewInit {
   @Input() pieceProperties!: Piece;
   @Input() position!: Position;
   @Input() boardWidth = 800;
+  @Output() onDragStart = new EventEmitter<number[]>();
+  @Output() onDragStop = new EventEmitter<void>();
 
   get dimensions() {
     return this.boardWidth / 8;
@@ -40,6 +42,7 @@ export class PieceComponent implements AfterViewInit {
     fromEvent<MouseEvent>(this.pieceEl, 'mousedown')
       .pipe(
         tap((event) => {
+          this.onDragStart.emit(this.pieceProperties.possibleTargetSquares)
           this.centerElFromEventOnCursor(event);
           this.pieceEl.style.cursor = 'grabbing';
           this.pieceEl.style.zIndex = '1000';
@@ -80,8 +83,13 @@ export class PieceComponent implements AfterViewInit {
         ),
         tap(() => {
           // TODO: check if move as legal
-          this.resetStyle();
-          this.updatePiece();
+          this.resetStyle()
+          if(!this.checkBounds()) {
+            this.setTranslate(this.position.x * 100, this.position.y * 100, '%');
+          } else {
+            this.updatePiece();
+          }
+          this.onDragStop.emit();
         })
       )
       .subscribe();
@@ -89,27 +97,32 @@ export class PieceComponent implements AfterViewInit {
 
   private updatePiece() {
     let matrix = this.getMatrix();
-    this.position.y = +matrix[5] / 100;
-    this.position.x = +matrix[4] / 100;
+      this.position.y = +matrix[5] / 100;
+      this.position.x = +matrix[4] / 100;
+
+
   }
 
   private resetStyle() {
     this.pieceEl.style.cursor = 'grab';
     this.pieceEl.style.zIndex = '';
-    this.checkBounds();
     this.centerOnCell();
+
   }
 
   private checkBounds() {
     const matrix = this.getMatrix();
-    if (
-      +matrix[4] > this.boardWidth - this.dimensions / 2 ||
-      +matrix[5] > this.boardWidth - this.dimensions / 2 ||
-      +matrix[4] < 0 - this.dimensions / 2 ||
-      +matrix[5] < 0 - this.dimensions / 2
-    ) {
-      this.setTranslate(this.position.x * 100, this.position.y * 100, '%');
-    }
+    let [newX,newY] = [+matrix[4] / 100, +matrix[5] / 100];
+    let found = this.pieceProperties.possibleTargetSquares.find(
+      (positionNumber: number) => {
+        const newPositionNumber = newX + newY * 8;
+        if(positionNumber === newPositionNumber)
+          return positionNumber;
+        else
+          return undefined
+      }
+    )
+    return !!found;
   }
 
   private centerOnCell() {

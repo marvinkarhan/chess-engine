@@ -1,4 +1,4 @@
-export const ALGEBRAIC_TO_INDEX = {
+export const ALGEBRAIC_TO_INDEX : {[field: string]: number} = {
     'a8': 63, 'b8': 62, 'c8': 61, 'd8': 60, 'e8': 59, 'f8': 58, 'g8': 57, 'h8': 56,
     'a7': 55, 'b7': 54, 'c7': 53, 'd7': 52, 'e7': 51, 'f7': 50, 'g7': 49, 'h7': 48,
     'a6': 47, 'b6': 46, 'c6': 45, 'd6': 44, 'e6': 43, 'f6': 42, 'g6': 41, 'h6': 40,

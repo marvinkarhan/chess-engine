@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Side } from './enums/Side';
 import { Board, Piece, PieceTypes } from './interfaces/Piece';
+import { BoardService } from './services/board.service';
 import { ChessApiService } from './services/chess-api.service';
 
 const START_POS_FEN: string =
@@ -15,14 +17,20 @@ export class BoardComponent implements OnInit {
   @Input() boardWidth = 800;
 
   pieces: Board = [];
+  potentialMoves: number[] = [];
 
-  constructor(private chessApi: ChessApiService) {
-    this.chessApi.createNewBoard().pipe().subscribe(
-      (pieces: Board) => {
-        this.pieces = pieces;
-      }
+  constructor(private boardService: BoardService) {
+    this.boardService.getNewBoard().subscribe(
+      (obs: Observable<Board>) => obs.subscribe((board: Board) => {this.pieces = board})
     )
   }
-
+  
+  showMoves(moves: number[]) {
+    console.log("Hallo", moves)
+    this.potentialMoves = moves;
+  }
+  clearMoves() {
+    this.potentialMoves = [];
+  }
   ngOnInit(): void {}
 }

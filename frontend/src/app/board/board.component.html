@@ -8,6 +8,11 @@
     [position]="{x: i % 8, y: i / 8 }"
     [pieceProperties]="piece"
     [boardWidth]="boardWidth"
+    (onDragStart)="showMoves($event)"
+    (onDragStop)="clearMoves()"
   ></piece>
   </ng-container>
+  <potential-move
+  *ngFor="let move of potentialMoves"
+  [position]="{x: move % 8, y: move / 8}"></potential-move>
 </div>
