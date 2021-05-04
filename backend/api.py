@@ -18,11 +18,11 @@ def on_test_message(message: str):
     print("Test-Message: " + message);
 
 @socketio.on('get_board_moves')
-def on_get_board_moves(fen: str):
+def on_get_board_moves():
     user_board = session[request.sid]
     moves = list(user_board.legal_moves_generator(user_board.active_side))
     uci_moves = [move.to_uci_string() for move in moves]
-
+    emit('new_board_moves', uci_moves)
     print(uci_moves)
 
 @socketio.on('connect')
