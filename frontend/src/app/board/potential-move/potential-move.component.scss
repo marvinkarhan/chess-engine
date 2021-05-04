@@ -1,0 +1,11 @@
+.potential-move {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 12.5%;
+    height: 12.5%;
+    background-size: cover;
+    z-index: 2;
+    will-change: transform;
+    background: radial-gradient(rgba(20,85,30,0.5) 19%, rgba(0,0,0,0) 20%);
+}
