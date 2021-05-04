@@ -1,7 +1,7 @@
 import { AfterViewInit, asNativeElements, Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
 import { fromEvent } from 'rxjs';
 import { filter, tap, takeUntil, take, switchMap } from 'rxjs/operators';
-import { Piece } from '../interfaces/Piece';
+import { Piece, Position } from '../interfaces/Piece';
 
 @Component({
   selector: 'piece',
@@ -10,6 +10,7 @@ import { Piece } from '../interfaces/Piece';
 })
 export class PieceComponent implements AfterViewInit {
   @Input() pieceProperties!: Piece;
+  @Input() position!: Position;
   @Input() boardWidth = 800;
 
   get dimensions() {
@@ -21,13 +22,18 @@ export class PieceComponent implements AfterViewInit {
     return this._pieceRef.nativeElement;
   }
 
-  constructor() {}
+  constructor() {
+  }
 
   ngAfterViewInit(): void {
     this.initDragAndDrop();
+    //TODO FIXME
+    //Correct the y position
+    this.position = {x: this.position.x, y: Math.trunc(this.position.y)};
   }
 
   initDragAndDrop() {
+    console.log(this.position)
     this.pieceEl.style.cursor = 'grab';
     fromEvent<MouseEvent>(this.pieceEl, 'mousedown')
       .pipe(
@@ -81,8 +87,8 @@ export class PieceComponent implements AfterViewInit {
 
   private updatePiece() {
     let matrix = this.getMatrix();
-    this.pieceProperties.yPos = +matrix[4] / 100;
-    this.pieceProperties.xPos = +matrix[5] / 100;
+    this.position.y = +matrix[5] / 100;
+    this.position.x = +matrix[4] / 100;
   }
 
   private resetStyle() {
@@ -100,7 +106,7 @@ export class PieceComponent implements AfterViewInit {
       +matrix[4] < 0 - this.dimensions / 2 ||
       +matrix[5] < 0 - this.dimensions / 2
     ) {
-      this.setTranslate(this.pieceProperties.yPos * 100, this.pieceProperties.xPos * 100, '%');
+      this.setTranslate(this.position.x * 100, this.position.y * 100, '%');
     }
   }
 

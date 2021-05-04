@@ -1,3 +1,5 @@
+import { Observable } from "rxjs";
+
 export type PieceTypes =
   | 'br'
   | 'bn'
@@ -12,4 +14,10 @@ export type PieceTypes =
   | 'wk'
   | 'wp';
 
-export type Piece = { xPos: number; yPos: number; type: PieceTypes };
+export type Piece = { type: PieceTypes, possibleTargetSquares: string[]};
+
+export type Board = (Piece|undefined)[];
+
+export type Position = {x: number, y: number}
+
+export type BoardInitializedFENStringEvent = Observable<string>

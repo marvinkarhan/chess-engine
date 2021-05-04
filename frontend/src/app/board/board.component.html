@@ -3,9 +3,11 @@
   [style.width]="boardWidth + 'px'"
   [style.height]="boardWidth + 'px'"
 >
-  <piece
-    *ngFor="let piece of pieces"
+  <ng-container *ngFor="let piece of pieces; index as i;" >
+    <piece *ngIf="piece"
+    [position]="{x: i % 8, y: i / 8 }"
     [pieceProperties]="piece"
     [boardWidth]="boardWidth"
   ></piece>
+  </ng-container>
 </div>
