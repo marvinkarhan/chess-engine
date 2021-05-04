@@ -13,34 +13,33 @@ def get_msb_generator(bb: int):
 
 class Board:
 
-    pieces = {
-        'P': 0,
-        'R': 0,
-        'N': 0,
-        'B': 0,
-        'Q': 0,
-        'K': 0,
-        'p': 0,
-        'r': 0,
-        'n': 0,
-        'b': 0,
-        'q': 0,
-        'k': 0
-    }
-
-    castle_w_king_side = True
-    castle_w_queen_side = True
-    castle_b_king_side = True
-    castle_b_queen_side = True
-
-    # 0: black, 1: white
-    active_side = 1
-    full_moves = 0
-    half_moves = 0
-
-    ep_square_bb = 0
-
     def __init__(self, fen=None) -> None:
+        self.pieces = {
+            'P': 0,
+            'R': 0,
+            'N': 0,
+            'B': 0,
+            'Q': 0,
+            'K': 0,
+            'p': 0,
+            'r': 0,
+            'n': 0,
+            'b': 0,
+            'q': 0,
+            'k': 0
+        }
+
+        self.castle_w_king_side = True
+        self.castle_w_queen_side = True
+        self.castle_b_king_side = True
+        self.castle_b_queen_side = True
+
+        # 0: black, 1: white
+        self.active_side = 1
+        self.full_moves = 0
+        self.half_moves = 0
+
+        self.ep_square_bb = 0
         fen = fen if fen else START_POS_FEN
         self.parse_FEN_string(fen)
 
