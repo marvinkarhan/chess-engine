@@ -24,16 +24,18 @@ export class PieceComponent implements AfterViewInit {
 
   constructor() {
   }
-
-  ngAfterViewInit(): void {
-    this.initDragAndDrop();
-    //TODO FIXME
+  
+  ngOnInit() {
+        //TODO FIXME
     //Correct the y position
     this.position = {x: this.position.x, y: Math.trunc(this.position.y)};
   }
 
+  ngAfterViewInit(): void {
+    this.initDragAndDrop()
+  }
+
   initDragAndDrop() {
-    console.log(this.position)
     this.pieceEl.style.cursor = 'grab';
     fromEvent<MouseEvent>(this.pieceEl, 'mousedown')
       .pipe(
