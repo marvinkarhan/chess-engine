@@ -23,7 +23,6 @@ export class ChessApiService {
 
    getBoardMoves(): Observable<Moves> {
      this.socket.emit(ChessApiEmits.GET_BOARD_MOVES);
-     this.socket.on(ChessApiEvents.NEW_BOARD_MOVES, (blub: string[]) => console.log(blub))
      let event = this.socket.fromEvent<string[]>(ChessApiEvents.NEW_BOARD_MOVES);
      return event.pipe<Moves>(map((uciMoves: string[]) => {
        let moves: Moves = {};
