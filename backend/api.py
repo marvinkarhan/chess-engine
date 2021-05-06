@@ -1,6 +1,7 @@
-from constants import START_POS_FEN
+from constants import FIELDS_TO_INDEX, ALGEBRAIC_TO_INDEX, START_POS_FEN
 from flask.globals import request, session
-from move_helper import uci_to_Move
+from move_helper import set_bit_on_bb, uci_to_Move
+from move import Move
 from board import Board
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit, send
@@ -9,21 +10,18 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
 
-@socketio.on('message')
-def onMessage(message: str):
-    print(message)
-
 @socketio.on('test_message')
 def on_test_message(message: str):
-    print("Test-Message: " + message);
+    print("Test-Message: " + message)
 
-@socketio.on('get_board_moves')
-def on_get_board_moves():
-    user_board = session[request.sid]
+@socketio.on('make_move')
+def on_make_move(uci_move: str):
+    user_board: Board = session[request.sid]
+    move = uci_to_Move(uci_move)
+    user_board.make_move(move)
     moves = list(user_board.legal_moves_generator(user_board.active_side))
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_moves', uci_moves)
-    print(uci_moves)
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves})
 
 @socketio.on('connect')
 def on_connect(): 
@@ -31,8 +29,11 @@ def on_connect():
 
 @socketio.on('new_board') 
 def on_new_board():
-    session[request.sid] = Board(START_POS_FEN)
-    emit('board_initialized', START_POS_FEN)
+    user_board = Board(START_POS_FEN)
+    session[request.sid] = user_board
+    moves = list(user_board.legal_moves_generator(user_board.active_side))
+    uci_moves = [move.to_uci_string() for move in moves]
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves})
 
 if __name__ == '__main__':
     socketio.run(app)
