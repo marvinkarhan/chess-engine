@@ -19,3 +19,12 @@ class Move:
             t=keys[self.target_square_bb.bit_length() - 1],
             p=self.promotion if self.promotion else ""
         )
+        
+    def __repr__(self):
+        return self.to_uci_string()
+
+    def __hash__(self):
+        return hash((self.origin_square_bb, self.target_square_bb, self.promotion))
+
+    def __copy__(self):
+        return type(self)(self.origin_square_bb, self.target_square_bb, self.promotion)

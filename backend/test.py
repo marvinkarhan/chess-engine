@@ -1,4 +1,5 @@
 import unittest
+from unittest.case import TestCase
 from board import *
 
 ## Performance test to test the move generation algorithm
@@ -17,6 +18,27 @@ class TestFullGame(unittest.TestCase):
 
         self.assertTrue(board.checkmate())
 
+
+class Perft(unittest.TestCase):
+
+    def test_depth0(self):
+        board = Board()
+        self.assertEqual(len(board.get_moves_tree(0)), 20)
+
+    def test_perft5(self):
+        board = Board()
+        moves_tree = board.get_moves_tree(2)
+        print(count(moves_tree))
+
+
+def count(d: dict):
+    if d:
+        sum = 0
+        for k in d:
+            sum += count(d[k])
+        return sum
+    else:
+        return 1
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
