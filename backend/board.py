@@ -48,6 +48,45 @@ class Board:
         print('\n'.join(['{0:064b}'.format(bb)[i:i + 8]
               for i in range(0, 64, 8)]))
 
+    def to_fen_string(self):
+        fen = ''
+        bb = 1 << 63
+        for row in range(0, 8, 1):
+            counter = 0
+            for x in range(0, 8, 1):
+                piece = self.get_piece_on_square(bb)
+                if piece:
+                    if counter > 0:
+                        fen += str(counter)
+                        counter = 0
+                    fen += piece
+                else:
+                    counter += 1
+                bb >>= 1
+            if counter > 0:
+                fen += str(counter)
+            if(row < 7):
+                fen += "/"
+
+        fen += ' w ' if self.active_side else ' b '
+        castle_rights = ''
+        castle_rights += 'K' if self.castle_w_king_side else ''
+        castle_rights += 'Q' if self.castle_w_queen_side else ''      
+        castle_rights += 'k' if self.castle_w_king_side else ''
+        castle_rights += 'q' if self.castle_w_queen_side else '' 
+        if not castle_rights:
+            castle_rights += '-'
+        fen += castle_rights + ' '
+        keys = list(ALGEBRAIC_TO_INDEX.keys())
+        if(self.ep_square_bb == 0):
+            fen += '- '
+        else:
+            fen += keys[-self.ep_square_bb.bit_length()] + ' '
+        fen += str(self.half_moves) + ' '
+        fen += str(self.full_moves)
+        return fen 
+
+
     def print_every_piece(self):
         for k, v in self.pieces.items():
             print(k + ':')
@@ -78,6 +117,7 @@ class Board:
         for k, v in self.pieces.items():
             if bb & v:
                 return k
+        return None
 
     def parse_FEN_string(self, fen: str):
         # for example: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
