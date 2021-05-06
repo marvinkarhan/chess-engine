@@ -3,16 +3,19 @@
   [style.width]="boardWidth + 'px'"
   [style.height]="boardWidth + 'px'"
 >
-  <ng-container *ngFor="let piece of pieces; index as i;" >
-    <piece *ngIf="piece"
-    [position]="{x: i % 8, y: i / 8 }"
-    [pieceProperties]="piece"
-    [boardWidth]="boardWidth"
-    (onDragStart)="showMoves($event)"
-    (onDragStop)="clearMoves()"
-  ></piece>
+  <ng-container *ngFor="let piece of boardService.pieces$ | async; index as i">
+    <piece
+      *ngIf="piece"
+      [position]="{ x: i % 8, y: toInt(i / 8) }"
+      [pieceProperties]="piece"
+      [boardWidth]="boardWidth"
+      (onDragStart)="showMoves($event)"
+      (onDragStop)="clearMoves()"
+      (onMove)="onMove($event)"
+    ></piece>
   </ng-container>
   <potential-move
-  *ngFor="let move of potentialMoves"
-  [position]="{x: move % 8, y: move / 8}"></potential-move>
+    *ngFor="let move of potentialMoves"
+    [position]="{ x: move % 8, y: move / 8 }"
+  ></potential-move>
 </div>

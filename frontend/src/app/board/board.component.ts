@@ -1,7 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { Side } from './enums/Side';
-import { Board, Piece, PieceTypes } from './interfaces/Piece';
+import { Board, Move, Piece, PieceTypes } from './interfaces/Piece';
 import { BoardService } from './services/board.service';
 import { ChessApiService } from './services/chess-api.service';
 
@@ -19,18 +20,24 @@ export class BoardComponent implements OnInit {
   pieces: Board = [];
   potentialMoves: number[] = [];
 
-  constructor(private boardService: BoardService) {
-    this.boardService.getNewBoard().subscribe(
-      (obs: Observable<Board>) => obs.subscribe((board: Board) => {this.pieces = board})
-    )
+  constructor(public boardService: BoardService) {
+    this.boardService.requestNewBoard();
   }
   
   showMoves(moves: number[]) {
-    console.log("Hallo", moves)
     this.potentialMoves = moves;
   }
   clearMoves() {
     this.potentialMoves = [];
   }
+  onMove(move: Move) {
+    this.boardService.makeMove(move);
+  }
+
+  toInt(float: number) {
+    return float | 0;
+  }
   ngOnInit(): void {}
+  
+  
 }

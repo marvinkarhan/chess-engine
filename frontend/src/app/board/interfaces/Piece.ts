@@ -20,4 +20,6 @@ export type Board = (Piece|undefined)[];
 
 export type Position = {x: number, y: number}
 
+export type Move = [oldPosition: Position, newPosition: Position];
+
 export type BoardInitializedFENStringEvent = Observable<string>
