@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import { Observable } from 'rxjs';
-import { map, mapTo, reduce, switchMap } from 'rxjs/operators';
-import { ALGEBRAIC_TO_INDEX } from '../constants/BoardConstants';
 import { ChessApiEmits, ChessApiEvents } from '../enums/ChessApiEvents';
+import { BoardInformation } from '../interfaces/BoardInformation';
 import {
   Board,
   BoardInitializedFENStringEvent,
@@ -17,13 +16,16 @@ import { BoardService } from './board.service';
 export class ChessApiService {
   constructor(private socket: Socket) {}
 
-  createNewBoard(): Observable<string> {
-    this.socket.emit(ChessApiEmits.NEW_BOARD);
-    return this.socket.fromEvent<string>(ChessApiEvents.BOARD_INITIALIZED);
+  onNewBoardInformation(): Observable<BoardInformation> {
+    return this.socket.fromEvent<BoardInformation>(ChessApiEvents.NEW_BOARD_INFORMATION);
   }
 
-  getBoardMoves(): Observable<string[]> {
-    this.socket.emit(ChessApiEmits.GET_BOARD_MOVES);
-    return this.socket.fromEvent<string[]>(ChessApiEvents.NEW_BOARD_MOVES);
+  requestNewBoard() : void {
+    this.socket.emit(ChessApiEmits.NEW_BOARD);
   }
+
+  requestNewMove(uciMove: string): void {
+    this.socket.emit(ChessApiEmits.MAKE_MOVE, uciMove);
+  } 
+
 }
