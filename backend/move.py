@@ -15,8 +15,9 @@ class Move:
     def to_uci_string(self):
         keys = list(ALGEBRAIC_TO_INDEX.keys())
         return "{f}{t}{p}".format(
-            f=keys[self.origin_square_bb.bit_length() - 1],
-            t=keys[self.target_square_bb.bit_length() - 1],
+            # Keys inverts positions in ALGEBRAIC_TO_INDEX
+            f=keys[-self.origin_square_bb.bit_length()],
+            t=keys[-self.target_square_bb.bit_length() ],
             p=self.promotion if self.promotion else ""
         )
         
