@@ -2,6 +2,7 @@ from constants import *
 from move_helper import *
 from move import *
 import time
+import copy
 
 
 def get_msb_generator(bb: int):
@@ -178,7 +179,9 @@ class Board:
                 if way_bb & ~friendlies_bb & ~attacked_squares_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
-    def legal_moves_generator(self, active_side):
+    def legal_moves_generator(self, active_side=None):
+        if active_side is None:
+            active_side = self.active_side
         friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
         king_bb = self.pieces['K' if active_side else 'k']
 
@@ -209,9 +212,20 @@ class Board:
             list(self.legal_moves_generator(self.active_side)))
         return bool(not has_legal_moves and is_king_attacked)
 
+    def get_moves_tree(self, depth: int):
+        move_tree = {}
+        if depth >= 0:
+            for move in self.legal_moves_generator():
+                newBoard = copy.deepcopy(self)
+                newBoard.make_move(move)
+                move_tree[move] = newBoard.get_moves_tree(depth - 1)
+        return move_tree
+
     def make_move(self, move: Move):
         if move not in list(self.legal_moves_generator(self.active_side)):
-            print('Invalid Move')
+            print('Invalid Move: ', move)
+            print('Valid moves are: ', list(
+                self.legal_moves_generator(self.active_side)))
             return
 
         # track if capture for half_moves
@@ -272,7 +286,8 @@ class Board:
                 self.castle_b_king_side = False
                 self.castle_b_queen_side = False
             # check if king move was castle
-            if not king_moves(move.origin_square_bb) & move.target_square_bb:
+            friendlies_bb = self.w_pieces_bb() if self.active_side else self.b_pieces_bb()
+            if not king_moves(move.origin_square_bb, friendlies_bb) & move.target_square_bb:
                 # castle king side
                 if move.target_square_bb & move_rightx2(move.origin_square_bb):
                     # get rook
@@ -295,6 +310,8 @@ class Board:
         self.active_side = not self.active_side
         if capture:
             self.half_moves = 0
+        else:
+            self.half_moves += 1
         if self.active_side:
             self.full_moves += 1
 
