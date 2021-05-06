@@ -2,7 +2,6 @@ from constants import *
 from move_helper import *
 from move import *
 import time
-import copy
 
 
 def get_msb_generator(bb: int):
@@ -43,6 +42,30 @@ class Board:
         self.ep_square_bb = 0
         fen = fen if fen else START_POS_FEN
         self.parse_FEN_string(fen)
+
+    def reset_board(self):
+        self.pieces = {
+            'P': 0,
+            'R': 0,
+            'N': 0,
+            'B': 0,
+            'Q': 0,
+            'K': 0,
+            'p': 0,
+            'r': 0,
+            'n': 0,
+            'b': 0,
+            'q': 0,
+            'k': 0
+        }
+        self.castle_w_king_side = True
+        self.castle_w_queen_side = True
+        self.castle_b_king_side = True
+        self.castle_b_queen_side = True
+        self.active_side = 1
+        self.full_moves = 0
+        self.half_moves = 0
+        self.ep_square_bb = 0
 
     def print_bitboard(self, bb: int):
         print('\n'.join(['{0:064b}'.format(bb)[i:i + 8]
@@ -120,6 +143,7 @@ class Board:
         return None
 
     def parse_FEN_string(self, fen: str):
+        self.reset_board()
         # for example: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
         placement, active_side, castling_ability, ep_square, half_moves, full_moves = fen.split(
             ' ')
@@ -256,10 +280,38 @@ class Board:
         move_tree = {}
         if depth >= 0:
             for move in self.legal_moves_generator():
-                newBoard = copy.deepcopy(self)
-                newBoard.make_move(move)
-                move_tree[move] = newBoard.get_moves_tree(depth - 1)
+                cur_state = self.store_board()
+                self.make_move(move)
+                # self.print_bitboard(self.w_pieces_bb() | self.b_pieces_bb())
+                move_tree[move] = self.get_moves_tree(depth - 1)
+                self.restore_board(cur_state)
+                # print('-------------------')
         return move_tree
+
+    def store_board(self):
+        return {
+            'pieces': self.pieces.copy(),
+            'castle_w_king_side': self.castle_w_king_side,
+            'castle_w_queen_side': self.castle_w_queen_side,
+            'castle_b_king_side': self.castle_b_king_side,
+            'castle_b_queen_side': self.castle_b_queen_side,
+            'active_side': self.active_side,
+            'full_moves': self.full_moves,
+            'half_moves': self.half_moves,
+            'ep_square_bb': self.ep_square_bb
+        }
+
+    def restore_board(self, restore_dict: dict):
+        self.reset_board()
+        self.pieces = restore_dict['pieces']
+        self.castle_w_king_side = restore_dict['castle_w_king_side']
+        self.castle_w_queen_side = restore_dict['castle_w_queen_side']
+        self.castle_b_king_side = restore_dict['castle_b_king_side']
+        self.castle_b_queen_side = restore_dict['castle_b_queen_side']
+        self.active_side = restore_dict['active_side']
+        self.full_moves = restore_dict['full_moves']
+        self.half_moves = restore_dict['half_moves']
+        self.ep_square_bb = restore_dict['ep_square_bb']
 
     def make_move(self, move: Move):
         if move not in list(self.legal_moves_generator(self.active_side)):
