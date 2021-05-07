@@ -190,18 +190,22 @@ class Board:
         attacked_bb = 0
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
             active_side)
+        
+        # swap friendlies and enemies locally 
+        friendlies_bb = self.enemies_bb if active_side != self.active_side else self.friendlies_bb
+        enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
 
         attacked_bb |= king_moves(
-            king_bb, self.friendlies_bb) & self.enemies_bb
+            king_bb, friendlies_bb) & enemies_bb
         attacked_bb |= pawn_attacks(
-            pawn_bb, active_side, self.friendlies_bb, self.enemies_bb)
+            pawn_bb, active_side, friendlies_bb, enemies_bb)
         attacked_bb |= knight_moves(
-            knight_bb, self.friendlies_bb) & self.enemies_bb
+            knight_bb, friendlies_bb) & enemies_bb
 
         for pieces_bb, move_func in zip([rook_bb, bishop_bb, queen_bb], SLIDING_MOVES):
             for piece_bb in get_msb_generator(pieces_bb):
                 attacked_bb |= move_func(
-                    piece_bb, self.friendlies_bb, self.enemies_bb) & self.enemies_bb
+                    piece_bb, friendlies_bb, enemies_bb) & enemies_bb
         return attacked_bb
 
     def pseudo_legal_moves_generator(self, active_side):
@@ -247,11 +251,11 @@ class Board:
         if king_bb & ~attacked_squares_bb:
             if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
                 way_bb = (move_right(king_bb) | move_rightx2(king_bb))
-                if way_bb & ~self.friendlies_bb & ~attacked_squares_bb:
+                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb) == way_bb:
                     yield Move(king_bb, move_rightx2(king_bb))
             if active_side and self.castle_w_queen_side or not active_side and self.castle_b_queen_side:
                 way_bb = (move_left(king_bb) | move_leftx2(king_bb))
-                if way_bb & ~self.friendlies_bb & ~attacked_squares_bb:
+                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb) == way_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
     def legal_moves_generator(self):
@@ -430,6 +434,7 @@ class Board:
 
 if __name__ == '__main__':
     start_time = time.time()
-    board = Board()
-    moves_tree = board.get_moves_tree(0)
+    board = Board('rnb1kbnr/pppp1ppp/8/4p3/4P2q/5P2/PPPP2PP/RNBQKBNR w KQkq - 1 3')
+    moves_tree = board.get_moves_tree(1)
+    print(moves_tree)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
