@@ -24,10 +24,23 @@ class Perft(unittest.TestCase):
     # def test_depth0(self):
     #     board = Board()
     #     self.assertEqual(len(board.get_moves_tree(0)), 20)
+    def test_perft1(self):
+        board = Board()
+        moves_tree = board.get_moves_tree(1)
+        _count = count(moves_tree)
+        print(_count)
+        self.assertEqual(_count, 20)
+
+    def test_perft2(self):
+        board = Board()
+        moves_tree = board.get_moves_tree(2)
+        _count = count(moves_tree)
+        print(_count)
+        self.assertEqual(_count, 400)
 
     def test_perft3(self):
         board = Board()
-        moves_tree = board.get_moves_tree(2)
+        moves_tree = board.get_moves_tree(3)
         _count = count(moves_tree)
         print(_count)
         self.assertEqual(_count, 8902)

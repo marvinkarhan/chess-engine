@@ -34,6 +34,8 @@ class Board:
         self.castle_w_queen_side = True
         self.castle_b_king_side = True
         self.castle_b_queen_side = True
+        self.friendlies_bb = 0
+        self.enemies_bb = 0
 
         # 0: black, 1: white
         self.active_side = 1
@@ -63,6 +65,8 @@ class Board:
         self.castle_w_queen_side = True
         self.castle_b_king_side = True
         self.castle_b_queen_side = True
+        self.friendlies_bb = 0
+        self.enemies_bb = 0
         self.active_side = 1
         self.full_moves = 0
         self.half_moves = 0
@@ -75,14 +79,13 @@ class Board:
     def evaluate(self):
         bb = 1 << 63
         score = 0
-        for x in range(0,64,1):
+        for x in range(0, 64, 1):
             piece = self.get_piece_on_square(bb)
             if(piece):
                 score += PIECE_VALUES[piece]
             bb >>= 1
         print(score)
         return score
-
 
     def to_fen_string(self):
         fen = ''
@@ -107,9 +110,9 @@ class Board:
         fen += ' w ' if self.active_side else ' b '
         castle_rights = ''
         castle_rights += 'K' if self.castle_w_king_side else ''
-        castle_rights += 'Q' if self.castle_w_queen_side else ''      
+        castle_rights += 'Q' if self.castle_w_queen_side else ''
         castle_rights += 'k' if self.castle_w_king_side else ''
-        castle_rights += 'q' if self.castle_w_queen_side else '' 
+        castle_rights += 'q' if self.castle_w_queen_side else ''
         if not castle_rights:
             castle_rights += '-'
         fen += castle_rights + ' '
@@ -120,8 +123,7 @@ class Board:
             fen += keys[-self.ep_square_bb.bit_length()] + ' '
         fen += str(self.half_moves) + ' '
         fen += str(self.full_moves)
-        return fen 
-
+        return fen
 
     def print_every_piece(self):
         for k, v in self.pieces.items():
@@ -181,117 +183,108 @@ class Board:
                 else:
                     self.pieces[char] |= bb_placement_mask
                     bb_placement_mask >>= 1
+        self.friendlies_bb = self.w_pieces_bb() if self.active_side else self.b_pieces_bb()
+        self.enemies_bb = self.b_pieces_bb() if self.active_side else self.w_pieces_bb()
 
-    def attacked_squares(self, active_side, enemies_bb=0):
+    def attacked_squares(self, active_side):
         attacked_bb = 0
-        friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
-        if not enemies_bb:
-            enemies_bb = self.b_pieces_bb() if active_side else self.w_pieces_bb()
-        else:
-            # override firendlies (incase an enemy took a piece, used in legal move gen)
-            friendlies_bb = friendlies_bb & ~enemies_bb
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
             active_side)
 
-        attacked_bb |= king_moves(king_bb, friendlies_bb) & enemies_bb
+        attacked_bb |= king_moves(
+            king_bb, self.friendlies_bb) & self.enemies_bb
         attacked_bb |= pawn_attacks(
-            pawn_bb, active_side, friendlies_bb, enemies_bb)
-        attacked_bb |= knight_moves(knight_bb, friendlies_bb) & enemies_bb
+            pawn_bb, active_side, self.friendlies_bb, self.enemies_bb)
+        attacked_bb |= knight_moves(
+            knight_bb, self.friendlies_bb) & self.enemies_bb
 
         for pieces_bb, move_func in zip([rook_bb, bishop_bb, queen_bb], SLIDING_MOVES):
             for piece_bb in get_msb_generator(pieces_bb):
                 attacked_bb |= move_func(
-                    piece_bb, friendlies_bb, enemies_bb) & enemies_bb
+                    piece_bb, self.friendlies_bb, self.enemies_bb) & self.enemies_bb
         return attacked_bb
 
     def pseudo_legal_moves_generator(self, active_side):
-        friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
-        enemies_bb = self.b_pieces_bb() if active_side else self.w_pieces_bb()
         attacked_squares_bb = self.attacked_squares(not active_side)
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
             active_side)
         # pawn moves
         for pawn in get_msb_generator(pawn_bb):
-            for move in get_msb_generator(pawn_attacks(pawn, active_side, friendlies_bb, enemies_bb) | pawn_moves(pawn, active_side, friendlies_bb, enemies_bb)):
+            for move in get_msb_generator(pawn_attacks(pawn, active_side, self.friendlies_bb, self.enemies_bb) | pawn_moves(pawn, active_side, self.friendlies_bb, self.enemies_bb)):
                 yield Move(pawn, move)
             # en passant
             if self.ep_square_bb:
                 move = pawn_attacks(
-                    pawn, active_side, friendlies_bb, self.ep_square_bb) & self.ep_square_bb
+                    pawn, active_side, self.friendlies_bb, self.ep_square_bb) & self.ep_square_bb
                 if move:
                     yield Move(pawn, move)
 
         # rook moves
         for rook in get_msb_generator(rook_bb):
-            for move in get_msb_generator(rook_moves(rook, friendlies_bb, enemies_bb)):
+            for move in get_msb_generator(rook_moves(rook, self.friendlies_bb, self.enemies_bb)):
                 yield Move(rook, move)
 
         # bishop moves
         for bishop in get_msb_generator(bishop_bb):
-            for move in get_msb_generator(bishop_moves(bishop, friendlies_bb, enemies_bb)):
+            for move in get_msb_generator(bishop_moves(bishop, self.friendlies_bb, self.enemies_bb)):
                 yield Move(bishop, move)
 
         # queen moves
         for queen in get_msb_generator(queen_bb):
-            for move in get_msb_generator(queen_moves(queen, friendlies_bb, enemies_bb)):
+            for move in get_msb_generator(queen_moves(queen, self.friendlies_bb, self.enemies_bb)):
                 yield Move(queen, move)
 
         # knight moves
         for knight in get_msb_generator(knight_bb):
-            for move in get_msb_generator(knight_moves(knight, friendlies_bb)):
+            for move in get_msb_generator(knight_moves(knight, self.friendlies_bb)):
                 yield Move(knight, move)
 
         # king moves (there is always only one king)
-        for move in get_msb_generator(king_moves(king_bb, friendlies_bb) & ~attacked_squares_bb):
+        for move in get_msb_generator(king_moves(king_bb, self.friendlies_bb) & ~attacked_squares_bb):
             yield Move(king_bb, move)
 
         # king castle
         if king_bb & ~attacked_squares_bb:
             if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
                 way_bb = (move_right(king_bb) | move_rightx2(king_bb))
-                if way_bb & ~friendlies_bb & ~attacked_squares_bb:
+                if way_bb & ~self.friendlies_bb & ~attacked_squares_bb:
                     yield Move(king_bb, move_rightx2(king_bb))
             if active_side and self.castle_w_queen_side or not active_side and self.castle_b_queen_side:
                 way_bb = (move_left(king_bb) | move_leftx2(king_bb))
-                if way_bb & ~friendlies_bb & ~attacked_squares_bb:
+                if way_bb & ~self.friendlies_bb & ~attacked_squares_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
-    def legal_moves_generator(self, active_side=None):
-        if active_side is None:
-            active_side = self.active_side
-        friendlies_bb = self.w_pieces_bb() if active_side else self.b_pieces_bb()
-        king_bb = self.pieces['K' if active_side else 'k']
-
-        for pseudo_legal_move in self.pseudo_legal_moves_generator(active_side):
-            friendlies_bb_copy = friendlies_bb
+    def legal_moves_generator(self):
+        king_bb = self.pieces['K' if self.active_side else 'k']
+        for pseudo_legal_move in self.pseudo_legal_moves_generator(self.active_side):
             # check if piece moving is king and update his position (other pieces are in this case the same)
-            king_bb_copy = king_bb
             if pseudo_legal_move.origin_square_bb == king_bb:
-                king_bb_copy = pseudo_legal_move.target_square_bb
+                king_bb = pseudo_legal_move.target_square_bb
+            friendlies_bb_copy = self.friendlies_bb
             # make move on copy
-            friendlies_bb_copy = friendlies_bb_copy & ~pseudo_legal_move.origin_square_bb
-            friendlies_bb_copy = friendlies_bb_copy | pseudo_legal_move.target_square_bb
+            self.friendlies_bb &= ~pseudo_legal_move.origin_square_bb
+            self.friendlies_bb |= pseudo_legal_move.target_square_bb
             # check if king is attacked on changed board, if not move is valid
-            if not (self.attacked_squares(not active_side, friendlies_bb_copy) & king_bb_copy):
+            if not (self.attacked_squares(not self.active_side) & king_bb):
+                self.friendlies_bb = friendlies_bb_copy
                 yield pseudo_legal_move
+            self.friendlies_bb = friendlies_bb_copy
 
-    def stalemate(self, active_side):
+    def stalemate(self):
         is_king_attacked = self.attacked_squares(
-            not active_side) & self.pieces['K' if active_side else 'k']
-        has_legal_moves = len(
-            list(self.legal_moves_generator(active_side)))
+            not self.active_side) & self.pieces['K' if self.active_side else 'k']
+        has_legal_moves = len(list(self.legal_moves_generator()))
         return bool(not has_legal_moves and not is_king_attacked)
 
     def checkmate(self):
         is_king_attacked = self.attacked_squares(
             not self.active_side) & self.pieces['K' if self.active_side else 'k']
-        has_legal_moves = len(
-            list(self.legal_moves_generator(self.active_side)))
+        has_legal_moves = len(list(self.legal_moves_generator()))
         return bool(not has_legal_moves and is_king_attacked)
 
     def get_moves_tree(self, depth: int):
         move_tree = {}
-        if depth >= 0:
+        if depth >= 1:
             for move in self.legal_moves_generator():
                 cur_state = self.store_board()
                 self.make_move(move)
@@ -308,6 +301,8 @@ class Board:
             'castle_w_queen_side': self.castle_w_queen_side,
             'castle_b_king_side': self.castle_b_king_side,
             'castle_b_queen_side': self.castle_b_queen_side,
+            'friendlies_bb': self.friendlies_bb,
+            'enemies_bb': self.enemies_bb,
             'active_side': self.active_side,
             'full_moves': self.full_moves,
             'half_moves': self.half_moves,
@@ -321,16 +316,18 @@ class Board:
         self.castle_w_queen_side = restore_dict['castle_w_queen_side']
         self.castle_b_king_side = restore_dict['castle_b_king_side']
         self.castle_b_queen_side = restore_dict['castle_b_queen_side']
+        self.friendlies_bb = restore_dict['friendlies_bb']
+        self.enemies_bb = restore_dict['enemies_bb']
         self.active_side = restore_dict['active_side']
         self.full_moves = restore_dict['full_moves']
         self.half_moves = restore_dict['half_moves']
         self.ep_square_bb = restore_dict['ep_square_bb']
 
     def make_move(self, move: Move):
-        if move not in list(self.legal_moves_generator(self.active_side)):
+        if move not in list(self.legal_moves_generator()):
             print('Invalid Move: ', move)
             print('Valid moves are: ', list(
-                self.legal_moves_generator(self.active_side)))
+                self.legal_moves_generator()))
             return
 
         # track if capture for half_moves
@@ -342,6 +339,8 @@ class Board:
         # update bitboards to represent change
         self.pieces[origin_piece] &= ~move.origin_square_bb
         self.pieces[origin_piece] |= move.target_square_bb
+        self.friendlies_bb &= ~move.origin_square_bb
+        self.friendlies_bb |= move.target_square_bb
         # target piece only exists on capture
         if target_piece:
             self.pieces[target_piece] &= ~move.target_square_bb
@@ -355,6 +354,7 @@ class Board:
                     self.ep_square_bb) if self.active_side else move_up(self.ep_square_bb)
                 captured_pawn = self.get_piece_on_square(captured_pawn_bb)
                 self.pieces[captured_pawn] &= ~captured_pawn_bb
+                self.enemies_bb &= ~captured_pawn_bb
                 self.ep_square_bb = 0
                 capture = True
             # check for resulting en passant
@@ -391,37 +391,45 @@ class Board:
                 self.castle_b_king_side = False
                 self.castle_b_queen_side = False
             # check if king move was castle
-            friendlies_bb = self.w_pieces_bb() if self.active_side else self.b_pieces_bb()
-            if not king_moves(move.origin_square_bb, friendlies_bb) & move.target_square_bb:
+            if not king_moves(move.origin_square_bb, self.friendlies_bb) & move.target_square_bb:
                 # castle king side
                 if move.target_square_bb & move_rightx2(move.origin_square_bb):
                     # get rook
                     rook_square = (H & R1) if self.active_side else (H & R8)
+                    target_square = move_leftx2(move_right(rook_square))
                     rook_piece = self.get_piece_on_square(rook_square)
                     # move rook
                     self.pieces[rook_piece] &= ~rook_square
-                    self.pieces[rook_piece] |= move_leftx2(rook_square)
+                    self.pieces[rook_piece] |= target_square
+                    self.friendlies_bb &= ~rook_square
+                    self.friendlies_bb |= target_square
                 # castle queen side
                 else:
                     # get rook
                     rook_square = (A & R1) if self.active_side else (A & R8)
+                    target_square = move_rightx2(move_right(rook_square))
                     rook_piece = self.get_piece_on_square(rook_square)
                     # move rook
                     self.pieces[rook_piece] &= ~rook_square
-                    self.pieces[rook_piece] |= move_rightx2(
-                        move_right(rook_square))
+                    self.pieces[rook_piece] |= target_square
+                    self.friendlies_bb &= ~rook_square
+                    self.friendlies_bb |= target_square
 
         # update board properties
-        self.active_side = not self.active_side
         if capture:
             self.half_moves = 0
+            self.enemies_bb &= ~move.target_square_bb
         else:
             self.half_moves += 1
         if self.active_side:
             self.full_moves += 1
+        # swap sides
+        self.active_side = not self.active_side
+        self.friendlies_bb, self.enemies_bb = self.enemies_bb, self.friendlies_bb
 
 
 if __name__ == '__main__':
     start_time = time.time()
-    Board()
+    board = Board()
+    moves_tree = board.get_moves_tree(0)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')

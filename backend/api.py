@@ -20,7 +20,7 @@ def on_make_move(uci_move: str):
     user_board: Board = session[request.sid]
     move = uci_to_Move(uci_move)
     user_board.make_move(move)
-    moves = list(user_board.legal_moves_generator(user_board.active_side))
+    moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
     emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : user_board.evaluate()})
 
@@ -32,9 +32,10 @@ def on_connect():
 def on_new_board():
     user_board = Board(START_POS_FEN)
     session[request.sid] = user_board
-    moves = list(user_board.legal_moves_generator(user_board.active_side))
+    moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
     emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation': user_board.evaluate()})
 
 if __name__ == '__main__':
     socketio.run(app)
+
