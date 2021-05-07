@@ -188,12 +188,15 @@ class Board:
 
     def attacked_squares(self, active_side):
         attacked_bb = 0
-        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
-            active_side)
-        
-        # swap friendlies and enemies locally 
+
+        # swap friendlies and enemies locally
         friendlies_bb = self.enemies_bb if active_side != self.active_side else self.friendlies_bb
         enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
+
+        active_pieces = self.get_active_pieces(active_side)
+        # filter pieces in case they got removed (eg. in legal_moves_generator)
+        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = [
+            x & friendlies_bb for x in active_pieces]
 
         attacked_bb |= king_moves(
             king_bb, friendlies_bb) & enemies_bb
@@ -261,18 +264,23 @@ class Board:
     def legal_moves_generator(self):
         king_bb = self.pieces['K' if self.active_side else 'k']
         for pseudo_legal_move in self.pseudo_legal_moves_generator(self.active_side):
+            king_bb_copy = king_bb
             # check if piece moving is king and update his position (other pieces are in this case the same)
-            if pseudo_legal_move.origin_square_bb == king_bb:
-                king_bb = pseudo_legal_move.target_square_bb
+            if pseudo_legal_move.origin_square_bb == king_bb_copy:
+                king_bb_copy = pseudo_legal_move.target_square_bb
             friendlies_bb_copy = self.friendlies_bb
+            enemies_bb_copy = self.enemies_bb
             # make move on copy
             self.friendlies_bb &= ~pseudo_legal_move.origin_square_bb
             self.friendlies_bb |= pseudo_legal_move.target_square_bb
+            self.enemies_bb &= ~pseudo_legal_move.target_square_bb
             # check if king is attacked on changed board, if not move is valid
-            if not (self.attacked_squares(not self.active_side) & king_bb):
+            if not (self.attacked_squares(not self.active_side) & king_bb_copy):
                 self.friendlies_bb = friendlies_bb_copy
+                self.enemies_bb = enemies_bb_copy
                 yield pseudo_legal_move
             self.friendlies_bb = friendlies_bb_copy
+            self.enemies_bb = enemies_bb_copy
 
     def stalemate(self):
         is_king_attacked = self.attacked_squares(
@@ -434,7 +442,8 @@ class Board:
 
 if __name__ == '__main__':
     start_time = time.time()
-    board = Board('rnb1kbnr/pppp1ppp/8/4p3/4P2q/5P2/PPPP2PP/RNBQKBNR w KQkq - 1 3')
+    board = Board(
+        'rnb1kbnr/pppp1ppp/8/4p3/4P3/5Pq1/PPPP3P/RNBQKBNR w KQkq - 0 4')
     moves_tree = board.get_moves_tree(1)
     print(moves_tree)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
