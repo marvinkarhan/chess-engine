@@ -1,3 +1,4 @@
+from random import random
 from constants import *
 from move_helper import *
 from move import *
@@ -47,6 +48,18 @@ class Board:
     def print_bitboard(self, bb: int):
         print('\n'.join(['{0:064b}'.format(bb)[i:i + 8]
               for i in range(0, 64, 8)]))
+
+    def evaluate(self):
+        bb = 1 << 63
+        score = 0
+        for x in range(0,64,1):
+            piece = self.get_piece_on_square(bb)
+            if(piece):
+                score += PIECE_VALUES[piece]
+            bb >>= 1
+        print(score)
+        return score
+
 
     def to_fen_string(self):
         fen = ''
