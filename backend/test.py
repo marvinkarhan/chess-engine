@@ -21,14 +21,16 @@ class TestFullGame(unittest.TestCase):
 
 class Perft(unittest.TestCase):
 
-    def test_depth0(self):
-        board = Board()
-        self.assertEqual(len(board.get_moves_tree(0)), 20)
+    # def test_depth0(self):
+    #     board = Board()
+    #     self.assertEqual(len(board.get_moves_tree(0)), 20)
 
-    def test_perft5(self):
+    def test_perft3(self):
         board = Board()
         moves_tree = board.get_moves_tree(2)
-        print(count(moves_tree))
+        _count = count(moves_tree)
+        print(_count)
+        self.assertEqual(_count, 8902)
 
 
 def count(d: dict):
