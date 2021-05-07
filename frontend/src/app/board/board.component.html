@@ -1,4 +1,5 @@
-<div
+<div class="board-wrapper">
+  <div
   id="board"
   [style.width]="boardWidth + 'px'"
   [style.height]="boardWidth + 'px'"
@@ -19,3 +20,6 @@
     [position]="{ x: move % 8, y: move / 8 }"
   ></potential-move>
 </div>
+<evaluation-bar [evalValue]='this.boardService.evaluation$ | async'></evaluation-bar>
+</div>
+

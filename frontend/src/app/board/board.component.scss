@@ -12,6 +12,9 @@
   box-shadow: generate-shadows($size);
 }
 
+.board-wrapper {
+  display: flex;
+}
 #board {
   background-size: 100%;
   user-select: none;

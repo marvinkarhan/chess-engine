@@ -22,6 +22,8 @@ export class BoardService implements OnDestroy {
   sideToMove: Side = Side.white;
   private _pieces$ = new BehaviorSubject<Board>([]);
   public pieces$ = this._pieces$.asObservable();
+  private _evaluation$ = new BehaviorSubject<number>(0.5);
+  public evaluation$ = this._evaluation$.asObservable();
   private _subs$ = new Subscription();
 
   constructor(private chessApi: ChessApiService) {
@@ -47,9 +49,12 @@ export class BoardService implements OnDestroy {
   private _setupBoardInformationListener() : void {
     this._subs$.add(
       this.chessApi.onNewBoardInformation().subscribe((boardInformation: BoardInformation) => {
+        console.log("Hallo")
         let pieces = this._loadFENString(boardInformation.fen);
         this._uciToBoard(pieces, boardInformation.moves);
         this._pieces$.next(pieces);
+        this._evaluation$.next(boardInformation.evaluation);
+        console.log("update")
       })
     )
   }

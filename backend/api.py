@@ -5,6 +5,7 @@ from move import Move
 from board import Board
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit, send
+import random
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -21,7 +22,7 @@ def on_make_move(uci_move: str):
     user_board.make_move(move)
     moves = list(user_board.legal_moves_generator(user_board.active_side))
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves})
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : random.random()})
 
 @socketio.on('connect')
 def on_connect(): 
@@ -33,7 +34,7 @@ def on_new_board():
     session[request.sid] = user_board
     moves = list(user_board.legal_moves_generator(user_board.active_side))
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves})
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation': random.random()})
 
 if __name__ == '__main__':
     socketio.run(app)
