@@ -39,12 +39,17 @@ class Perft(unittest.TestCase):
         _count = count(moves_tree)
         self.assertEqual(_count, 8902)
 
-    # takes to long 08.05 (>100s)
     def test_perft4(self):
         board = Board()
         moves_tree = board.get_moves_tree(4)
         _count = count(moves_tree)
         self.assertEqual(_count, 197281)
+
+    def test_perft5(self):
+        board = Board()
+        moves_tree = board.get_moves_tree(5)
+        _count = count(moves_tree)
+        self.assertEqual(_count, 4865609)
 
     def test_perft2_Kiwipete(self):
         board = Board('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')

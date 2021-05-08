@@ -36,6 +36,12 @@ class Board:
         self.castle_b_queen_side = True
         self.friendlies_bb = 0
         self.enemies_bb = 0
+        self.captures = 0
+        self.make_move_time = 0
+        self.unmake_move_time = 0
+        self.pseudo_legal_move_time = 0
+        self.legal_move_time = 0
+
 
         # 0: black, 1: white
         self.active_side = 1
@@ -259,32 +265,11 @@ class Board:
                     yield Move(king_bb, move_leftx2(king_bb))
 
     def legal_moves_generator(self):
-        king_bb = self.pieces['K' if self.active_side else 'k']
-        for pseudo_legal_move in self.pseudo_legal_moves_generator(self.active_side):
-            king_bb_copy = king_bb
-            moved_piece = self.get_piece_on_square(
-                pseudo_legal_move.origin_square_bb)
-            moved_piece_bb_copy = self.pieces[moved_piece]
-            # check if piece moving is king and update his position (other pieces are in this case the same)
-            if pseudo_legal_move.origin_square_bb == king_bb_copy:
-                king_bb_copy = pseudo_legal_move.target_square_bb
-            friendlies_bb_copy = self.friendlies_bb
-            enemies_bb_copy = self.enemies_bb
-            # make move on copy
-            self.pieces[moved_piece] &= ~pseudo_legal_move.origin_square_bb
-            self.pieces[moved_piece] |= pseudo_legal_move.target_square_bb
-            self.friendlies_bb &= ~pseudo_legal_move.origin_square_bb
-            self.friendlies_bb |= pseudo_legal_move.target_square_bb
-            self.enemies_bb &= ~pseudo_legal_move.target_square_bb
-            # check if king is attacked on changed board, if not move is valid
-            if not (self.attacked_squares(not self.active_side) & king_bb_copy):
-                self.pieces[moved_piece] = moved_piece_bb_copy
-                self.friendlies_bb = friendlies_bb_copy
-                self.enemies_bb = enemies_bb_copy
-                yield pseudo_legal_move
-            self.pieces[moved_piece] = moved_piece_bb_copy
-            self.friendlies_bb = friendlies_bb_copy
-            self.enemies_bb = enemies_bb_copy
+        for move in self.pseudo_legal_moves_generator(self.active_side):
+            previous_board_state = self.store()
+            if self.make_move(move):
+                self.restore(previous_board_state)
+                yield move
 
     def stalemate(self):
         is_king_attacked = self.attacked_squares(
@@ -301,16 +286,23 @@ class Board:
     def get_moves_tree(self, depth: int):
         move_tree = {}
         if depth >= 1:
-            for move in self.legal_moves_generator():
-                cur_state = self.store_board()
+            start_time = time.time()
+            legal_moves = list(self.legal_moves_generator())
+            self.legal_move_time += time.time() - start_time
+            for move in legal_moves:
+                cur_state = self.store()
+                start_time = time.time()
                 self.make_move(move)
+                self.make_move_time += time.time() - start_time
                 # self.print_bitboard(self.w_pieces_bb() | self.b_pieces_bb())
                 move_tree[move] = self.get_moves_tree(depth - 1)
-                self.restore_board(cur_state)
+                start_time = time.time()
+                self.restore(cur_state)
+                self.unmake_move_time += time.time() - start_time
                 # print('-------------------')
         return move_tree
 
-    def store_board(self):
+    def store(self):
         return {
             'pieces': self.pieces.copy(),
             'castle_w_king_side': self.castle_w_king_side,
@@ -325,7 +317,7 @@ class Board:
             'ep_square_bb': self.ep_square_bb
         }
 
-    def restore_board(self, restore_dict: dict):
+    def restore(self, restore_dict: dict):
         self.reset_board()
         self.pieces = restore_dict['pieces']
         self.castle_w_king_side = restore_dict['castle_w_king_side']
@@ -340,12 +332,7 @@ class Board:
         self.ep_square_bb = restore_dict['ep_square_bb']
 
     def make_move(self, move: Move):
-        if move not in list(self.legal_moves_generator()):
-            print('Invalid Move: ', move)
-            print('Valid moves are: ', list(
-                self.legal_moves_generator()))
-            return
-
+        stored_board = self.store()
         # track if capture for half_moves
         capture = False
 
@@ -438,6 +425,7 @@ class Board:
         if capture:
             self.half_moves = 0
             self.enemies_bb &= ~move.target_square_bb
+            self.captures += 1
         else:
             self.half_moves += 1
         if self.active_side:
@@ -445,11 +433,16 @@ class Board:
         # swap sides
         self.active_side = not self.active_side
         self.friendlies_bb, self.enemies_bb = self.enemies_bb, self.friendlies_bb
+        # unmake move if it was illegal
+        if self.attacked_squares(not self.active_side) & self.pieces['K' if not self.active_side else 'k']:
+            self.restore(stored_board)
+            return False
+        return True
 
 
 if __name__ == '__main__':
     start_time = time.time()
-    board = Board(
-        'r3k2r/p1ppqNb1/bn2pnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1')
+    board = Board()
     moves_tree = board.get_moves_tree(3)
+    print(board.legal_move_time, board.make_move_time, board.unmake_move_time)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
