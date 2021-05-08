@@ -434,7 +434,7 @@ class Board:
         self.active_side = not self.active_side
         self.friendlies_bb, self.enemies_bb = self.enemies_bb, self.friendlies_bb
         # unmake move if it was illegal
-        if self.attacked_squares(not self.active_side) & self.pieces['K' if not self.active_side else 'k']:
+        if self.attacked_squares(self.active_side) & self.pieces['K' if not self.active_side else 'k']:
             self.restore(stored_board)
             return False
         return True
@@ -442,7 +442,7 @@ class Board:
 
 if __name__ == '__main__':
     start_time = time.time()
-    board = Board()
-    moves_tree = board.get_moves_tree(3)
+    board = Board('k7/8/5Q2/5p2/5P2/8/6q1/7K w - - 0 1')
+    board.make_move(uci_to_Move('f6f7'))
     print(board.legal_move_time, board.make_move_time, board.unmake_move_time)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
