@@ -392,7 +392,7 @@ class Board:
         if origin_piece == 'R' or target_piece == 'R':
             if move.origin_square_bb == (H & R1) or move.target_square_bb == (H & R1):
                 self.castle_w_king_side = False
-            elif move.origin_square_bb == (A & R1) or move.origin_square_bb == (A & R1):
+            elif move.origin_square_bb == (A & R1) or move.target_square_bb == (A & R1):
                 self.castle_w_queen_side = False
         elif origin_piece == 'r' or target_piece == 'r':
             if move.origin_square_bb == (H & R8) or move.target_square_bb == (H & R8):
