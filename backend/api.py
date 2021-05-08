@@ -30,7 +30,7 @@ def on_connect():
 
 @socketio.on('new_board') 
 def on_new_board():
-    user_board = Board(START_POS_FEN)
+    user_board = Board('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
     session[request.sid] = user_board
     moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]

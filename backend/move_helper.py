@@ -145,10 +145,10 @@ def pawn_moves(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
     return 0
 
 
-def pawn_attacks(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
+def pawn_attacks(bb: int, active_side: int, friendlies_bb: int):
     if active_side:
-        return ((move_left_up(bb) | move_right_up(bb)) & enemies_bb) & ~friendlies_bb
-    return ((move_left_down(bb) | move_right_down(bb)) & enemies_bb) & ~friendlies_bb
+        return (move_left_up(bb) | move_right_up(bb)) & ~friendlies_bb
+    return (move_left_down(bb) | move_right_down(bb)) & ~friendlies_bb
 
 
 SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
