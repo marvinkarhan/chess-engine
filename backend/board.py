@@ -3,6 +3,8 @@ from constants import *
 from move_helper import *
 from move import *
 import time
+from line_profiler import LineProfiler
+import cProfile, pstats
 
 
 def get_msb_generator(bb: int):
@@ -264,8 +266,10 @@ class Board:
                 if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb) == way_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
-    def legal_moves_generator(self):
-        for move in self.pseudo_legal_moves_generator(self.active_side):
+    def legal_moves_generator(self, active_side = None):
+        if active_side is None:
+            active_side = self.active_side
+        for move in self.pseudo_legal_moves_generator(active_side):
             previous_board_state = self.store()
             if self.make_move(move):
                 self.restore(previous_board_state)
@@ -439,10 +443,25 @@ class Board:
             return False
         return True
 
+def count(d: dict):
+    if d:
+        sum = 0
+        for k in d:
+            sum += count(d[k])
+        return sum
+    else:
+        return 1
+
 
 if __name__ == '__main__':
     start_time = time.time()
-    board = Board('k7/8/5Q2/5p2/5P2/8/6q1/7K w - - 0 1')
-    board.make_move(uci_to_Move('f6f7'))
-    print(board.legal_move_time, board.make_move_time, board.unmake_move_time)
+    board = Board()
+    profiler = cProfile.Profile()
+    profiler.enable()
+    tree = board.get_moves_tree(4)
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats('cumtime')
+    stats.print_stats()
+    print(count(tree))
+    # print(board.legal_move_time, board.make_move_time, board.unmake_move_time)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
