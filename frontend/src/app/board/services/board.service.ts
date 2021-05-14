@@ -11,6 +11,7 @@ import { ALGEBRAIC_TO_INDEX } from '../constants/BoardConstants';
 import { Side } from '../enums/Side';
 import { BoardInformation } from '../interfaces/BoardInformation';
 import { Board, Move, Piece, PieceTypes } from '../interfaces/Piece';
+import { BoardAudioService } from './board-audio.service';
 import { ChessApiService } from './chess-api.service';
 
 @Injectable({
@@ -26,7 +27,7 @@ export class BoardService implements OnDestroy {
   public evaluation$ = this._evaluation$.asObservable();
   private _subs$ = new Subscription();
 
-  constructor(private chessApi: ChessApiService) {
+  constructor(private chessApi: ChessApiService, private _boardAudio: BoardAudioService) {
     this._setupBoardInformationListener();
   }
 
@@ -41,9 +42,20 @@ export class BoardService implements OnDestroy {
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}`;
     this.chessApi.requestNewMove(uciMove);
+    this._clearMoves()
     // let pieces = this._pieces$.value;
     // pieces[newPositionIndex] = pieces[oldPositionIndex];
     // pieces[oldPositionIndex] = undefined; 
+  }
+
+  private _clearMoves() {
+    let currentPieces = this._pieces$.value;
+    currentPieces.forEach((piece) => {
+      if(piece) {
+        piece.possibleTargetSquares = []
+      }
+    })
+    this._pieces$.next(currentPieces)
   }
 
   private _setupBoardInformationListener() : void {
@@ -55,6 +67,7 @@ export class BoardService implements OnDestroy {
         this._pieces$.next(pieces);
         this._evaluation$.next(boardInformation.evaluation);
         console.log("update")
+        this._boardAudio.playMoveSound()
       })
     )
   }

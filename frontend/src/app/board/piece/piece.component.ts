@@ -13,6 +13,7 @@ import {
 import { fromEvent } from 'rxjs';
 import { filter, tap, takeUntil, take, switchMap } from 'rxjs/operators';
 import { Move, Piece, Position } from '../interfaces/Piece';
+import { BoardAudioService } from '../services/board-audio.service';
 
 @Component({
   selector: 'piece',
@@ -36,7 +37,7 @@ export class PieceComponent implements AfterViewInit {
     return this._pieceRef.nativeElement;
   }
 
-  constructor() {}
+  constructor(private boardAudioService: BoardAudioService) {}
 
   ngOnInit() {
   }
@@ -48,7 +49,7 @@ export class PieceComponent implements AfterViewInit {
   initDragAndDrop() {
     this.pieceEl.style.cursor = 'grab';
     
-    fromEvent<MouseEvent>(this.pieceEl, 'mousedown')
+    let grabEvent = fromEvent<MouseEvent>(this.pieceEl, 'mousedown')
       .pipe(
         tap((event) => {
           this.onDragStart.emit(this.pieceProperties.possibleTargetSquares);
@@ -102,15 +103,13 @@ export class PieceComponent implements AfterViewInit {
           this.onDragStop.emit();
         })
       )
-      .subscribe();
+      grabEvent.subscribe()
   }
 
   private updatePiece() {
     let matrix = this.getMatrix();
     let [newX, newY] = [+matrix[4] / 100, +matrix[5] / 100];
-    let audio = new Audio("../../../assets/sounds/Move.ogg");
-    audio.load();
-    audio.play();
+    this.boardAudioService.playMoveSound()
     this.onMove.emit([this.position, { x: newX, y: newY }]);
     this.position.y = newY;
     this.position.x = newX;
