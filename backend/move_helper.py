@@ -1,8 +1,11 @@
+#from functools import cache
 from constants import *
 from move import *
+from functools import cache,lru_cache
 import re
 
 
+@lru_cache(maxsize=None)
 def set_bit_on_bb(bb: int, index: int, value):
     bb_mask = 1 << index
     # remove potential bit
@@ -22,52 +25,55 @@ if a shift results in a piece wrapping the board (going from line A to H) it get
 """
 
 
+@lru_cache(maxsize=None)
 def move_left(bb: int):
     return (bb << 1 & ~H) & FULL_BB_MASK
 
-
+@lru_cache(maxsize=None)
 def move_right(bb: int):
     return bb >> 1 & ~A
 
-
+@lru_cache(maxsize=None)
 def move_up(bb: int):
     return bb << 8 & FULL_BB_MASK
 
-
+@lru_cache(maxsize=None)
 def move_down(bb: int):
     return bb >> 8
 
 
 # castle optimizations
+@lru_cache(maxsize=None)
 def move_leftx2(bb: int):
     return ((bb << 2 & ~H) & ~G) & FULL_BB_MASK
 
-
+@lru_cache(maxsize=None)
 def move_rightx2(bb: int):
     return ((bb >> 2 & ~A) & ~ B)
 
 
 # pawn optimizations
+@lru_cache(maxsize=None)
 def move_downx2(bb: int):
     return bb >> 16
 
-
+@lru_cache(maxsize=None)
 def move_upx2(bb: int):
     return bb << 16 & FULL_BB_MASK
 
-
+@lru_cache(maxsize=None)
 def move_left_up(bb: int):
     return (bb << 9 & ~H) & FULL_BB_MASK
 
-
+@lru_cache(maxsize=None)
 def move_left_down(bb: int):
     return bb >> 7 & ~H
 
-
+@lru_cache(maxsize=None)
 def move_right_up(bb: int):
     return (bb << 7 & ~A) & FULL_BB_MASK
 
-
+@lru_cache(maxsize=None)
 def move_right_down(bb: int):
     return bb >> 9 & ~A
 
@@ -92,12 +98,11 @@ KNIGHT_MOVES = [
     lambda x: move_downx2(move_right(x))
 ]
 
-
 def traverse_bb(bb: int, directions, friendlies_bb: int, enemies_bb: int):
     result_bb = 0
     for move_func in directions:
         square_bb = bb
-        while True:
+        while 1:
             square_bb = move_func(square_bb)
             if square_bb & friendlies_bb:
                 break
@@ -106,33 +111,33 @@ def traverse_bb(bb: int, directions, friendlies_bb: int, enemies_bb: int):
                 break
     return result_bb
 
-
+@lru_cache(maxsize=None)
 def king_moves(bb: int, friendlies_bb: int):
     moves_bb = 0
     for moves_func in DIRECTIONS:
         moves_bb |= moves_func(bb)
     return moves_bb & ~friendlies_bb
 
-
+@lru_cache(maxsize=None)
 def queen_moves(bb: int, friendlies_bb: int, enemies_bb: int):
     return traverse_bb(bb, DIRECTIONS, friendlies_bb, enemies_bb)
 
-
+@lru_cache(maxsize=None)
 def rook_moves(bb: int, friendlies_bb: int, enemies_bb: int):
     return traverse_bb(bb, HORIZONTAL_VERTICAL_MOVES, friendlies_bb, enemies_bb)
 
-
+@lru_cache(maxsize=None)
 def bishop_moves(bb: int, friendlies_bb: int, enemies_bb: int):
     return traverse_bb(bb, DIAGONALS_MOVES, friendlies_bb, enemies_bb)
 
-
+@lru_cache(maxsize=None)
 def knight_moves(bb: int, friendlies_bb: int):
     moves_bb = 0
     for move_func in KNIGHT_MOVES:
         moves_bb |= move_func(bb)
     return moves_bb & ~friendlies_bb
 
-
+@lru_cache(maxsize=None)
 def pawn_moves(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
     if active_side:
         first_step = (move_up(bb) & ~enemies_bb) & ~friendlies_bb
@@ -144,7 +149,7 @@ def pawn_moves(bb: int, active_side: int, friendlies_bb: int, enemies_bb: int):
         return ((move_down(bb) | move_downx2(bb & R7)) & ~enemies_bb) & ~friendlies_bb
     return 0
 
-
+@lru_cache(maxsize=None)
 def pawn_attacks(bb: int, active_side: int, friendlies_bb: int):
     if active_side:
         return (move_left_up(bb) | move_right_up(bb)) & ~friendlies_bb
