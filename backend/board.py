@@ -1,6 +1,6 @@
 from random import random
 import ctypes
-from math import trunc
+from math import pi, trunc
 from constants import *
 from move_helper import *
 from move import *
@@ -120,47 +120,53 @@ class Board:
     
     def root_nega_max(self, depth: int): 
         best_move = None
-        max = -2000
+        alpha = -200000
+        beta =  200000
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
-            score = -self.nega_max(depth-1,self.active_side)
-           # if(score < 0):
-            #    print("Hallo")
-            if(score > max):
-                max = score
-                best_move = move
+            score = -self.nega_max(depth-1, -beta,-alpha)
             self.restore(backup)
+            if score >= beta:
+                return [move, beta]
+            if score > alpha:
+                alpha = score
+                best_move = move
+
 
         #print("BEST-Score", max)
-        return [best_move,max]
+        return [best_move,alpha]
 
-    def nega_max(self, depth: int, side):
+    def nega_max(self, depth: int, alpha,beta):
         if(depth == 0):
             return self.evaluate()
-        max = -2000
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
-            score = -self.nega_max(depth-1, side)
-            #if(score < 0):
-               # print("Hallo",score, move)
-            if(score > max):
-                #print(f'{score} > {max}')
-                max = score
+            score = -self.nega_max(depth-1,-beta,-alpha)
             self.restore(backup)
+            if score >= beta:
+                return beta
+            if score > alpha:
+                alpha = score
         #print("DEPTH-BEST-SCORE",max)
-        return max
+        return alpha
 
     def evaluate(self):
         side_to_move = 1 if self.active_side else -1
         score = 0
         for piece, amount in self.pieces.items():
-            score += PIECE_VALUES[piece] * len(get_lsb_array(amount))
+            lsb_array = get_lsb_array(amount)
+            score += PIECE_VALUES[piece] * len(lsb_array)
+            for position in lsb_array:
+                index = 63 - bitScanForward(position) # index from behind
+                #print(index, piece, PIECE_SQUARE_TABLES[piece][index] )
+
+                score += PIECE_SQUARE_TABLES[piece][index] * (1 if piece.isupper() else -1)
 
         moves_white = len(list(self.pseudo_legal_moves_generator(1)))
         moves_black = len(list(self.pseudo_legal_moves_generator(0)))
-        score += 0.1 * (moves_white-moves_black)
+        score += 10 * (moves_white-moves_black)
       #  if score != 0:
         
            # print(score)
@@ -414,7 +420,6 @@ class Board:
         stored_board = self.store()
         # track if capture for half_moves
         capture = False
-
         origin_piece = self.get_piece_on_square(move.origin_square_bb)
         target_piece = self.get_piece_on_square(move.target_square_bb)
 
@@ -532,8 +537,16 @@ if __name__ == '__main__':
     start_time = time.time()
     board = Board()
     #profiler = cProfile.Profile()
-    #profiler.enable()
-    print(board.root_nega_max(4))
+   # profiler.enable()
+    [move, value] = board.root_nega_max(4)
+    print(move)
+    board.make_move(move)
+    [move, value]  = board.root_nega_max(4)
+    print(move)
+    board.make_move(move)
+    [move, value]  = board.root_nega_max(4)
+    print(move)
+    board.make_move(move)
     #tree = board.get_moves_tree(4)
     #profiler.disable()
     #stats = pstats.Stats(profiler).sort_stats('cumtime')
