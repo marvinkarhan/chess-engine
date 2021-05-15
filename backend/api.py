@@ -23,8 +23,9 @@ def on_make_move(uci_move: str):
     user_board: Board = session[request.sid]
     move = uci_to_Move(uci_move)
     user_board.make_move(move)
-    # [next_move, score] = user_board.root_nega_max(4)
-    # user_board.make_move(next_move)
+    [next_move, score] = user_board.process_next_move(4, uci_move)
+    print("neuer move", next_move)
+    user_board.make_move(next_move)
     moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
     emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : 0})
