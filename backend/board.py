@@ -6,6 +6,7 @@ from move import *
 import time
 import cProfile, pstats
 from functools import lru_cache
+# from numpy import bitwise_xor, uint, uint64, right_shift
 index64 = [
     0, 47,  1, 56, 48, 27,  2, 60,
    57, 49, 41, 37, 28, 16,  3, 61,
@@ -17,12 +18,17 @@ index64 = [
    13, 18,  8, 12,  7,  6,  5, 63
 ]
 
-@lru_cache(maxsize=None)
+#@lru_cache(maxsize=None)
 def bitScanForward(bb: int):
+    # debruijn64 = uint64(0x03f79d71b4cb0a89)
+    # bb = uint64(bb)
+    # #debruijn64 = 0x03f79d71b4cb0a89
+    # index = right_shift(bitwise_xor(bb, (bb-uint(1))) * debruijn64 , uint64(58))
+    # return index64[index]
     return (bb & -bb).bit_length() - 1
 
 
-@lru_cache(maxsize=None)
+#@lru_cache(maxsize=None)
 def get_lsb_array(bb: int):
     bbs = []
     while bb:
@@ -280,6 +286,7 @@ class Board:
         # swap friendlies and enemies locally
         friendlies_bb = self.enemies_bb if active_side != self.active_side else self.friendlies_bb
         enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
+        empty_bb = ~(friendlies_bb | enemies_bb) & FULL_BB_MASK
 
         active_pieces = self.get_active_pieces(active_side)
         # filter pieces in case they got removed (eg. in legal_moves_generator)
@@ -290,13 +297,14 @@ class Board:
         attacked_bb |= pawn_attacks(pawn_bb, active_side, friendlies_bb)
         attacked_bb |= knight_moves(knight_bb, friendlies_bb)
 
-        for pieces_bb, move_func in zip([rook_bb, bishop_bb, queen_bb], SLIDING_MOVES):
-            for piece_bb in get_lsb_array(pieces_bb):
-                attacked_bb |= move_func(piece_bb, friendlies_bb, enemies_bb)
+        attacked_bb |= rook_moves(rook_bb | queen_bb, empty_bb, friendlies_bb)
+        attacked_bb |= bishop_moves(bishop_bb | queen_bb, empty_bb, friendlies_bb)
+        
         return attacked_bb
 
     def pseudo_legal_moves_generator(self, active_side):
         attacked_squares_bb = self.attacked_squares(not active_side)
+        empty_bb = ~(self.friendlies_bb | self.enemies_bb) & FULL_BB_MASK
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
             active_side)
         # pawn moves
@@ -320,17 +328,17 @@ class Board:
 
         # rook moves
         for rook in get_lsb_array(rook_bb):
-            for move in get_lsb_array(rook_moves(rook, self.friendlies_bb, self.enemies_bb)):
+            for move in get_lsb_array(rook_moves(rook, empty_bb, self.friendlies_bb)):
                 yield Move(rook, move)
 
         # bishop moves
         for bishop in get_lsb_array(bishop_bb):
-            for move in get_lsb_array(bishop_moves(bishop, self.friendlies_bb, self.enemies_bb)):
+            for move in get_lsb_array(bishop_moves(bishop, empty_bb, self.friendlies_bb)):
                 yield Move(bishop, move)
 
         # queen moves
         for queen in get_lsb_array(queen_bb):
-            for move in get_lsb_array(queen_moves(queen, self.friendlies_bb, self.enemies_bb)):
+            for move in get_lsb_array(queen_moves(queen, empty_bb, self.friendlies_bb)):
                 yield Move(queen, move)
 
         # knight moves
@@ -544,10 +552,11 @@ if __name__ == '__main__':
     start_time = time.time()
     # board = Board('k7/7P/8/8/8/8/8/7K w - - 0 1')
     # board.make_move(Move(1 << H7, 1 << H8, 'Q'))
+    # board = Board('1k6/8/8/8/3R4/8/8/7K w - - 0 1')
     board = Board()
-    #profiler = cProfile.Profile()
-   # profiler.enable()
-    [move, value] = board.root_nega_max(5)
+    profiler = cProfile.Profile()
+    profiler.enable()
+    # [move, value] = board.root_nega_max(5)
     # print(move)
     # board.make_move(move)
     # [move, value]  = board.root_nega_max(4)
@@ -556,12 +565,15 @@ if __name__ == '__main__':
     # [move, value]  = board.root_nega_max(4)
     # print(move)
     # board.make_move(move)
-    # tree = board.get_moves_tree(1)
-    #profiler.disable()
-    #stats = pstats.Stats(profiler).sort_stats('cumtime')
-    #stats.print_stats()
+    tree = board.get_moves_tree(4)
+    # board.print_bitboard(board.attacked_squares(board.active_side))
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats('tottime')
+    stats.print_stats()
     # print(count(tree))
-
+    # empty = ~(board.friendlies_bb | board.enemies_bb) & FULL_BB_MASK
+    # for i in range(0, 1000000):
+    #     rook_moves(0x10000000, empty, board.enemies_bb)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
     #moves = list(board.legal_moves_generator())
     #print(moves[4])

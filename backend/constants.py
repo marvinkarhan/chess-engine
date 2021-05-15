@@ -12,6 +12,8 @@ E = D >> 1
 F = E >> 1
 G = F >> 1
 H = G >> 1
+NOT_H = ~H
+NOT_A = ~A
 # masks for ranks
 R1 = 0xff
 R2 = R1 << 8
