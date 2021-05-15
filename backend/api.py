@@ -23,7 +23,7 @@ def on_make_move(uci_move: str):
     user_board: Board = session[request.sid]
     move = uci_to_Move(uci_move)
     user_board.make_move(move)
-    [next_move, score] = user_board.root_nega_max(4)
+    [next_move, score] = user_board.process_next_move(4, uci_move)
     print("neuer move", next_move)
     user_board.make_move(next_move)
     moves = list(user_board.legal_moves_generator())

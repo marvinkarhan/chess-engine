@@ -76,6 +76,9 @@ class Board:
         self.unmake_move_time = 0
         self.pseudo_legal_move_time = 0
         self.legal_move_time = 0
+        
+
+        self.current_opening_table = OPENING_TABLE
 
 
         # 0: black, 1: white
@@ -117,6 +120,19 @@ class Board:
         print('\n'.join(['{0:064b}'.format(bb)[i:i + 8]
               for i in range(0, 64, 8)]))
 
+
+    def process_next_move(self, depth: int, last_move: str): 
+        print(self.half_moves)
+        if self.half_moves < 20 and last_move in self.current_opening_table:
+            #print("hay", self.current_opening_table)
+            for key in self.current_opening_table[last_move]:
+                black_key = key
+                result =  [uci_to_Move(key),0]
+                break
+            self.current_opening_table = self.current_opening_table[last_move][black_key]
+            return result
+        else:
+            return self.root_nega_max(depth)
     
     def root_nega_max(self, depth: int): 
         best_move = None

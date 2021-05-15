@@ -157,3 +157,8 @@ PIECE_SQUARE_TABLES = {
 }
 
 PROMOTION_OPTIONS = ['N', 'n', 'B', 'b', 'Q', 'q', 'R', 'r']
+
+import json
+
+with open('my_openings.json') as json_file:
+    OPENING_TABLE = json.load(json_file)
