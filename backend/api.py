@@ -28,7 +28,7 @@ def on_make_move(uci_move: str):
     user_board.make_move(next_move)
     moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : 0})
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : score})
 
 @socketio.on('connect')
 def on_connect(): 
