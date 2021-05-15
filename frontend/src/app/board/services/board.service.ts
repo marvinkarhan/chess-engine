@@ -36,16 +36,16 @@ export class BoardService implements OnDestroy {
   }
 
   makeMove(move: Move) {
-    const [oldPosition, newPosition] = move;
+    const [oldPosition, newPosition, promotion] = move;
     const oldPositionIndex = oldPosition.x + 8 * oldPosition.y;
     const newPositionIndex = newPosition.x + 8 * newPosition.y;
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
-    const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}`;
+    const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
     this.chessApi.requestNewMove(uciMove);
     this._clearMoves()
     // let pieces = this._pieces$.value;
     // pieces[newPositionIndex] = pieces[oldPositionIndex];
-    // pieces[oldPositionIndex] = undefined; 
+    // pieces[oldPositionIndex] = undefined;
   }
 
   private _clearMoves() {
@@ -61,12 +61,11 @@ export class BoardService implements OnDestroy {
   private _setupBoardInformationListener() : void {
     this._subs$.add(
       this.chessApi.onNewBoardInformation().subscribe((boardInformation: BoardInformation) => {
-        console.log("Hallo")
+        console.log("new FEN: ", boardInformation.fen);
         let pieces = this._loadFENString(boardInformation.fen);
         this._uciToBoard(pieces, boardInformation.moves);
         this._pieces$.next(pieces);
         this._evaluation$.next(boardInformation.evaluation);
-        console.log("update")
         this._boardAudio.playMoveSound()
       })
     )
@@ -80,12 +79,16 @@ export class BoardService implements OnDestroy {
     uciMoves.forEach((uciMove: string) => {
       let startSquare: string = uciMove[0] + uciMove[1];
       let targetSquare = uciMove[2] + uciMove[3];
+      let promotion = uciMove[4] ? true : false || false;
       const length: number = Object.keys(ALGEBRAIC_TO_INDEX).length
       let startSquareIndex: number = length - ALGEBRAIC_TO_INDEX[startSquare] - 1;
       let targetSquareIndex: number = length - ALGEBRAIC_TO_INDEX[targetSquare] - 1;
       currentPieces[startSquareIndex]?.possibleTargetSquares.push(
         targetSquareIndex
       );
+      if (currentPieces[startSquareIndex]) {
+        currentPieces[startSquareIndex]!.promotion = promotion;
+      }
     });
     return currentPieces;
   }
@@ -119,6 +122,7 @@ export class BoardService implements OnDestroy {
           pieces.push({
             type: (color + char.toLowerCase()) as PieceTypes,
             possibleTargetSquares: [],
+            promotion: false
           });
         }
       });

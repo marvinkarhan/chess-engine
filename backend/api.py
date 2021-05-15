@@ -23,12 +23,11 @@ def on_make_move(uci_move: str):
     user_board: Board = session[request.sid]
     move = uci_to_Move(uci_move)
     user_board.make_move(move)
-    [next_move, score] = user_board.root_nega_max(4)
-    print("neuer move", next_move)
-    user_board.make_move(next_move)
+    # [next_move, score] = user_board.root_nega_max(4)
+    # user_board.make_move(next_move)
     moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : score})
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : 0})
 
 @socketio.on('connect')
 def on_connect(): 
@@ -36,7 +35,7 @@ def on_connect():
 
 @socketio.on('new_board') 
 def on_new_board():
-    #user_board = Board('N1bk3r/1p1pnpp1/p1n1pq1p/7P/4P3/1Q1P1N2/PP1B1PP1/R3KB1R w KQk - 0 2')
+    # user_board = Board('8/1k5P/8/8/8/8/8/7K w - - 0 1')
     user_board = Board()
     session[request.sid] = user_board
     moves = list(user_board.legal_moves_generator())

@@ -5,13 +5,13 @@ import { Injectable } from '@angular/core';
 })
 export class BoardAudioService {
 
-  constructor() {
+  audio = new Audio("../../../assets/sounds/Move.ogg");
 
-   }
+  constructor() {
+    this.audio.load();
+  }
 
   playMoveSound() {
-    let audio = new Audio("../../../assets/sounds/Move.ogg");
-    audio.load();
-    audio.play();
+    this.audio.play();
   }
 }

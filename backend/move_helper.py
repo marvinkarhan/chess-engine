@@ -1,7 +1,7 @@
 #from functools import cache
 from constants import *
 from move import *
-from functools import cache,lru_cache
+from functools import lru_cache
 import re
 
 
@@ -46,6 +46,10 @@ def move_down(bb: int):
 @lru_cache(maxsize=None)
 def move_leftx2(bb: int):
     return ((bb << 2 & ~H) & ~G) & FULL_BB_MASK
+
+@lru_cache(maxsize=None)
+def move_leftx3(bb: int):
+    return (((bb << 3 & ~H) & ~G) & ~F) & FULL_BB_MASK
 
 @lru_cache(maxsize=None)
 def move_rightx2(bb: int):
@@ -160,7 +164,6 @@ SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
 
 
 def uci_to_Move(uci: str):
-    uci = uci.lower()
     m = re.match('([a-h][1-8])([a-h][1-8])(.)?', uci)
 
     if m is None:
@@ -168,9 +171,9 @@ def uci_to_Move(uci: str):
         return
 
     promotion = m.group(3)
-    if promotion is not None and promotion not in PROMOTION_OPTIONS:
+    if promotion is not None and promotion not in PROMOTION_OPTIONS_W + PROMOTION_OPTIONS_B:
         print('Invalid Promotion in uci')
         return
     origin_square_bb = set_bit_on_bb(0, ALGEBRAIC_TO_INDEX[m.group(1)], 1)
     target_square_bb = set_bit_on_bb(0, ALGEBRAIC_TO_INDEX[m.group(2)], 1)
-    return Move(origin_square_bb, target_square_bb, bool(promotion))
+    return Move(origin_square_bb, target_square_bb, promotion)

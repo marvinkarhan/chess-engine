@@ -156,4 +156,5 @@ PIECE_SQUARE_TABLES = {
 
 }
 
-PROMOTION_OPTIONS = ['N', 'n', 'B', 'b', 'Q', 'q', 'R', 'r']
+PROMOTION_OPTIONS_W = ['N', 'B', 'Q', 'R']
+PROMOTION_OPTIONS_B = ['n', 'b', 'q', 'r']

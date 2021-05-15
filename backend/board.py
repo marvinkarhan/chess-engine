@@ -1,12 +1,10 @@
 from random import random
-import ctypes
 from math import pi, trunc
 from constants import *
 from move_helper import *
 from move import *
 import time
 import cProfile, pstats
-from numpy import uint64, right_shift, bitwise_xor, uint
 from functools import lru_cache
 index64 = [
     0, 47,  1, 56, 48, 27,  2, 60,
@@ -19,20 +17,9 @@ index64 = [
    13, 18,  8, 12,  7,  6,  5, 63
 ]
 
-# /**
-#  * bitScanForward
-#  * @author Kim Walisch (2012)
-#  * @param bb bitboard to scan
-#  * @precondition bb != 0
-#  * @return index (0..63) of least significant one bit
-#  */
 @lru_cache(maxsize=None)
 def bitScanForward(bb: int):
-    debruijn64 = uint64(0x03f79d71b4cb0a89)
-    bb = uint64(bb)
-    #debruijn64 = 0x03f79d71b4cb0a89
-    index = right_shift(bitwise_xor(bb, (bb-uint(1))) * debruijn64 , uint64(58))
-    return index64[index]
+    return (bb & -bb).bit_length() - 1
 
 
 @lru_cache(maxsize=None)
@@ -72,10 +59,6 @@ class Board:
         self.friendlies_bb = 0
         self.enemies_bb = 0
         self.captures = 0
-        self.make_move_time = 0
-        self.unmake_move_time = 0
-        self.pseudo_legal_move_time = 0
-        self.legal_move_time = 0
 
 
         # 0: black, 1: white
@@ -303,7 +286,15 @@ class Board:
         # pawn moves
         for pawn in get_lsb_array(pawn_bb):
             for move in get_lsb_array(pawn_attacks(pawn, active_side, self.friendlies_bb) & self.enemies_bb | pawn_moves(pawn, active_side, self.friendlies_bb, self.enemies_bb)):
-                yield Move(pawn, move)
+                # check for promotion
+                if move & R1:
+                    for promotion in PROMOTION_OPTIONS_B:
+                        yield Move(pawn, move, promotion)
+                elif move & R8:
+                    for promotion in PROMOTION_OPTIONS_W:
+                        yield Move(pawn, move, promotion)
+                else:
+                    yield Move(pawn, move)
             # en passant
             if self.ep_square_bb:
                 move = pawn_attacks(pawn, active_side,
@@ -339,12 +330,14 @@ class Board:
         if king_bb & ~attacked_squares_bb:
             if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
                 way_bb = (move_right(king_bb) | move_rightx2(king_bb))
-                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb) == way_bb:
+                # check if there is sth in the way of the king
+                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb:
                     yield Move(king_bb, move_rightx2(king_bb))
             if active_side and self.castle_w_queen_side or not active_side and self.castle_b_queen_side:
-                way_bb = (move_left(king_bb) | move_leftx2(
-                    king_bb) | move_leftx2(move_left(king_bb)))
-                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb) == way_bb:
+                way_bb = (move_left(king_bb) | move_leftx2(king_bb))
+                way_rook_bb = move_leftx3(king_bb)
+                # check if there is sth in the way of the king and if there is sth in the way of the rook
+                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb and (way_rook_bb & ~self.friendlies_bb & ~self.enemies_bb) == way_rook_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
     def legal_moves_generator(self, active_side = None):
@@ -371,20 +364,12 @@ class Board:
     def get_moves_tree(self, depth: int):
         move_tree = {}
         if depth >= 1:
-            start_time = time.time()
             legal_moves = list(self.legal_moves_generator())
-            self.legal_move_time += time.time() - start_time
             for move in legal_moves:
                 cur_state = self.store()
-                start_time = time.time()
                 self.make_move(move)
-                self.make_move_time += time.time() - start_time
-                # self.print_bitboard(self.w_pieces_bb() | self.b_pieces_bb())
                 move_tree[move] = self.get_moves_tree(depth - 1)
-                start_time = time.time()
                 self.restore(cur_state)
-                self.unmake_move_time += time.time() - start_time
-                # print('-------------------')
         return move_tree
 
     def store(self):
@@ -433,6 +418,12 @@ class Board:
 
         # en passant
         if origin_piece in ['P', 'p']:
+            # promotion
+            if move.promotion:
+                # remove pawn
+                self.pieces[origin_piece] &= ~move.target_square_bb
+                # add promoted piece
+                self.pieces[move.promotion] |= move.target_square_bb
             # complete ep move
             if self.ep_square_bb:
                 if move.target_square_bb == self.ep_square_bb:
@@ -524,36 +515,37 @@ class Board:
         return True
 
 def count(d: dict):
-    if d:
-        sum = 0
-        for k in d:
+    sum = 0
+    for k in d:
+        if type(d[k]) is dict:
             sum += count(d[k])
-        return sum
-    else:
-        return 1
+        else:
+            sum += 1
+    return sum
 
 
 if __name__ == '__main__':
     start_time = time.time()
+    # board = Board('k7/7P/8/8/8/8/8/7K w - - 0 1')
+    # board.make_move(Move(1 << H7, 1 << H8, 'Q'))
     board = Board()
     #profiler = cProfile.Profile()
    # profiler.enable()
-    [move, value] = board.root_nega_max(4)
-    print(move)
-    board.make_move(move)
-    [move, value]  = board.root_nega_max(4)
-    print(move)
-    board.make_move(move)
-    [move, value]  = board.root_nega_max(4)
-    print(move)
-    board.make_move(move)
-    #tree = board.get_moves_tree(4)
+    [move, value] = board.root_nega_max(5)
+    # print(move)
+    # board.make_move(move)
+    # [move, value]  = board.root_nega_max(4)
+    # print(move)
+    # board.make_move(move)
+    # [move, value]  = board.root_nega_max(4)
+    # print(move)
+    # board.make_move(move)
+    # tree = board.get_moves_tree(1)
     #profiler.disable()
     #stats = pstats.Stats(profiler).sort_stats('cumtime')
     #stats.print_stats()
     # print(count(tree))
 
-    # print(board.legal_move_time, board.make_move_time, board.unmake_move_time)
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
     #moves = list(board.legal_moves_generator())
     #print(moves[4])

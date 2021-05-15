@@ -101,8 +101,9 @@ export class PieceComponent implements AfterViewInit {
   private updatePiece() {
     let matrix = this.getMatrix();
     let [newX, newY] = [+matrix[4] / 100, +matrix[5] / 100];
+    let promotion = this.pieceProperties.promotion ? this.pieceProperties.type[0] === 'w' ? 'Q' : 'q' : '';
     this.boardAudioService.playMoveSound();
-    this.onMove.emit([this.position, { x: newX, y: newY }]);
+    this.onMove.emit([this.position, { x: newX, y: newY }, promotion]);
     this.position.y = newY;
     this.position.x = newX;
   }
