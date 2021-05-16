@@ -24,6 +24,30 @@
   border-radius: 3px;
   animation: rippling-shadow 2s ease-in-out infinite alternate;
 }
+.ranks {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 3%;
+  justify-content: space-around;
+  padding-left: 4px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: rgba(0,0,0,0.4);
+}
+
+.files {
+  display: flex;
+  margin-top: -2.8%;
+  gap: 11.4%;
+  padding-left: -10%;
+  padding-left: 4px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: rgba(0,0,0,0.4);
+  width: 100%;
+  box-sizing: border-box;
+}
 
 @keyframes rippling-shadow {
   @for $i from 0 through 100 {

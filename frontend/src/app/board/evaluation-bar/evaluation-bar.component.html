@@ -1,5 +1,11 @@
 <div id="evaluation-bar">
-<div id="black-bar" [ngStyle]="{'height': ((10 - this.evalValue!)/20)*100 + '%'}">
-
-</div>
+  <div class="evaluation-description">
+    <div class="eval top">10</div>
+    <div class="eval mid">0</div>
+    <div class="eval bottom">-10</div>
+  </div>
+  <div
+    id="black-bar"
+    [ngStyle]="{ height: ((10 - this.evalValue!) / 20) * 100 + '%' }"
+  ></div>
 </div>
