@@ -171,9 +171,7 @@ class Board:
                 score += PIECE_SQUARE_TABLES[piece][index] * (1 if piece.isupper() else -1)
 
         moves_white = len(list(self.pseudo_legal_moves_generator(1)))
-        moves_black = len(list(self.pseudo_legal_moves_generator(0)))
-        print("MOVES BLACK", moves_black)
-        print("MOVES White", moves_white)       
+        moves_black = len(list(self.pseudo_legal_moves_generator(0)))     
         score += 10 * (moves_white-moves_black)
       #  if score != 0:
         
