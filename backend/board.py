@@ -1,4 +1,4 @@
-from random import random
+from random import choice, random
 from math import pi, trunc
 from constants import *
 from move_helper import *
@@ -62,6 +62,8 @@ class Board:
         
 
         self.current_opening_table = OPENING_TABLE
+        self.opening_moves = 10
+        self.opening_finished = False
 
 
         # 0: black, 1: white
@@ -105,22 +107,20 @@ class Board:
 
 
     def process_next_move(self, depth: int, last_move: str): 
-        print(self.half_moves)
-        if self.half_moves < 20 and last_move in self.current_opening_table:
+        if self.half_moves < self.opening_moves and last_move in self.current_opening_table and not self.opening_finished:
             #print("hay", self.current_opening_table)
-            for key in self.current_opening_table[last_move]:
-                black_key = key
-                result =  [uci_to_Move(key),0]
-                break
+            black_key = choice(list(self.current_opening_table[last_move].keys()))
+            result =  [uci_to_Move(black_key),0]
             self.current_opening_table = self.current_opening_table[last_move][black_key]
             return result
         else:
+            self.opening_finished = True
             return self.root_nega_max(depth)
     
     def root_nega_max(self, depth: int): 
         best_move = None
-        alpha = -200000
-        beta =  200000
+        alpha = -20000000
+        beta =  20000000
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
@@ -355,6 +355,17 @@ class Board:
                 # check if there is sth in the way of the king and if there is sth in the way of the rook
                 if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb and (way_rook_bb & ~self.friendlies_bb & ~self.enemies_bb) == way_rook_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
+        # pawn moves
+        for pawn in get_lsb_array(pawn_bb):
+            for move in get_lsb_array(pawn_attacks(pawn, active_side, self.friendlies_bb) & self.enemies_bb | pawn_moves(pawn, active_side, self.friendlies_bb, self.enemies_bb)):
+                yield Move(pawn, move)
+            # en passant
+            if self.ep_square_bb:
+                move = pawn_attacks(pawn, active_side,
+                                    self.friendlies_bb) & self.ep_square_bb
+                if move:
+                    yield Move(pawn, move)
+
 
     def legal_moves_generator(self, active_side = None):
         if active_side is None:
@@ -545,9 +556,9 @@ if __name__ == '__main__':
     # board = Board('k7/7P/8/8/8/8/8/7K w - - 0 1')
     # board.make_move(Move(1 << H7, 1 << H8, 'Q'))
     board = Board()
-    #profiler = cProfile.Profile()
-   # profiler.enable()
-    [move, value] = board.root_nega_max(5)
+    profiler = cProfile.Profile()
+    profiler.enable()
+    #[move, value] = board.root_nega_max(4)
     # print(move)
     # board.make_move(move)
     # [move, value]  = board.root_nega_max(4)
@@ -556,11 +567,12 @@ if __name__ == '__main__':
     # [move, value]  = board.root_nega_max(4)
     # print(move)
     # board.make_move(move)
-    # tree = board.get_moves_tree(1)
-    #profiler.disable()
-    #stats = pstats.Stats(profiler).sort_stats('cumtime')
-    #stats.print_stats()
+    tree = board.get_moves_tree(4)
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats('tottime')
+    stats.print_stats()
     # print(count(tree))
+    
 
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
     #moves = list(board.legal_moves_generator())
