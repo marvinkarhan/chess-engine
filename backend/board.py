@@ -1,5 +1,6 @@
 from random import choice, random
 from math import pi, trunc
+from re import M
 from constants import *
 from move_helper import *
 from move import *
@@ -110,7 +111,7 @@ class Board:
         if self.half_moves < self.opening_moves and last_move in self.current_opening_table and not self.opening_finished:
             #print("hay", self.current_opening_table)
             black_key = choice(list(self.current_opening_table[last_move].keys()))
-            result =  [uci_to_Move(black_key),0]
+            result =  [[uci_to_Move(black_key)],0]
             self.current_opening_table = self.current_opening_table[last_move][black_key]
             return result
         else:
@@ -118,38 +119,44 @@ class Board:
             return self.root_nega_max(depth)
     
     def root_nega_max(self, depth: int): 
-        best_move = None
+        best_moves = None
         alpha = -20000000
         beta =  20000000
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
-            score = -self.nega_max(depth-1, -beta,-alpha)
+            [moves, score] = self.nega_max(depth-1, -beta,-alpha)
+            score = -score 
             self.restore(backup)
             if score >= beta:
                 return [move, beta]
             if score > alpha:
                 alpha = score
-                best_move = move
+                moves.append(move)
+                best_moves = moves
 
 
         #print("BEST-Score", max)
-        return [best_move,alpha]
+        return [best_moves,alpha]
 
     def nega_max(self, depth: int, alpha,beta):
+        best_moves = []
         if(depth == 0):
-            return self.evaluate()
+            return [[],self.evaluate()]
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
-            score = -self.nega_max(depth-1,-beta,-alpha)
+            [moves, score] = self.nega_max(depth-1,-beta,-alpha)
+            score = -score
             self.restore(backup)
             if score >= beta:
-                return beta
+                return [best_moves, beta]
             if score > alpha:
                 alpha = score
+                moves.append(move)
+                best_moves = moves
         #print("DEPTH-BEST-SCORE",max)
-        return alpha
+        return [best_moves, alpha]
 
     def evaluate(self):
         side_to_move = 1 if self.active_side else -1
@@ -165,6 +172,8 @@ class Board:
 
         moves_white = len(list(self.pseudo_legal_moves_generator(1)))
         moves_black = len(list(self.pseudo_legal_moves_generator(0)))
+        print("MOVES BLACK", moves_black)
+        print("MOVES White", moves_white)       
         score += 10 * (moves_white-moves_black)
       #  if score != 0:
         
@@ -567,7 +576,7 @@ if __name__ == '__main__':
     # [move, value]  = board.root_nega_max(4)
     # print(move)
     # board.make_move(move)
-    tree = board.get_moves_tree(4)
+    #tree = board.get_moves_tree(4)
     profiler.disable()
     stats = pstats.Stats(profiler).sort_stats('tottime')
     stats.print_stats()
@@ -575,6 +584,11 @@ if __name__ == '__main__':
     
 
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
+
+    moves_white = len(list(board.pseudo_legal_moves_generator(1)))
+    moves_black = len(list(board.pseudo_legal_moves_generator(0)))
+    print("MOVES BLACK", moves_black)
+    print("MOVES White", moves_white)      
     #moves = list(board.legal_moves_generator())
     #print(moves[4])
     #board.make_move(moves[4])
