@@ -22,14 +22,14 @@ def on_make_move(uci_move: str):
     user_board: Board = session[request.sid]
     move = move_helper.uci_to_Move(uci_move)
     user_board.make_move(move)
-    user_board.print_bitboard(user_board.all_pieces_bb())
-    [next_move, score] = user_board.process_next_move(4, uci_move)
-    print("neuer move", next_move, uci_move)
-    user_board.make_move(next_move)
-    user_board.print_bitboard(user_board.all_pieces_bb())
+    [best_moves, score] = user_board.process_next_move(4, uci_move)
+    print("best moves", best_moves)
+    
+    user_board.make_move(best_moves[-1])
     moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : score})
+    best_moves_strings = [move.to_uci_string() for move in reversed(best_moves)]
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation' : score / 100, 'aiMoves': best_moves_strings})
 
 @socketio.on('connect')
 def on_connect(): 
@@ -42,7 +42,7 @@ def on_new_board():
     session[request.sid] = user_board
     moves = list(user_board.legal_moves_generator())
     uci_moves = [move.to_uci_string() for move in moves]
-    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation': user_board.evaluate()})
+    emit('new_board_info', {'fen': user_board.to_fen_string(), 'moves': uci_moves, 'evaluation': user_board.evaluate() / 100 })
 
 if __name__ == '__main__':
     socketio.run(app)

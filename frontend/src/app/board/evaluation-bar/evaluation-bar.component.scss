@@ -1,14 +1,45 @@
 #evaluation-bar {
     width: 50px;
-    background-color: white;
+    background-color: #fefefe;
     height: 100%;
     border-radius: 10px;
+    margin-left: 1rem;
+    position: relative;
+    box-shadow: 2px 4px 6px rgba(0,0,0, 100%)
+}
+.evaluation-description {
+    box-sizing: border-box;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    flex-direction: column;
+    color: #444;
+}
+.eval {
+    font-weight: 600;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.top {
+    margin-bottom: auto;
+}
+.mid {
+    margin-bottom: auto;
+    margin-top: auto;
+}
+.bottom {
+    margin-top: auto;
 }
 #black-bar {
-    border-radius: 9px;
+    border-radius: 8px;
     width: 100%;
     height: 50%;
     max-height: 100%;
-    background-color: black;
+    background-color: rgba(0, 0, 0, 0.98);
     transition: height 1s;
 }

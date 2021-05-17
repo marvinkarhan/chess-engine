@@ -1,25 +1,48 @@
 <div class="board-wrapper">
   <div
-  id="board"
-  [style.width]="boardWidth + 'px'"
-  [style.height]="boardWidth + 'px'"
->
-  <ng-container *ngFor="let piece of boardService.pieces$ | async; index as i">
-    <piece
-      *ngIf="piece"
-      [position]="{ x: i % 8, y: toInt(i / 8) }"
-      [pieceProperties]="piece"
-      [boardWidth]="boardWidth"
-      (onDragStart)="showMoves($event)"
-      (onDragStop)="clearMoves()"
-      (onMove)="onMove($event)"
-    ></piece>
-  </ng-container>
-  <potential-move
-    *ngFor="let move of potentialMoves"
-    [position]="{ x: move % 8, y: move / 8 }"
-  ></potential-move>
+    id="board"
+    [style.width]="boardWidth + 'px'"
+    [style.height]="boardWidth + 'px'"
+  >
+    <ng-container
+      *ngFor="let piece of boardService.pieces$ | async; index as i"
+    >
+      <piece
+        *ngIf="piece"
+        [position]="{ x: i % 8, y: toInt(i / 8) }"
+        [pieceProperties]="piece"
+        [boardWidth]="boardWidth"
+        (onDragStart)="showMoves($event)"
+        (onDragStop)="clearMoves()"
+        (onMove)="onMove($event)"
+      ></piece>
+    </ng-container>
+    <potential-move
+      *ngFor="let move of potentialMoves"
+      [position]="{ x: move % 8, y: move / 8 }"
+    ></potential-move>
+    <div class="ranks">
+      <div class="rank">1</div>
+      <div class="rank">2</div>
+      <div class="rank">3</div>
+      <div class="rank">4</div>
+      <div class="rank">5</div>
+      <div class="rank">6</div>
+      <div class="rank">7</div>
+      <div class="rank">8</div>
+    </div>
+    <div class="files">
+      <div class="file">a</div>
+      <div class="file">b</div>
+      <div class="file">c</div>
+      <div class="file">d</div>
+      <div class="file">e</div>
+      <div class="file">f</div>
+      <div class="file">g</div>
+      <div class="file">h</div>
+    </div> 
+  </div>
+  <evaluation-bar
+    [evalValue]="this.boardService.evaluation$ | async"
+  ></evaluation-bar>
 </div>
-<evaluation-bar [evalValue]='this.boardService.evaluation$ | async'></evaluation-bar>
-</div>
-

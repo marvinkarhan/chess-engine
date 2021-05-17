@@ -17,7 +17,6 @@ export class PotentialMoveComponent implements OnInit {
         //TODO FIXME
     //Correct the y position
     this.position = {x: this.position.x, y: Math.trunc(this.position.y)};
-    console.log(this.position)
   }
 
 }

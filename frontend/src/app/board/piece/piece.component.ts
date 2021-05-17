@@ -117,7 +117,6 @@ export class PieceComponent implements AfterViewInit {
   private checkBounds() {
     const matrix = this.getMatrix();
     let [newX, newY] = [+matrix[4] / 100, +matrix[5] / 100];
-    console.log('newX,Y', newX, newY);
     const newPositionNumber = newX + newY * 8;
     let found = this.pieceProperties.possibleTargetSquares.find(
       (positionNumber: number) => {

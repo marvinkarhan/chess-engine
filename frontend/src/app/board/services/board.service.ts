@@ -61,12 +61,12 @@ export class BoardService implements OnDestroy {
   private _setupBoardInformationListener() : void {
     this._subs$.add(
       this.chessApi.onNewBoardInformation().subscribe((boardInformation: BoardInformation) => {
-        console.log("new FEN: ", boardInformation.fen);
         let pieces = this._loadFENString(boardInformation.fen);
         this._uciToBoard(pieces, boardInformation.moves);
         this._pieces$.next(pieces);
         this._evaluation$.next(boardInformation.evaluation);
         this._boardAudio.playMoveSound()
+        console.log('DEBUG BOARDINFO', boardInformation)
       })
     )
   }
