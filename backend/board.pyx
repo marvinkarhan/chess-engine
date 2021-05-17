@@ -1,8 +1,9 @@
-from random import random
+from random import choice, random
 from math import pi, trunc
+from re import M
 from constants cimport *
 from move_helper import *
-from move import *
+from move cimport *
 import time
 import cProfile, pstats
 from functools import lru_cache
@@ -37,9 +38,9 @@ def get_lsb_array(u64 bb):
 cdef class Board:
     cdef:
         dict pieces, current_opening_table
-        bint castle_w_king_side, castle_w_queen_side, castle_b_king_side, castle_b_queen_side, active_side
+        bint castle_w_king_side, castle_w_queen_side, castle_b_king_side, castle_b_queen_side, active_side, opening_finished
         u64 friendlies_bb, enemies_bb, ep_square_bb
-        int full_moves, half_moves
+        int full_moves, half_moves, opening_moves
 
 
     def __init__(self, fen=None) -> None:
@@ -67,6 +68,8 @@ cdef class Board:
         
 
         self.current_opening_table = OPENING_TABLE
+        self.opening_moves = 10
+        self.opening_finished = False
 
 
         # 0: black, 1: white
@@ -110,50 +113,55 @@ cdef class Board:
 
 
     cpdef list process_next_move(self, int depth, last_move: str):
-        if self.half_moves < 20 and last_move in self.current_opening_table:
-            #print("hay", self.current_opening_table)
-            for key in self.current_opening_table[last_move]:
-                black_key = key
-                result =  [uci_to_Move(key),0]
-                break
+        if self.full_moves * 2 < self.opening_moves and last_move in self.current_opening_table and not self.opening_finished:
+            black_key = choice(list(self.current_opening_table[last_move].keys()))
+            print('book move: ', black_key)
+            result =  [[uci_to_Move(black_key)],0]
             self.current_opening_table = self.current_opening_table[last_move][black_key]
             return result
         else:
+            self.opening_finished = True
             return self.root_nega_max(depth)
     
     cpdef list root_nega_max(self, int depth):
         cdef int alpha, beta, score
-        best_move = None
-        alpha = -200000
-        beta =  200000
+        best_moves = None
+        alpha = -20000000
+        beta =  20000000
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
-            score = -self.nega_max(depth-1, -beta,-alpha)
+            [moves, score] = self.nega_max(depth-1, -beta,-alpha)
+            score = -score 
             self.restore(backup)
             if score >= beta:
                 return [move, beta]
             if score > alpha:
                 alpha = score
-                best_move = move
-        return [best_move,alpha]
+                moves.append(move)
+                best_moves = moves
+        return [best_moves,alpha]
 
-    cdef int nega_max(self, int depth, int alpha, int beta):
+    cdef list nega_max(self, int depth, int alpha, int beta):
         cdef int score
         cdef dict backup
+        cdef list best_moves, moves
+        best_moves = []
         if(depth == 0):
-            return self.evaluate()
+            return [[],self.evaluate()]
         for move in self.legal_moves_generator():
             backup = self.store() 
             self.make_move(move)
-            score = -self.nega_max(depth-1,-beta,-alpha)
+            [moves, score] = self.nega_max(depth-1,-beta,-alpha)
+            score = -score
             self.restore(backup)
             if score >= beta:
-                return beta
+                return [best_moves, beta]
             if score > alpha:
                 alpha = score
-        #print("DEPTH-BEST-SCORE",max)
-        return alpha
+                moves.append(move)
+                best_moves = moves
+        return [best_moves, alpha]
 
     cpdef int evaluate(self):
         cdef u64 amount, position
@@ -172,7 +180,7 @@ cdef class Board:
 
         moves_white = len(list(self.pseudo_legal_moves_generator(1)))
         moves_black = len(list(self.pseudo_legal_moves_generator(0)))
-        score += 10 * (moves_white-moves_black)
+        score += 10 * (moves_white - moves_black)
         return score * side_to_move
 
     def to_fen_string(self):
@@ -201,7 +209,7 @@ cdef class Board:
         castle_rights += 'Q' if self.castle_w_queen_side else ''
         castle_rights += 'k' if self.castle_w_king_side else ''
         castle_rights += 'q' if self.castle_w_queen_side else ''
-        if not castle_rights:
+        if castle_rights == '':
             castle_rights += '-'
         fen += castle_rights + ' '
         keys = list(ALGEBRAIC_TO_INDEX.keys())
@@ -260,8 +268,7 @@ cdef class Board:
         self.castle_b_king_side = 'k' in castling_ability
         self.castle_b_queen_side = 'q' in castling_ability
         if ep_square in ALGEBRAIC_TO_INDEX:
-            self.ep_square_bb = set_bit_on_bb(
-                0, ALGEBRAIC_TO_INDEX[ep_square], 1)
+            self.ep_square_bb = 1 << ALGEBRAIC_TO_INDEX[ep_square]
 
         ranks = placement.split('/')
         # fen starts notation from the top left

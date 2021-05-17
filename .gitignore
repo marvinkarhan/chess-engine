@@ -1,4 +1,4 @@
 .vscode
 backend/__pycache__
 backend/build
-.pyd
+*.pyd

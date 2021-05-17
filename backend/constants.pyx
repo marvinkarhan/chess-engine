@@ -174,5 +174,5 @@ PROMOTION_OPTIONS_B = ['n', 'b', 'q', 'r']
 
 import json
 
-with open('my_openings.json') as json_file:
+with open('opening-extractor/output/openings.json') as json_file:
     OPENING_TABLE = json.load(json_file)

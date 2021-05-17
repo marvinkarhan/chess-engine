@@ -1,18 +1,7 @@
 from constants cimport *
-from move import *
+from move cimport *
 from functools import lru_cache, cache
 import re
-
-@lru_cache(maxsize=None)
-def set_bit_on_bb(u64 bb, int index, int value):
-    cdef u64 bb_mask = 1 << index
-    # remove potential bit
-    bb &= ~bb_mask
-    # add bit if value is true
-    if value:
-        bb |= bb_mask
-    return bb
-
 
 """
 following functions are helper functions
@@ -323,6 +312,7 @@ def uci_to_Move(uci: str):
     if promotion is not None and promotion not in PROMOTION_OPTIONS_W + PROMOTION_OPTIONS_B:
         print('Invalid promotion in uci')
         return
-    origin_square_bb = set_bit_on_bb(0, ALGEBRAIC_TO_INDEX[m.group(1)], 1)
-    target_square_bb = set_bit_on_bb(0, ALGEBRAIC_TO_INDEX[m.group(2)], 1)
+    origin_square_bb = 1 << ALGEBRAIC_TO_INDEX[m.group(1)]
+    target_square_bb = 1 << ALGEBRAIC_TO_INDEX[m.group(2)]
+    print(uci, Move(origin_square_bb, target_square_bb, promotion), ALGEBRAIC_TO_INDEX[m.group(1)], m.group(2))
     return Move(origin_square_bb, target_square_bb, promotion)

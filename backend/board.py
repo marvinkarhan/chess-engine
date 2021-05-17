@@ -370,16 +370,6 @@ class Board:
                 # check if there is sth in the way of the king and if there is sth in the way of the rook
                 if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb and (way_rook_bb & ~self.friendlies_bb & ~self.enemies_bb) == way_rook_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
-        # pawn moves
-        for pawn in get_lsb_array(pawn_bb):
-            for move in get_lsb_array(pawn_attacks(pawn, active_side, self.friendlies_bb) & self.enemies_bb | pawn_moves(pawn, active_side, self.friendlies_bb, self.enemies_bb)):
-                yield Move(pawn, move)
-            # en passant
-            if self.ep_square_bb:
-                move = pawn_attacks(pawn, active_side,
-                                    self.friendlies_bb) & self.ep_square_bb
-                if move:
-                    yield Move(pawn, move)
 
 
     def legal_moves_generator(self, active_side = None):

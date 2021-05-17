@@ -1,7 +1,5 @@
 # Import the extension module hello.
 import move_helper
-import _move_helper
-import _board
 import board
 import time
 import cProfile
@@ -23,16 +21,10 @@ board = board.Board()
 start_time = time.time()
 # profiler = cProfile.Profile()
 # profiler.enable()
-# tree = board.root_nega_max(4)
+tree = board.root_nega_max(5)
 # profiler.disable()
 # stats = pstats.Stats(profiler).sort_stats('tottime')
 # stats.print_stats()
-uci_move = 'e2e4'
-move = move_helper.uci_to_Move('e2e4')
-board.make_move(move)
-board.print_bitboard(board.all_pieces_bb())
-[next_move, score] = board.process_next_move(4, uci_move)
-print("neuer move", next_move, uci_move)
 print(f'--- total runtime: {time.time() - start_time} seconds ---')
 
 # results:
@@ -42,3 +34,6 @@ print(f'--- total runtime: {time.time() - start_time} seconds ---')
 # board.root_nega_max(4) - 2.6s
 # board.root_nega_max(5) - 71.1s
 # ---> reverting change
+# after move to cython
+# board.root_nega_max(4) - 1.9s
+# board.root_nega_max(5) - 30.1s
