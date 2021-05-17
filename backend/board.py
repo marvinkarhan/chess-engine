@@ -348,7 +348,7 @@ class Board:
         # king moves (there is always only one king)
         for move in get_lsb_array(king_moves(king_bb, self.friendlies_bb) & ~attacked_squares_bb):
             yield Move(king_bb, move)
-
+        #lkjlköj
         # king castle
         if king_bb & ~attacked_squares_bb:
             if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
