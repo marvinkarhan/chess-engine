@@ -362,16 +362,6 @@ class Board:
                 # check if there is sth in the way of the king and if there is sth in the way of the rook
                 if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb and (way_rook_bb & ~self.friendlies_bb & ~self.enemies_bb) == way_rook_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
-        # pawn moves
-        for pawn in get_lsb_array(pawn_bb):
-            for move in get_lsb_array(pawn_attacks(pawn, active_side, self.friendlies_bb) & self.enemies_bb | pawn_moves(pawn, active_side, self.friendlies_bb, self.enemies_bb)):
-                yield Move(pawn, move)
-            # en passant
-            if self.ep_square_bb:
-                move = pawn_attacks(pawn, active_side,
-                                    self.friendlies_bb) & self.ep_square_bb
-                if move:
-                    yield Move(pawn, move)
 
 
     def legal_moves_generator(self, active_side = None):
@@ -563,9 +553,9 @@ if __name__ == '__main__':
     # board = Board('k7/7P/8/8/8/8/8/7K w - - 0 1')
     # board.make_move(Move(1 << H7, 1 << H8, 'Q'))
     board = Board()
-    profiler = cProfile.Profile()
-    profiler.enable()
-    #[move, value] = board.root_nega_max(4)
+   # profiler = cProfile.Profile()
+    #profiler.enable()
+    [move, value] = board.root_nega_max(5)
     # print(move)
     # board.make_move(move)
     # [move, value]  = board.root_nega_max(4)
@@ -575,18 +565,18 @@ if __name__ == '__main__':
     # print(move)
     # board.make_move(move)
     #tree = board.get_moves_tree(4)
-    profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('tottime')
-    stats.print_stats()
+    #profiler.disable()
+    #stats = pstats.Stats(profiler).sort_stats('tottime')
+    #stats.print_stats()
     # print(count(tree))
     
 
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
 
-    moves_white = len(list(board.pseudo_legal_moves_generator(1)))
-    moves_black = len(list(board.pseudo_legal_moves_generator(0)))
-    print("MOVES BLACK", moves_black)
-    print("MOVES White", moves_white)      
+    #moves_white = len(list(board.pseudo_legal_moves_generator(1)))
+   # moves_black = len(list(board.pseudo_legal_moves_generator(0)))
+   ## print("MOVES BLACK", moves_black)
+   # print("MOVES White", moves_white)      
     #moves = list(board.legal_moves_generator())
     #print(moves[4])
     #board.make_move(moves[4])
