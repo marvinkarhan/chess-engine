@@ -1,4 +1,3 @@
-# cython: profile=True
 from random import choice, random
 from math import pi, trunc
 from re import M
@@ -303,8 +302,9 @@ cdef class Board:
         attacked_bb |= pawn_attacks(pawn_bb, active_side, friendlies_bb)
         attacked_bb |= knight_moves(knight_bb, friendlies_bb)
 
-        attacked_bb |= rook_moves(rook_bb | queen_bb, empty_bb, friendlies_bb)
-        attacked_bb |= bishop_moves(bishop_bb | queen_bb, empty_bb, friendlies_bb)
+        for pieces_bb, move_func in zip([rook_bb, bishop_bb, queen_bb], SLIDING_MOVES):
+            for piece_bb in get_lsb_array(pieces_bb):
+                attacked_bb |= move_func(piece_bb, friendlies_bb, enemies_bb)
         
         return attacked_bb
 
@@ -335,17 +335,17 @@ cdef class Board:
 
         # rook moves
         for rook in get_lsb_array(rook_bb):
-            for move in get_lsb_array(rook_moves(rook, empty_bb, self.friendlies_bb)):
+            for move in get_lsb_array(rook_moves(rook, self.friendlies_bb, self.enemies_bb)):
                 yield Move(rook, move)
 
         # bishop moves
         for bishop in get_lsb_array(bishop_bb):
-            for move in get_lsb_array(bishop_moves(bishop, empty_bb, self.friendlies_bb)):
+            for move in get_lsb_array(bishop_moves(bishop, self.friendlies_bb, self.enemies_bb)):
                 yield Move(bishop, move)
 
         # queen moves
         for queen in get_lsb_array(queen_bb):
-            for move in get_lsb_array(queen_moves(queen, empty_bb, self.friendlies_bb)):
+            for move in get_lsb_array(queen_moves(queen, self.friendlies_bb, self.enemies_bb)):
                 yield Move(queen, move)
 
         # knight moves
