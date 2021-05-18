@@ -5,18 +5,20 @@ from constants import *
 from move_helper import *
 from move import *
 import time
-import cProfile, pstats
+import cProfile
+import pstats
 from functools import lru_cache
 index64 = [
     0, 47,  1, 56, 48, 27,  2, 60,
-   57, 49, 41, 37, 28, 16,  3, 61,
-   54, 58, 35, 52, 50, 42, 21, 44,
-   38, 32, 29, 23, 17, 11,  4, 62,
-   46, 55, 26, 59, 40, 36, 15, 53,
-   34, 51, 20, 43, 31, 22, 10, 45,
-   25, 39, 14, 33, 19, 30,  9, 24,
-   13, 18,  8, 12,  7,  6,  5, 63
+    57, 49, 41, 37, 28, 16,  3, 61,
+    54, 58, 35, 52, 50, 42, 21, 44,
+    38, 32, 29, 23, 17, 11,  4, 62,
+    46, 55, 26, 59, 40, 36, 15, 53,
+    34, 51, 20, 43, 31, 22, 10, 45,
+    25, 39, 14, 33, 19, 30,  9, 24,
+    13, 18,  8, 12,  7,  6,  5, 63
 ]
+
 
 @lru_cache(maxsize=None)
 def bitScanForward(bb: int):
@@ -32,7 +34,6 @@ def get_lsb_array(bb: int):
         bbs.append(new_bb)
         bb &= bb - 1
     return bbs
-
 
 
 class Board:
@@ -60,12 +61,10 @@ class Board:
         self.friendlies_bb = 0
         self.enemies_bb = 0
         self.captures = 0
-        
 
         self.current_opening_table = OPENING_TABLE
         self.opening_moves = 10
         self.opening_finished = False
-
 
         # 0: black, 1: white
         self.active_side = 1
@@ -106,57 +105,62 @@ class Board:
         print('\n'.join(['{0:064b}'.format(bb)[i:i + 8]
               for i in range(0, 64, 8)]))
 
-
-    def process_next_move(self, depth: int, last_move: str): 
+    def process_next_move(self, depth: int, last_move: str):
         if self.half_moves < self.opening_moves and last_move in self.current_opening_table and not self.opening_finished:
             #print("hay", self.current_opening_table)
-            black_key = choice(list(self.current_opening_table[last_move].keys()))
-            result =  [[uci_to_Move(black_key)],0]
+            black_key = choice(
+                list(self.current_opening_table[last_move].keys()))
+            result = [[uci_to_Move(black_key)], 0]
             self.current_opening_table = self.current_opening_table[last_move][black_key]
             return result
         else:
             self.opening_finished = True
-            return self.root_nega_max(depth)
-    
-    def root_nega_max(self, depth: int): 
-        best_moves = None
-        alpha = -20000000
-        beta =  20000000
-        for move in self.legal_moves_generator():
-            backup = self.store() 
-            self.make_move(move)
-            [moves, score] = self.nega_max(depth-1, -beta,-alpha)
-            score = -score 
-            self.restore(backup)
-            if score >= beta:
-                return [move, beta]
-            if score > alpha:
-                alpha = score
-                moves.append(move)
-                best_moves = moves
+            return self.nega_max(depth, -2000000, 2000000)
 
 
-        #print("BEST-Score", max)
-        return [best_moves,alpha]
-
-    def nega_max(self, depth: int, alpha,beta):
+    def nega_max(self, depth: int, alpha, beta):
         best_moves = []
         if(depth == 0):
-            return [[],self.evaluate()]
-        for move in self.legal_moves_generator():
-            backup = self.store() 
-            self.make_move(move)
-            [moves, score] = self.nega_max(depth-1,-beta,-alpha)
-            score = -score
-            self.restore(backup)
-            if score >= beta:
-                return [best_moves, beta]
-            if score > alpha:
-                alpha = score
-                moves.append(move)
-                best_moves = moves
-        #print("DEPTH-BEST-SCORE",max)
+            return self.quiesce(alpha, beta)
+        for move in self.pseudo_legal_moves_generator(self.active_side):
+            backup = self.store()
+            if self.make_move(move):
+                [moves, score] = self.nega_max(depth-1, -beta, -alpha)
+                score = -score
+                self.restore(backup)
+                if score >= beta:
+                    return [best_moves, beta]
+                if score > alpha:
+                    alpha = score
+                    moves.append(move)
+                    best_moves = moves
+        # print("DEPTH-BEST-SCORE",max)
         return [best_moves, alpha]
+
+    def quiesce(self, alpha: int, beta: int):
+        stand_pat: int = self.evaluate()
+        best_moves = []
+        if(stand_pat >= beta):
+            return [[],beta]
+        if(alpha < stand_pat):
+            alpha = stand_pat
+
+        for move in self.pseudo_attack_moves_generator(self.active_side):
+            backup = self.store()
+            if self.make_move(move):
+                [moves, score] = self.quiesce(-beta, -alpha)
+                score = -score
+                if(score >= beta):
+                    return [best_moves, beta]
+                if(score > alpha):
+                    alpha = score
+                    moves.append(move)
+                    best_moves = moves
+                self.restore(backup)
+
+        return [best_moves,alpha]
+        
+        
 
     def evaluate(self):
         side_to_move = 1 if self.active_side else -1
@@ -165,17 +169,18 @@ class Board:
             lsb_array = get_lsb_array(amount)
             score += PIECE_VALUES[piece] * len(lsb_array)
             for position in lsb_array:
-                index = 63 - bitScanForward(position) # index from behind
+                index = 63 - bitScanForward(position)  # index from behind
                 #print(index, piece, PIECE_SQUARE_TABLES[piece][index] )
 
-                score += PIECE_SQUARE_TABLES[piece][index] * (1 if piece.isupper() else -1)
+                score += PIECE_SQUARE_TABLES[piece][index] * \
+                    (1 if piece.isupper() else -1)
 
         moves_white = len(list(self.pseudo_legal_moves_generator(1)))
-        moves_black = len(list(self.pseudo_legal_moves_generator(0)))     
+        moves_black = len(list(self.pseudo_legal_moves_generator(0)))
         score += 10 * (moves_white-moves_black)
       #  if score != 0:
-        
-           # print(score)
+
+        # print(score)
         return score * side_to_move
 
     def to_fen_string(self):
@@ -239,11 +244,11 @@ class Board:
     def all_pieces_bb(self):
         return self.w_pieces_bb() | self.b_pieces_bb()
 
-    def get_active_pieces(self, active_side): 
+    def get_active_pieces(self, active_side):
         if active_side:
-            return [self.pieces['P'], self.pieces['R'],self.pieces['N'], self.pieces['B'], self.pieces['Q'], self.pieces['K']]
+            return [self.pieces['P'], self.pieces['R'], self.pieces['N'], self.pieces['B'], self.pieces['Q'], self.pieces['K']]
         else:
-            return [self.pieces['p'], self.pieces['r'],self.pieces['n'], self.pieces['b'], self.pieces['q'], self.pieces['k']]
+            return [self.pieces['p'], self.pieces['r'], self.pieces['n'], self.pieces['b'], self.pieces['q'], self.pieces['k']]
         return [v for k, v in self.pieces.items() if (k.isupper() if active_side else k.islower())]
 
     def get_piece_on_square(self, bb):
@@ -281,7 +286,7 @@ class Board:
         self.friendlies_bb = self.w_pieces_bb() if self.active_side else self.b_pieces_bb()
         self.enemies_bb = self.b_pieces_bb() if self.active_side else self.w_pieces_bb()
 
-    def attacked_squares(self, active_side, active_pieces = None):
+    def attacked_squares(self, active_side, active_pieces=None):
         attacked_bb = 0
 
         # swap friendlies and enemies locally
@@ -301,6 +306,54 @@ class Board:
             for piece_bb in get_lsb_array(pieces_bb):
                 attacked_bb |= move_func(piece_bb, friendlies_bb, enemies_bb)
         return attacked_bb
+
+    def pseudo_attack_moves_generator(self, active_side):
+        attacked_squares_bb = self.attacked_squares(not active_side)
+        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
+            active_side)
+
+        for pawn in get_lsb_array(pawn_bb):
+            for move in get_lsb_array(pawn_attacks(pawn, active_side, self.friendlies_bb) & self.enemies_bb):
+                # check for promotion
+                if move & R1:
+                    for promotion in PROMOTION_OPTIONS_B:
+                        yield Move(pawn, move, promotion)
+                elif move & R8:
+                    for promotion in PROMOTION_OPTIONS_W:
+                        yield Move(pawn, move, promotion)
+                else:
+                    yield Move(pawn, move)
+            # en passant
+            if self.ep_square_bb:
+                move = pawn_attacks(pawn, active_side,
+                                    self.friendlies_bb) & self.ep_square_bb
+                if move:
+                    yield Move(pawn, move)
+
+        # rook moves
+        for rook in get_lsb_array(rook_bb):
+            for move in get_lsb_array(rook_moves(rook, self.friendlies_bb, self.enemies_bb) & self.enemies_bb):
+                yield Move(rook, move)
+
+        # bishop moves
+        for bishop in get_lsb_array(bishop_bb):
+            for move in get_lsb_array(bishop_moves(bishop, self.friendlies_bb, self.enemies_bb) & self.enemies_bb):
+                yield Move(bishop, move)
+
+        # queen moves
+        for queen in get_lsb_array(queen_bb):
+            for move in get_lsb_array(queen_moves(queen, self.friendlies_bb, self.enemies_bb) & self.enemies_bb):
+                yield Move(queen, move)
+
+        # knight moves
+        for knight in get_lsb_array(knight_bb):
+            for move in get_lsb_array(knight_moves(knight, self.friendlies_bb) & self.enemies_bb):
+                yield Move(knight, move)
+
+        # king moves (there is always only one king)
+        for move in get_lsb_array(king_moves(king_bb, self.friendlies_bb) & ~attacked_squares_bb & self.enemies_bb):
+            yield Move(king_bb, move)
+        
 
     def pseudo_legal_moves_generator(self, active_side):
         attacked_squares_bb = self.attacked_squares(not active_side)
@@ -348,7 +401,6 @@ class Board:
         # king moves (there is always only one king)
         for move in get_lsb_array(king_moves(king_bb, self.friendlies_bb) & ~attacked_squares_bb):
             yield Move(king_bb, move)
-        #lkjlköj
         # king castle
         if king_bb & ~attacked_squares_bb:
             if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
@@ -363,8 +415,7 @@ class Board:
                 if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb and (way_rook_bb & ~self.friendlies_bb & ~self.enemies_bb) == way_rook_bb:
                     yield Move(king_bb, move_leftx2(king_bb))
 
-
-    def legal_moves_generator(self, active_side = None):
+    def legal_moves_generator(self, active_side=None):
         if active_side is None:
             active_side = self.active_side
         for move in self.pseudo_legal_moves_generator(active_side):
@@ -538,6 +589,7 @@ class Board:
             return False
         return True
 
+
 def count(d: dict):
     sum = 0
     for k in d:
@@ -553,10 +605,10 @@ if __name__ == '__main__':
     # board = Board('k7/7P/8/8/8/8/8/7K w - - 0 1')
     # board.make_move(Move(1 << H7, 1 << H8, 'Q'))
     board = Board()
-   # profiler = cProfile.Profile()
-    #profiler.enable()
-    [move, value] = board.root_nega_max(5)
-    # print(move)
+    #profiler = cProfile.Profile()
+    #profiler.enable()f
+    [move, value] = board.nega_max(5, -2000000, 2000000)
+    print(move, value)
     # board.make_move(move)
     # [move, value]  = board.root_nega_max(4)
     # print(move)
@@ -569,15 +621,14 @@ if __name__ == '__main__':
     #stats = pstats.Stats(profiler).sort_stats('tottime')
     #stats.print_stats()
     # print(count(tree))
-    
 
     print(f'--- total runtime: {time.time() - start_time} seconds ---')
 
     #moves_white = len(list(board.pseudo_legal_moves_generator(1)))
    # moves_black = len(list(board.pseudo_legal_moves_generator(0)))
    ## print("MOVES BLACK", moves_black)
-   # print("MOVES White", moves_white)      
+   # print("MOVES White", moves_white)
     #moves = list(board.legal_moves_generator())
-    #print(moves[4])
-    #board.make_move(moves[4])
+    # print(moves[4])
+    # board.make_move(moves[4])
    # board.root_nega_max(2)
