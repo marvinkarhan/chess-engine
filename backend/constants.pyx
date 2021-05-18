@@ -1,26 +1,39 @@
-
 START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
-FULL_BB_MASK = 0xffffffffffffffff
+cdef u64 FULL_BB_MASK = 0xffffffffffffffff
 
 # masks for lines
-A = 0x8080808080808080
-B = A >> 1
-C = B >> 1
-D = C >> 1
-E = D >> 1
-F = E >> 1
-G = F >> 1
-H = G >> 1
+cdef u64 A = 0x8080808080808080
+cdef u64 B = 0x4040404040404040
+cdef u64 C = 0x2020202020202020
+cdef u64 D = 0x1010101010101010
+cdef u64 E = 0x808080808080808
+cdef u64 F = 0x404040404040404
+cdef u64 G = 0x202020202020202
+cdef u64 H = 0x101010101010101
+cdef u64 NOT_H = 0xfefefefefefefefe
+cdef u64 NOT_A = 0x7f7f7f7f7f7f7f7f
 # masks for ranks
-R1 = 0xff
-R2 = R1 << 8
-R3 = R2 << 8
-R4 = R3 << 8
-R5 = R4 << 8
-R6 = R5 << 8
-R7 = R6 << 8
-R8 = R7 << 8
+cdef u64 R1 = 0xff
+cdef u64 R2 = 0xff00
+cdef u64 R3 = 0xff0000
+cdef u64 R4 = 0xff000000
+cdef u64 R5 = 0xff00000000
+cdef u64 R6 = 0xff0000000000
+cdef u64 R7 = 0xff000000000000
+cdef u64 R8 = 0xff00000000000000
+
+cdef u64 debruijn64 = 0x03f79d71b4cb0a89
+cdef int[64] debruijn64_index64 = [
+    0, 47,  1, 56, 48, 27,  2, 60,
+   57, 49, 41, 37, 28, 16,  3, 61,
+   54, 58, 35, 52, 50, 42, 21, 44,
+   38, 32, 29, 23, 17, 11,  4, 62,
+   46, 55, 26, 59, 40, 36, 15, 53,
+   34, 51, 20, 43, 31, 22, 10, 45,
+   25, 39, 14, 33, 19, 30,  9, 24,
+   13, 18,  8, 12,  7,  6,  5, 63
+]
 
 FIELDS_TO_INDEX = [
     A8, B8, C8, D8, E8, F8, G8, H8,

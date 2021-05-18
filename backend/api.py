@@ -1,8 +1,7 @@
 
 
-from constants import FIELDS_TO_INDEX, ALGEBRAIC_TO_INDEX, START_POS_FEN
 from flask.globals import request, session
-from move_helper import uci_to_Move
+import move_helper
 from move import Move
 from board import Board
 from flask import Flask, render_template
@@ -21,7 +20,7 @@ def on_test_message(message: str):
 @socketio.on('make_move')
 def on_make_move(uci_move: str):
     user_board: Board = session[request.sid]
-    move = uci_to_Move(uci_move)
+    move = move_helper.uci_to_Move(uci_move)
     user_board.make_move(move)
     [best_moves, score] = user_board.process_next_move(4, uci_move)
     print("best moves", best_moves)

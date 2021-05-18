@@ -6,4 +6,4 @@ pip install flask-socketio
 $env:FLASK_APP = "api.py"
 $env:FLASK_ENV = "development"
 # Start the flask instance.
-flask run
+python -m flask run
