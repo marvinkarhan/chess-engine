@@ -1,8 +1,9 @@
 # Import the extension module hello.
-import move_helper
 import board
 import time
-import cProfile
+import cProfile, pstats
+import pyximport
+pyximport.install()
 
 # start_time = time.time()
 # print('run cython rookmoves 1000000 times:')
@@ -21,10 +22,14 @@ board = board.Board()
 start_time = time.time()
 # profiler = cProfile.Profile()
 # profiler.enable()
-tree = board.root_nega_max(5)
+# tree = board.root_nega_max(4)
 # profiler.disable()
 # stats = pstats.Stats(profiler).sort_stats('tottime')
 # stats.print_stats()
+cProfile.runctx("board.root_nega_max(5)", globals(), locals(), "Profile.prof")
+
+stats = pstats.Stats("Profile.prof").sort_stats('tottime')
+stats.print_stats()
 print(f'--- total runtime: {time.time() - start_time} seconds ---')
 
 # results:

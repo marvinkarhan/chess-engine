@@ -1,3 +1,4 @@
+# cython: profile=True
 from constants cimport *
 from move cimport *
 from functools import lru_cache, cache

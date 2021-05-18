@@ -1,3 +1,4 @@
+# cython: profile=True
 from random import choice, random
 from math import pi, trunc
 from re import M
