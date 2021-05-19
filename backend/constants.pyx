@@ -172,6 +172,23 @@ PIECE_SQUARE_TABLES = {
 PROMOTION_OPTIONS_W = ['N', 'B', 'Q', 'R']
 PROMOTION_OPTIONS_B = ['n', 'b', 'q', 'r']
 
+
+# Based on https://en.wikipedia.org/wiki/Linear_congruential_generator
+cdef lcg(u64 modulus, u64 a, u64 b, u64 c, u64 seed, int amount):
+    """Linear congruential generator."""
+    cdef int index
+    cdef list numbers
+    numbers = []
+    for i in range(0,amount):
+        seed = (a * seed + c) % modulus
+        numbers.append(seed)
+
+    return numbers
+
+
+ZOBRIST_TABLE = lcg(0xfdab38264, 2787869, 17767698, 5786987, 107987, 781)
+EVALUATE_TABLE = {}
+
 import json
 
 with open('opening-extractor/output/openings.json') as json_file:

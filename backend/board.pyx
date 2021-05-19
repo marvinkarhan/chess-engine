@@ -1,3 +1,4 @@
+# cython: profile=True
 from random import choice, random
 from math import pi, trunc
 from re import M
@@ -8,7 +9,66 @@ import time
 import cProfile, pstats
 from functools import lru_cache
 
+def get_zobrist():
+    return ZOBRIST_TABLE
 
+
+cdef u64 hash_board(Board board):
+    # """"
+    #     The hash indizes are defined as following:
+    #     The max size of the array is 781
+    #     It's always (PRNBQK) for all 64 fields,
+    #     The Field ar defined like this A1, A2, B1, ..., F8
+    #     It Starts with White followed by black, meaning the first 6 * 64 are defined like this
+    #     [WP * A1, ..., WK * F8] for the first 6 * 64 - 1 indizes = 384 - 1 = 383 [0,383]
+    #     followed by black:
+    #     [BP * A1, ..., BK * F8] for the first 383 + 6 * 64 = 383 + 384 = 767 [384,767]
+    #     After that we process if black is to move this is the key: 767 + 1 = 768
+    #     Then the 4 castling rights in this order (WK, WQ, BK, BQ) = [769,772]
+    #     The last 8 are the en passant squares fields in this order (A, B, C, D, E, F, G, H) = [773,780]
+    # """"
+    cdef int offset, index
+    cdef list lsb_array
+    cdef u64 final_hash_key, hash_value
+    offset = 0
+    final_hash_key = 0
+    hash_value = 0
+    for piece, bb in board.pieces.items():
+        lsb_array = get_lsb_array(bb)
+        for position in lsb_array:
+            index = 63 - bitScanForward(position) # index from behind
+            hash_value = ZOBRIST_TABLE[offset+index]
+            final_hash_key ^= hash_value
+        offset += 64 # Every piece is a shift to 64 indizes in the array
+
+    if not board.active_side:
+        final_hash_key ^= ZOBRIST_TABLE[768]
+    if board.castle_w_king_side:
+        final_hash_key ^= ZOBRIST_TABLE[769]
+    if board.castle_w_queen_side:
+        final_hash_key ^= ZOBRIST_TABLE[770]
+    if board.castle_b_king_side:
+        final_hash_key ^= ZOBRIST_TABLE[771]
+    if board.castle_b_queen_side:
+        final_hash_key ^= ZOBRIST_TABLE[772]   
+    if board.ep_square_bb & A:
+        final_hash_key ^= ZOBRIST_TABLE[773]
+    elif board.ep_square_bb & B:
+        final_hash_key ^= ZOBRIST_TABLE[774]
+    elif board.ep_square_bb & C:
+        final_hash_key ^= ZOBRIST_TABLE[775]
+    elif board.ep_square_bb & D:
+        final_hash_key ^= ZOBRIST_TABLE[776]   
+    elif board.ep_square_bb & E:
+        final_hash_key ^= ZOBRIST_TABLE[777]
+    elif board.ep_square_bb & F:
+        final_hash_key ^= ZOBRIST_TABLE[778]
+    elif board.ep_square_bb & G:
+        final_hash_key ^= ZOBRIST_TABLE[779]      
+    elif board.ep_square_bb & H:
+        final_hash_key ^= ZOBRIST_TABLE[780]   
+
+    return final_hash_key
 
 @lru_cache(maxsize=None)
 def bitScanForward(u64 bb):
@@ -121,52 +181,36 @@ cdef class Board:
             return result
         else:
             self.opening_finished = True
-            return self.root_nega_max(depth)
-    
-    cpdef list root_nega_max(self, int depth):
-        cdef int alpha, beta, score
-        best_moves = None
-        alpha = -20000000
-        beta =  20000000
-        for move in self.legal_moves_generator():
-            backup = self.store() 
-            self.make_move(move)
-            [moves, score] = self.nega_max(depth-1, -beta,-alpha)
-            score = -score 
-            self.restore(backup)
-            if score >= beta:
-                return [move, beta]
-            if score > alpha:
-                alpha = score
-                moves.append(move)
-                best_moves = moves
-        return [best_moves,alpha]
+            return self.nega_max(depth, -20000000, 20000000)
 
-    cdef list nega_max(self, int depth, int alpha, int beta):
+    cpdef list nega_max(self, int depth, int alpha, int beta):
         cdef int score
         cdef dict backup
         cdef list best_moves, moves
         best_moves = []
         if(depth == 0):
             return [[],self.evaluate()]
-        for move in self.legal_moves_generator():
-            backup = self.store() 
-            self.make_move(move)
-            [moves, score] = self.nega_max(depth-1,-beta,-alpha)
-            score = -score
-            self.restore(backup)
-            if score >= beta:
-                return [best_moves, beta]
-            if score > alpha:
-                alpha = score
-                moves.append(move)
-                best_moves = moves
+        for move in self.pseudo_legal_moves_generator(self.active_side):
+            backup = self.store()    
+            if self.make_move(move):
+                [moves, score] = self.nega_max(depth-1,-beta,-alpha)
+                score = -score
+                self.restore(backup)
+                if score >= beta:
+                    return [best_moves, beta]
+                if score > alpha:
+                    alpha = score
+                    moves.append(move)
+                    best_moves = moves
         return [best_moves, alpha]
 
     cpdef int evaluate(self):
-        cdef u64 amount, position
+        cdef u64 amount, position, hash_key
         cdef int side_to_move, score, moves_white, moves_black
         cdef list lsb_array
+        hash_key = hash_board(self)
+        if hash_key in EVALUATE_TABLE:
+            return EVALUATE_TABLE[hash_key]
         side_to_move = 1 if self.active_side else -1
         score = 0
         for piece, amount in self.pieces.items():
@@ -178,9 +222,10 @@ cdef class Board:
 
                 score += PIECE_SQUARE_TABLES[piece][index] * (1 if piece.isupper() else -1)
 
-        moves_white = len(list(self.pseudo_legal_moves_generator(1)))
-        moves_black = len(list(self.pseudo_legal_moves_generator(0)))
+        #moves_white = len(list(self.pseudo_legal_moves_generator(1)))
+        #moves_black = len(list(self.pseudo_legal_moves_generator(0)))
         score += 10 * (moves_white - moves_black)
+        EVALUATE_TABLE[hash_key] = score * side_to_move
         return score * side_to_move
 
     def to_fen_string(self):
