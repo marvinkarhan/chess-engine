@@ -61,3 +61,6 @@ cdef:
     u64[64][64] REY_BBS
 
     dict OPENING_TABLE
+    u64[781] ZOBRIST_TABLE
+    dict OPENING_TABLE
+    dict EVALUATE_TABLE
