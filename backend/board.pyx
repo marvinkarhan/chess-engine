@@ -200,7 +200,7 @@ cdef class Board:
 
         #moves_white = len(list(self.pseudo_legal_moves_generator(1)))
         #moves_black = len(list(self.pseudo_legal_moves_generator(0)))
-        score += 10 * (moves_white - moves_black)
+        score += 10 #* (moves_white - moves_black)
         EVALUATE_TABLE[hash_key] = score * side_to_move
         return score * side_to_move
 
@@ -241,6 +241,9 @@ cdef class Board:
         fen += str(self.half_moves) + ' '
         fen += str(self.full_moves)
         return fen
+
+    def get_active_side(self):
+        return self.active_side
 
     def print_every_piece(self):
         for k, v in self.pieces.items():
@@ -335,7 +338,6 @@ cdef class Board:
         enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
         occupied_bb = friendlies_bb | enemies_bb
         empty_bb = ~occupied_bb
-
         # more than one king attacker = only king moves possible
         if not pop_last_bb(king_attackers_bb):
             # pawn moves
@@ -345,8 +347,8 @@ cdef class Board:
             promotion_rank = R7 if active_side else R2
             direction = 1 if active_side else -1
             move_up_f = move_up if active_side else move_down
-            move_left_up_f = move_left_up if active_side else move_left_down
-            move_right_up_f = move_right_up if active_side else move_right_down
+            move_left_up_f = move_left_up if active_side else move_right_down
+            move_right_up_f = move_right_up if active_side else move_left_down
             # normal moves
             # pawns that can move one
             pawn_not_on_promotion_rank = pawn_bb & ~promotion_rank
@@ -374,18 +376,18 @@ cdef class Board:
                     for promotion in promotion_options:
                         yield Move(move - 9 * direction, move, move_type.PROMOTION, promtion)
             # captures
-            bb = move_left_up_f(pawn_on_promotion_rank) & enemies_bb
-            for move in get_lsb_array(bb):
-                yield Move(move - 7 * direction, move)
-            bb = move_right_up_f(pawn_on_promotion_rank) & enemies_bb
+            bb = move_left_up_f(pawn_not_on_promotion_rank) & enemies_bb
             for move in get_lsb_array(bb):
                 yield Move(move - 9 * direction, move)
+            bb = move_right_up_f(pawn_not_on_promotion_rank) & enemies_bb
+            for move in get_lsb_array(bb):
+                yield Move(move - 7 * direction, move)
             # en passant
             if self.ep_square_bb:
                 ep_square = bitScanForward(self.ep_square_bb)
                 bb = pawn_not_on_promotion_rank & PAWN_ATTACKS_BBS[ep_square][active_side]
                 for move in get_lsb_array(bb):
-                    yield Move(move, ep_square)
+                    yield Move(move, ep_square, move_type.EN_PASSANT)
             # rook moves
             for rook in get_lsb_array(rook_bb):
                 for move in get_lsb_array(rook_moves(SQUARE_BBS[rook], friendlies_bb, enemies_bb)):
@@ -513,7 +515,7 @@ cdef class Board:
         stored_board = self.store()
         # track if capture for half_moves
         capture = False
-        origin_square_bb =SQUARE_BBS[move.origin_square]
+        origin_square_bb = SQUARE_BBS[move.origin_square]
         target_square_bb = SQUARE_BBS[move.target_square]
         origin_piece = self.get_piece_on_square(origin_square_bb)
         target_piece = self.get_piece_on_square(target_square_bb)

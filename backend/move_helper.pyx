@@ -241,7 +241,6 @@ def uci_to_Move(uci: str):
     if promotion is not None and promotion not in PROMOTION_OPTIONS_W + PROMOTION_OPTIONS_B:
         print('Invalid promotion in uci')
         return
-    origin_square_bb = 1 << ALGEBRAIC_TO_INDEX[m.group(1)]
-    target_square_bb = 1 << ALGEBRAIC_TO_INDEX[m.group(2)]
-    print(uci, Move(origin_square_bb, target_square_bb, promotion), ALGEBRAIC_TO_INDEX[m.group(1)], m.group(2))
-    return Move(origin_square_bb, target_square_bb, promotion)
+    origin_square = ALGEBRAIC_TO_INDEX[m.group(1)]
+    target_square = ALGEBRAIC_TO_INDEX[m.group(2)]
+    return Move(origin_square, target_square, prmtn=promotion)

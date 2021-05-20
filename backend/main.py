@@ -6,13 +6,16 @@ import move_helper
 # pyximport.install()
 
 
-_board = board.Board()
-# _board = board.Board("rnbqkbnr/pp5p/2ppp1p1/8/5p2/2NPBNP1/PPPQPPBP/R3K2R w KQkq - 0 8")
+# _board = board.Board()
+_board = board.Board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/4P3/2p2QPp/PPPBBP1P/R3K2R w KQkq - 0 1")
 
 start_time = time.time()
 # profiler = cProfile.Profile()
 # profiler.enable()
-tree = _board.root_nega_max(5)
+# [best_moves, alpha] = _board.nega_max(3, -20000000, 20000000)
+# print(best_moves)
+# _board.make_move(move_helper.uci_to_Move('g2g3'))
+# [best_moves, alpha] = _board.nega_max(2, -20000000, 20000000)
 # profiler.disable()
 # stats = pstats.Stats(profiler).sort_stats('tottime')
 # stats.print_stats()
@@ -24,6 +27,7 @@ tree = _board.root_nega_max(5)
 # board.print_moves()
 # print(move_helper.bitScanForward(0b10000000))
 # print(len(list(_board.pseudo_legal_moves_generator_2(1))))
+print(list(_board.pseudo_legal_moves_generator(_board.get_active_side())))
 print(f'--- total runtime: {time.time() - start_time} seconds ---')
 
 # results:
