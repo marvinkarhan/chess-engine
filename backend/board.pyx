@@ -142,7 +142,7 @@ cdef class Board:
 
     cpdef int evaluate(self):
         cdef u64 amount, position, hash_key
-        cdef int side_to_move, score, moves_white, moves_black
+        cdef int side_to_move, score, #moves_white, moves_black
         cdef list lsb_array
         self.hash_value = self.hash_board()
         if self.hash_value in EVALUATE_TABLE:
