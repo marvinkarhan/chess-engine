@@ -3,16 +3,31 @@ from constants cimport *
 cdef class Move:
     
     def __init__(self, int o_s, int t_s, move_type move_type=move_type.NORMAL, prmtn=""):
-        self.origin_square = o_s
-        self.target_square = t_s
-        self.promotion = prmtn if prmtn else ""
-        self.type = move_type
+        self._origin_square = o_s
+        self._target_square = t_s
+        self._promotion = prmtn if prmtn else ""
+        self._type = move_type
+    
+    @property
+    def origin_square(self):
+        return self._origin_square
+        
+    @property
+    def target_square(self):
+        return self._target_square
+
+    @property
+    def promotion(self):
+        return self._promotion
+        
+    @property
+    def type(self):
+        return self._type
 
     def __eq__(self, other):
         return (self.origin_square == other.origin_square and
                 self.target_square == other.target_square and
-                self.promotion == other.promotion and
-                self.move_type == other.move_type)
+                self.promotion == other.promotion)
 
     def to_uci_string(self):
         keys = list(ALGEBRAIC_TO_INDEX.keys())

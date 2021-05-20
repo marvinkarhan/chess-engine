@@ -25,13 +25,26 @@ cdef u64 R8 = 0xff00000000000000
 
 
 cdef u64 CASTLING_W_KING_SIDE_WAY = 0x6
+cdef u64 CASTLING_W_KING_SIDE_KING_WAY = 0xe
 cdef u64 CASTLING_W_KING_SIDE_SQUARE = 1
+
 cdef u64 CASTLING_W_QUEEN_SIDE_WAY = 0x70
+cdef u64 CASTLING_W_QUEEN_SIDE_KING_WAY = 0x38
 cdef u64 CASTLING_W_QUEEN_SIDE_SQUARE = 5
+
 cdef u64 CASTLING_B_KING_SIDE_WAY = 0x600000000000000
+cdef u64 CASTLING_B_KING_SIDE_KING_WAY = 0xe00000000000000
 cdef u64 CASTLING_B_KING_SIDE_SQUARE = 57
+
 cdef u64 CASTLING_B_QUEEN_SIDE_WAY = 0x7000000000000000
+cdef u64 CASTLING_B_QUEEN_SIDE_KING_WAY = 0x3800000000000000
 cdef u64 CASTLING_B_QUEEN_SIDE_SQUARE = 61
+cdef u64[4][2] CASTELING_ARR = [
+      [CASTLING_W_KING_SIDE_SQUARE, CASTLING_W_KING_SIDE_KING_WAY],
+      [CASTLING_W_QUEEN_SIDE_SQUARE, CASTLING_W_QUEEN_SIDE_KING_WAY],
+      [CASTLING_B_KING_SIDE_SQUARE, CASTLING_B_KING_SIDE_KING_WAY],
+      [CASTLING_B_QUEEN_SIDE_SQUARE, CASTLING_B_QUEEN_SIDE_KING_WAY],
+]
 
 cdef u64 debruijn64 = 0x03f79d71b4cb0a89
 cdef int[64] debruijn64_index64 = [
@@ -235,7 +248,24 @@ def arr_Rectangular():
                         rays[i][j] = 0
       return rays
 
-REY_BBS = arr_Rectangular()
+cdef u64[64][64] REY_BBS = arr_Rectangular()
+
+def arr_Rectangular_lines():
+      cdef u64[64][64] rays
+      rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
+      for i, bb_1 in enumerate(SQUARE_BBS):
+            for j, bb_2 in enumerate(SQUARE_BBS):
+                  if DIAGONALS_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = DIAGONALS_MOVE_BBS[i] & DIAGONALS_MOVE_BBS[j] | bb_1 | bb_2
+                  elif HORIZONTAL_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2
+                  elif VERTICAL_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j] | bb_1 | bb_2
+                  else:
+                        rays[i][j] = 0
+      return rays
+
+cdef u64[64][64] LINE_BBS = arr_Rectangular_lines()
 
 # Based on https://en.wikipedia.org/wiki/Linear_congruential_generator
 cdef lcg(u64 modulus, u64 a, u64 b, u64 c, u64 seed, int amount):

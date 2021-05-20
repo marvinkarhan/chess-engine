@@ -7,7 +7,7 @@ import move_helper
 
 
 # _board = board.Board()
-_board = board.Board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/4P3/2p2QPp/PPPBBP1P/R3K2R w KQkq - 0 1")
+_board = board.Board("8/2k5/8/8/8/6pb/8/7K w - - 0 1")
 
 start_time = time.time()
 # profiler = cProfile.Profile()
@@ -19,6 +19,7 @@ start_time = time.time()
 # profiler.disable()
 # stats = pstats.Stats(profiler).sort_stats('tottime')
 # stats.print_stats()
+# _board.nega_max(5, -20000000, 20000000)
 # cProfile.runctx("board.root_nega_max(5)", globals(), locals(), "Profile.prof")
 
 # stats = pstats.Stats("Profile.prof").sort_stats('tottime')
@@ -26,8 +27,9 @@ start_time = time.time()
 # board.new_legal_moves_generator()
 # board.print_moves()
 # print(move_helper.bitScanForward(0b10000000))
-# print(len(list(_board.pseudo_legal_moves_generator_2(1))))
-print(list(_board.pseudo_legal_moves_generator(_board.get_active_side())))
+# _board.print_bitboard(0x38)
+print(list(_board.legal_moves_generator()))
+# print(move_helper.uci_to_Move('e7e8') in list(_board.legal_moves_generator()))
 print(f'--- total runtime: {time.time() - start_time} seconds ---')
 
 # results:

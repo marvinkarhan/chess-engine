@@ -7,6 +7,6 @@ cdef enum move_type:
     CASTLING
 
 cdef class Move:
-    cdef int origin_square, target_square
-    cdef str promotion
-    cdef move_type type
+    cdef int _origin_square, _target_square
+    cdef str _promotion
+    cdef move_type _type

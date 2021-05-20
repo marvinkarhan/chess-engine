@@ -34,6 +34,7 @@ cdef:
     u64 CASTLING_B_KING_SIDE_SQUARE
     u64 CASTLING_B_QUEEN_SIDE_WAY
     u64 CASTLING_B_QUEEN_SIDE_SQUARE
+    u64[4][2] CASTELING_ARR
 
     u64 debruijn64
     int[64] debruijn64_index64
@@ -59,6 +60,7 @@ cdef:
     u64[64] KING_MOVES_BBS
     u64[64] SQUARE_BBS
     u64[64][64] REY_BBS
+    u64[64][64] LINE_BBS
 
     dict OPENING_TABLE
     u64[781] ZOBRIST_TABLE

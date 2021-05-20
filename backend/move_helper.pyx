@@ -204,30 +204,12 @@ def pawn_attacks(u64 bb, int active_side, u64 friendlies_bb):
 
 SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
 
-cdef u64 in_between(u64 origin_bb, u64 target_bb):
-   return REY_BBS[origin_bb][target_bb]
+cpdef u64 in_between(int origin, int target):
+   return REY_BBS[origin][target]
 
 
-cpdef u64 may_move(u64 origin_bb, u64 target_bb, u64 occupied_bb):
-   return not in_between(origin_bb, target_bb) & occupied_bb
-
-
-def blockers(int square, bint active_side, u64 rook_bb, u64 knight_bb, u64 bishop_bb, u64 queen_bb, u64 king_bb, u64 pawn_bb, u64 friendlies_bb):
-    cdef u64 sliding_attackers_bb, blockers_bb, sliding_attacker_bb, blocker_bb, square_bb
-    square_bb = SQUARE_BBS[square]
-    # sliding pieces
-    sliding_attackers_bb = 0
-    sliding_attackers_bb |= DIAGONALS_MOVE_BBS[square] & (bishop_bb | queen_bb)
-    sliding_attackers_bb |= HORIZONTAL_VERTICAL_MOVE_BBS[square] & (rook_bb | queen_bb)
-
-    blockers_bb = 0
-    for sliding_attacker_bb in get_lsb_array(sliding_attackers_bb):
-        blocker_bb = in_between(square_bb, sliding_attacker_bb) & friendlies_bb
-        # is only one piece
-        if blocker_bb and SQUARE_BBS[bitScanForward(blocker_bb)] == blocker_bb:
-            blockers_bb |= blocker_bb
-
-    return blockers_bb
+cpdef u64 may_move(int origin, int target, u64 occupied_bb):
+   return not in_between(origin, target) & occupied_bb
 
 
 def uci_to_Move(uci: str):
