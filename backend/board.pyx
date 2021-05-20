@@ -12,70 +12,11 @@ from functools import lru_cache
 def get_zobrist():
     return ZOBRIST_TABLE
 
-
-cdef u64 hash_board(Board board):
-    # """"
-    #     The hash indizes are defined as following:
-    #     The max size of the array is 781
-    #     It's always (PRNBQK) for all 64 fields,
-    #     The Field ar defined like this A1, A2, B1, ..., F8
-    #     It Starts with White followed by black, meaning the first 6 * 64 are defined like this
-    #     [WP * A1, ..., WK * F8] for the first 6 * 64 - 1 indizes = 384 - 1 = 383 [0,383]
-    #     followed by black:
-    #     [BP * A1, ..., BK * F8] for the first 383 + 6 * 64 = 383 + 384 = 767 [384,767]
-    #     After that we process if black is to move this is the key: 767 + 1 = 768
-    #     Then the 4 castling rights in this order (WK, WQ, BK, BQ) = [769,772]
-    #     The last 8 are the en passant squares fields in this order (A, B, C, D, E, F, G, H) = [773,780]
-    # """"
-    cdef int offset, index
-    cdef list lsb_array
-    cdef u64 final_hash_key, hash_value
-    offset = 0
-    final_hash_key = 0
-    hash_value = 0
-    for piece, bb in board.pieces.items():
-        lsb_array = get_lsb_array(bb)
-        for position in lsb_array:
-            index = 63 - position # index from behind
-            hash_value = ZOBRIST_TABLE[offset+index]
-            final_hash_key ^= hash_value
-        offset += 64 # Every piece is a shift to 64 indizes in the array
-
-    if not board.active_side:
-        final_hash_key ^= ZOBRIST_TABLE[768]
-    if board.castle_w_king_side:
-        final_hash_key ^= ZOBRIST_TABLE[769]
-    if board.castle_w_queen_side:
-        final_hash_key ^= ZOBRIST_TABLE[770]
-    if board.castle_b_king_side:
-        final_hash_key ^= ZOBRIST_TABLE[771]
-    if board.castle_b_queen_side:
-        final_hash_key ^= ZOBRIST_TABLE[772]   
-    if board.ep_square_bb & A:
-        final_hash_key ^= ZOBRIST_TABLE[773]
-    elif board.ep_square_bb & B:
-        final_hash_key ^= ZOBRIST_TABLE[774]
-    elif board.ep_square_bb & C:
-        final_hash_key ^= ZOBRIST_TABLE[775]
-    elif board.ep_square_bb & D:
-        final_hash_key ^= ZOBRIST_TABLE[776]   
-    elif board.ep_square_bb & E:
-        final_hash_key ^= ZOBRIST_TABLE[777]
-    elif board.ep_square_bb & F:
-        final_hash_key ^= ZOBRIST_TABLE[778]
-    elif board.ep_square_bb & G:
-        final_hash_key ^= ZOBRIST_TABLE[779]      
-    elif board.ep_square_bb & H:
-        final_hash_key ^= ZOBRIST_TABLE[780]   
-
-    return final_hash_key
-
-
 cdef class Board:
     cdef:
-        dict pieces, current_opening_table
+        dict pieces, current_opening_table, zobrist_indizes
         bint castle_w_king_side, castle_w_queen_side, castle_b_king_side, castle_b_queen_side, active_side, opening_finished
-        u64 friendlies_bb, enemies_bb, ep_square_bb
+        u64 friendlies_bb, enemies_bb, ep_square_bb, hash_value
         int full_moves, half_moves, opening_moves
 
 
@@ -95,12 +36,28 @@ cdef class Board:
             'k': 0
         }
 
+        self.zobrist_indizes = {
+            'P': 0,
+            'R': 64,
+            'N': 128,
+            'B': 192,
+            'Q': 256,
+            'K': 320,
+            'p': 384,
+            'r': 448,
+            'n': 512,
+            'b': 576,
+            'q': 640,
+            'k': 704          
+        }
+
         self.castle_w_king_side = True
         self.castle_w_queen_side = True
         self.castle_b_king_side = True
         self.castle_b_queen_side = True
         self.friendlies_bb = 0
         self.enemies_bb = 0
+        self.hash_value = 0
         
 
         self.current_opening_table = OPENING_TABLE
@@ -116,6 +73,9 @@ cdef class Board:
         self.ep_square_bb = 0
         fen = fen if fen else START_POS_FEN
         self.parse_FEN_string(fen)
+
+    def get_hash(self):
+        return self.hash_value
 
     def reset_board(self):
         self.pieces = {
@@ -184,9 +144,9 @@ cdef class Board:
         cdef u64 amount, position, hash_key
         cdef int side_to_move, score, moves_white, moves_black
         cdef list lsb_array
-        hash_key = hash_board(self)
-        if hash_key in EVALUATE_TABLE:
-            return EVALUATE_TABLE[hash_key]
+        self.hash_value = self.hash_board()
+        if self.hash_value in EVALUATE_TABLE:
+            return EVALUATE_TABLE[self.hash_value]
         side_to_move = 1 if self.active_side else -1
         score = 0
         for piece, amount in self.pieces.items():
@@ -200,8 +160,8 @@ cdef class Board:
 
         #moves_white = len(list(self.pseudo_legal_moves_generator(1)))
         #moves_black = len(list(self.pseudo_legal_moves_generator(0)))
-        score += 10 #* (moves_white - moves_black)
-        EVALUATE_TABLE[hash_key] = score * side_to_move
+        score += 10 * (moves_white - moves_black)
+        EVALUATE_TABLE[self.hash_value] = score * side_to_move
         return score * side_to_move
 
     def to_fen_string(self):
@@ -306,6 +266,7 @@ cdef class Board:
                     bb_placement_mask >>= 1
         self.friendlies_bb = self.w_pieces_bb() if self.active_side else self.b_pieces_bb()
         self.enemies_bb = self.b_pieces_bb() if self.active_side else self.w_pieces_bb()
+        self.hash_value = self.hash_board()
 
     cpdef u64 pot_attackers(self, int square, bint active_side, u64 occupied_bb, only_sliders = False, exclude_sliders = False):
         cdef u64 pot_attackers_bb, move_bb, pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb
@@ -576,11 +537,74 @@ cdef class Board:
         self.half_moves = restore_dict['half_moves']
         self.ep_square_bb = restore_dict['ep_square_bb']
 
+    cdef u64 hash_board(self):
+        # """"
+        #     The hash indizes are defined as following:
+        #     The max size of the array is 781
+        #     It's always (PRNBQK) for all 64 fields,
+        #     The Field ar defined like this A1, A2, B1, ..., F8
+        #     It Starts with White followed by black, meaning the first 6 * 64 are defined like this
+        #     [WP * A1, ..., WK * F8] for the first 6 * 64 - 1 indizes = 384 - 1 = 383 [0,383]
+        #     followed by black:
+        #     [BP * A1, ..., BK * F8] for the first 383 + 6 * 64 = 383 + 384 = 767 [384,767]
+        #     After that we process if black is to move this is the key: 767 + 1 = 768
+        #     Then the 4 castling rights in this order (WK, WQ, BK, BQ) = [769,772]
+        #     The last 8 are the en passant squares fields in this order (A, B, C, D, E, F, G, H) = [773,780]
+        # """"
+        cdef int offset, index
+        cdef list lsb_array
+        cdef u64 hash_value
+        offset = 0
+        self.hash_value = 0
+        hash_value = 0
+        for piece, bb in self.pieces.items():
+            lsb_array = get_lsb_array(bb)
+            for position in lsb_array:
+                index = 63 - bitScanForward(position) # index from behind
+                hash_value = ZOBRIST_TABLE[offset+index]
+                self.hash_value ^= hash_value
+            offset += 64 # Every piece is a shift to 64 indizes in the array
+
+        self.set_optional_hash_criterium()
+
+        return self.hash_value
+
+    cdef set_optional_hash_criterium(self):
+        if not self.active_side:
+            self.hash_value ^= ZOBRIST_TABLE[768]
+        if self.castle_w_king_side:
+            self.hash_value ^= ZOBRIST_TABLE[769]
+        if self.castle_w_queen_side:
+            self.hash_value ^= ZOBRIST_TABLE[770]
+        if self.castle_b_king_side:
+            self.hash_value ^= ZOBRIST_TABLE[771]
+        if self.castle_b_queen_side:
+            self.hash_value ^= ZOBRIST_TABLE[772]   
+        if self.ep_square_bb & A:
+            self.hash_value ^= ZOBRIST_TABLE[773]
+        elif self.ep_square_bb & B:
+            self.hash_value ^= ZOBRIST_TABLE[774]
+        elif self.ep_square_bb & C:
+            self.hash_value ^= ZOBRIST_TABLE[775]
+        elif self.ep_square_bb & D:
+            self.hash_value ^= ZOBRIST_TABLE[776]   
+        elif self.ep_square_bb & E:
+            self.hash_value ^= ZOBRIST_TABLE[777]
+        elif self.ep_square_bb & F:
+            self.hash_value ^= ZOBRIST_TABLE[778]
+        elif self.ep_square_bb & G:
+            self.hash_value ^= ZOBRIST_TABLE[779]      
+        elif self.ep_square_bb & H:
+            self.hash_value ^= ZOBRIST_TABLE[780]   
+
+
     def make_move(self, move: Move):
-        cdef u64 captured_pawn_bb, moved_upx2, moved_downx2, rook_square, target_square, origin_square_bb, target_square_bb
+        cdef u64 captured_pawn_bb, moved_upx2, moved_downx2, rook_square, target_square, origin_square_bb, target_square_bb, stored_hash_value
         cdef bint capture
+        cdef int target_index, origin_index, rook_index, new_rook_index, captured_pawn_index, rook_piece_offset, promoted_piece_offset, target_piece_offset, origin_piece_offset
         cdef dict stored_board
-        stored_board = self.store()
+        stored_board = self.store()#
+        stored_hash_value = self.hash_value
         # track if capture for half_moves
         capture = False
         origin_square_bb = SQUARE_BBS[move.origin_square]
@@ -588,16 +612,24 @@ cdef class Board:
         origin_piece = self.get_piece_on_square(origin_square_bb)
         target_piece = self.get_piece_on_square(target_square_bb)
 
+
+        # ZOBRIST VARIABLES 
+        origin_index = 63 - bitScanForward(move.origin_square_bb)
+        origin_piece_offset = self.zobrist_indizes[origin_piece]
+        target_index = 63 - bitScanForward(move.target_square_bb)
         # update bitboards to represent change
-        try:
-            self.pieces[origin_piece] &= ~origin_square_bb
-            self.pieces[origin_piece] |= target_square_bb
-        except:
-            # print(move)
-            pass
+        self.pieces[origin_piece] &= ~move.origin_square_bb
+        self.pieces[origin_piece] |= move.target_square_bb
+        # ZOBRIST ADD PIECE TO NEW SQUARE
+        self.hash_value ^= ZOBRIST_TABLE[target_index + origin_piece_offset]
+        # ZOBRIST REMOVE PIECE FROM ORIGIN SQUARE
+        self.hash_value ^= ZOBRIST_TABLE[origin_index + origin_piece_offset]
         # target piece only exists on capture
         if target_piece:
-            self.pieces[target_piece] &= ~target_square_bb
+            target_piece_offset = self.zobrist_indizes[target_piece]
+            self.pieces[target_piece] &= ~move.target_square_bb
+            # ZOBRIST REMOVE PIECE FROM TARGET SQUARE
+            self.hash_value ^= ZOBRIST_TABLE[target_index + target_piece_offset] 
             capture = True
 
         # en passant
@@ -606,8 +638,13 @@ cdef class Board:
             if move.promotion:
                 # remove pawn
                 self.pieces[origin_piece] &= ~target_square_bb
+                # ZOBRIST REMOVE PIECE FROM NEW SQUARE
+                self.hash_value ^= ZOBRIST_TABLE[target_index + origin_piece_offset]
                 # add promoted piece
                 self.pieces[move.promotion] |= target_square_bb
+                # ZOBRIST ADD PROMOTED PIECE TO TARGET SQUARE
+                promoted_piece_offset = self.zobrist_indizes[move.promotion]
+                self.hash_value ^= ZOBRIST_TABLE[target_index + promoted_piece_offset]
             # complete ep move
             if self.ep_square_bb:
                 if target_square_bb == self.ep_square_bb:
@@ -616,6 +653,10 @@ cdef class Board:
                     captured_pawn = self.get_piece_on_square(captured_pawn_bb)
                     self.pieces[captured_pawn] &= ~captured_pawn_bb
                     self.enemies_bb &= ~captured_pawn_bb
+                    # ZOBRIST REMOVE EP CAPTURED ENEMY PAWN
+                    captured_pawn_index = 63 - bitScanForward(captured_pawn_bb)
+                    captured_pawn_offset = self.zobrist_indizes[captured_pawn]
+                    self.hash_value ^= ZOBRIST_TABLE[captured_pawn_index + captured_pawn_offset]
                 self.ep_square_bb = 0
                 capture = True
             # check for resulting en passant
@@ -630,6 +671,7 @@ cdef class Board:
                 if left_square_piece == enemy_pawn_key or right_square_piece == enemy_pawn_key:
                     self.ep_square_bb = move_down(target_square_bb & R4) | move_up(
                         target_square_bb & R5)
+
         else:
             self.ep_square_bb = 0
 
@@ -666,6 +708,13 @@ cdef class Board:
                     self.pieces[rook_piece] |= target_square
                     self.friendlies_bb &= ~rook_square
                     self.friendlies_bb |= target_square
+                    # ZOBRIST REMOVE ROOK FROM PREVIOUES SQUARE 
+                    rook_index = 63 - bitScanForward(rook_square)
+                    rook_piece_offset = self.zobrist_indizes[rook_piece]
+                    self.hash_value ^= ZOBRIST_TABLE[rook_index + rook_piece_offset]
+                    # ZOBRIST ADD ROOK TO NEW SQUARE
+                    new_rook_index = 63 - bitScanForward(target_square)
+                    self.hash_value ^= ZOBRIST_TABLE[new_rook_index + rook_piece_offset]             
                 # castle queen side
                 else:
                     # get rook
@@ -677,6 +726,13 @@ cdef class Board:
                     self.pieces[rook_piece] |= target_square
                     self.friendlies_bb &= ~rook_square
                     self.friendlies_bb |= target_square
+                    # ZOBRIST REMOVE ROOK FROM PREVIOUES SQUARE 
+                    rook_index = 63 - bitScanForward(rook_square)
+                    rook_piece_offset = self.zobrist_indizes[rook_piece]
+                    self.hash_value ^= ZOBRIST_TABLE[rook_index + rook_piece_offset]
+                    # ZOBRIST ADD ROOK TO NEW SQUARE
+                    new_rook_index = 63 - bitScanForward(target_square)
+                    self.hash_value ^= ZOBRIST_TABLE[new_rook_index + rook_piece_offset]     
 
         # update board properties
         self.friendlies_bb &= ~origin_square_bb
@@ -694,5 +750,9 @@ cdef class Board:
         # unmake move if it was illegal
         if self.attackers(bitScanForward(self.pieces['k' if self.active_side else 'K']), not self.active_side, self.friendlies_bb | self.enemies_bb):
             self.restore(stored_board)
+            self.hash_value = stored_hash_value
             return False
+
+        self.set_optional_hash_criterium()
+
         return True

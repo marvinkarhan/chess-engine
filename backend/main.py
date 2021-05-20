@@ -9,18 +9,31 @@ import move_helper
 # _board = board.Board()
 _board = board.Board("8/2k5/8/8/8/6pb/8/7K w - - 0 1")
 
+
+my_board = board.Board()
 start_time = time.time()
-# profiler = cProfile.Profile()
-# profiler.enable()
-# [best_moves, alpha] = _board.nega_max(3, -20000000, 20000000)
-# print(best_moves)
-# _board.make_move(move_helper.uci_to_Move('g2g3'))
-# [best_moves, alpha] = _board.nega_max(2, -20000000, 20000000)
-# profiler.disable()
-# stats = pstats.Stats(profiler).sort_stats('tottime')
-# stats.print_stats()
-# _board.nega_max(5, -20000000, 20000000)
-# cProfile.runctx("board.root_nega_max(5)", globals(), locals(), "Profile.prof")
+#profiler = cProfile.Profile() 
+#profiler.enable()
+tree = my_board.nega_max(5,-200000,200000)
+# fen_list = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1",
+# "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1",
+# "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
+# "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
+# "rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1",
+# "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"]
+# for fen in fen_list: 
+#     new_board = board.Board(fen)
+#     key = board.hash_board(new_board)
+#     print(key)
+#     key ^= board.get_zobrist()[768]
+#     print(key)
+#     key ^= board.get_zobrist()[768]
+#     print(key) 
+
+#profiler.disable()
+#stats = pstats.Stats(profiler).sort_stats('tottime')
+#stats.print_stats()
+# cProfile.runctx("my_board.nega_max(5,-200000,200000)", globals(), locals(), "Profile.prof")
 
 # stats = pstats.Stats("Profile.prof").sort_stats('tottime')
 # stats.print_stats()
