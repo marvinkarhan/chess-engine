@@ -1,3 +1,4 @@
+# cython: profile=True
 from constants cimport *
 from move cimport *
 from functools import lru_cache, cache
@@ -26,6 +27,7 @@ def get_lsb_bb_array(u64 bb):
         bb &= bb - 1
     return bbs
 
+@lru_cache(maxsize=None)
 def get_lsb_array(u64 bb):
     cdef list array = []
     while bb:

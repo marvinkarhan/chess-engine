@@ -1,20 +1,25 @@
 import board
 import time
 import move_helper
-# import cProfile, pstats
+import cProfile, pstats
 # import pyximport
 # pyximport.install()
 
 
-# _board = board.Board()
-_board = board.Board("8/2k5/8/8/8/6pb/8/7K w - - 0 1")
+_board = board.Board()
+# _board = board.Board("8/2k5/8/8/8/6pb/8/7K w - - 0 1")
 
 
 my_board = board.Board()
 start_time = time.time()
 #profiler = cProfile.Profile() 
 #profiler.enable()
-tree = my_board.nega_max(5,-200000,200000)
+[move, score] = my_board.nega_max(5,-200000,200000)
+# for n in range(100):
+#   start_time = time.time()
+#   [move, score] = my_board.nega_max(3,-200000,200000)
+#   my_board.make_move(move[-1])
+#   print(f'--- total runtime: {time.time() - start_time} seconds ---')
 # fen_list = ["rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1","rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1",
 # "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1",
 # "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
@@ -41,7 +46,7 @@ tree = my_board.nega_max(5,-200000,200000)
 # board.print_moves()
 # print(move_helper.bitScanForward(0b10000000))
 # _board.print_bitboard(0x38)
-print(list(_board.legal_moves_generator()))
+# print(list(_board.legal_moves_generator()))
 # print(move_helper.uci_to_Move('e7e8') in list(_board.legal_moves_generator()))
 print(f'--- total runtime: {time.time() - start_time} seconds ---')
 

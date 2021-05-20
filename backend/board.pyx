@@ -126,7 +126,7 @@ cdef class Board:
         best_moves = []
         if(depth == 0):
             return [[],self.evaluate()]
-        for move in self.pseudo_legal_moves_generator(self.active_side):
+        for move in self.legal_moves_generator(self.active_side):
             backup = self.store()    
             if self.make_move(move):
                 [moves, score] = self.nega_max(depth-1,-beta,-alpha)
@@ -160,7 +160,7 @@ cdef class Board:
 
         #moves_white = len(list(self.pseudo_legal_moves_generator(1)))
         #moves_black = len(list(self.pseudo_legal_moves_generator(0)))
-        score += 10 * (moves_white - moves_black)
+        # score += 10 * (moves_white - moves_black)
         EVALUATE_TABLE[self.hash_value] = score * side_to_move
         return score * side_to_move
 
@@ -322,12 +322,12 @@ cdef class Board:
         not_friendlies_bb = ~friendlies_bb
         enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
         occupied_bb = friendlies_bb | enemies_bb
+        empty_bb = ~occupied_bb
         king_attackers_bb = self.attackers(king_square, active_side, occupied_bb)
         evasion_bb = FULL_BB_MASK
         if only_evasions:
             evasion_bb = in_between(king_square, bitScanForward(king_attackers_bb)) | SQUARE_BBS[bitScanForward(king_attackers_bb)]
             # self.print_bitboard(pop_last_bb(king_attackers_bb))
-        empty_bb = ~occupied_bb
         # more than one king attacker = only king moves possible
         if not pop_last_bb(king_attackers_bb):
             # pawn moves
@@ -380,17 +380,17 @@ cdef class Board:
                     yield Move(move, ep_square, move_type.EN_PASSANT)
             # rook moves
             for rook in get_lsb_array(rook_bb):
-                for move in get_lsb_array(rook_moves(SQUARE_BBS[rook], friendlies_bb, enemies_bb) & evasion_bb):
+                for move in get_lsb_array(rook_moves(SQUARE_BBS[rook], empty_bb, friendlies_bb) & evasion_bb):
                     yield Move(rook, move)
 
             # bishop moves
             for bishop in get_lsb_array(bishop_bb):
-                for move in get_lsb_array(bishop_moves(SQUARE_BBS[bishop], friendlies_bb, enemies_bb) & evasion_bb):
+                for move in get_lsb_array(bishop_moves(SQUARE_BBS[bishop], empty_bb, friendlies_bb) & evasion_bb):
                     yield Move(bishop, move)
 
             # queen moves
             for queen in get_lsb_array(queen_bb):
-                for move in get_lsb_array(queen_moves(SQUARE_BBS[queen], friendlies_bb, enemies_bb) & evasion_bb):
+                for move in get_lsb_array(queen_moves(SQUARE_BBS[queen], empty_bb, friendlies_bb) & evasion_bb):
                     yield Move(queen, move)
 
             # king moves (there is always only one king)
@@ -427,7 +427,7 @@ cdef class Board:
 
     # new move generation based on king blockers and attackers (WIP)
     def legal_moves_generator(self, active_side = None):
-        cdef u64 king_bb, blockers_bb, attackers_bb
+        cdef u64 king_bb, blockers_bb, attackers_bb, king_attackers_bb
         cdef int king_square
         if active_side is None:
             active_side = self.active_side
@@ -451,6 +451,8 @@ cdef class Board:
                 yield move
     
     cdef bint move_is_legal(self, move, bint active_side, u64 blockers_bb, int king_square, u64 occupied_bb):
+        cdef u64 king_no_slide_attackers_bb, king_slide_attackers_bb, king_attackers_bb, c_way
+        cdef int way, c_sqaure
         king_no_slide_attackers_bb = self.attackers(king_square, active_side, occupied_bb, exclude_sliders = True)
         king_slide_attackers_bb = self.attackers(king_square, active_side, occupied_bb, only_sliders = True)
         king_attackers_bb = king_no_slide_attackers_bb | king_slide_attackers_bb
@@ -613,23 +615,12 @@ cdef class Board:
         target_piece = self.get_piece_on_square(target_square_bb)
 
 
-        # ZOBRIST VARIABLES 
-        origin_index = 63 - bitScanForward(move.origin_square_bb)
-        origin_piece_offset = self.zobrist_indizes[origin_piece]
-        target_index = 63 - bitScanForward(move.target_square_bb)
         # update bitboards to represent change
-        self.pieces[origin_piece] &= ~move.origin_square_bb
-        self.pieces[origin_piece] |= move.target_square_bb
-        # ZOBRIST ADD PIECE TO NEW SQUARE
-        self.hash_value ^= ZOBRIST_TABLE[target_index + origin_piece_offset]
-        # ZOBRIST REMOVE PIECE FROM ORIGIN SQUARE
-        self.hash_value ^= ZOBRIST_TABLE[origin_index + origin_piece_offset]
+        self.pieces[origin_piece] &= ~origin_square_bb
+        self.pieces[origin_piece] |= target_square_bb
         # target piece only exists on capture
         if target_piece:
-            target_piece_offset = self.zobrist_indizes[target_piece]
-            self.pieces[target_piece] &= ~move.target_square_bb
-            # ZOBRIST REMOVE PIECE FROM TARGET SQUARE
-            self.hash_value ^= ZOBRIST_TABLE[target_index + target_piece_offset] 
+            self.pieces[target_piece] &= ~target_square_bb
             capture = True
 
         # en passant
@@ -638,13 +629,8 @@ cdef class Board:
             if move.promotion:
                 # remove pawn
                 self.pieces[origin_piece] &= ~target_square_bb
-                # ZOBRIST REMOVE PIECE FROM NEW SQUARE
-                self.hash_value ^= ZOBRIST_TABLE[target_index + origin_piece_offset]
                 # add promoted piece
                 self.pieces[move.promotion] |= target_square_bb
-                # ZOBRIST ADD PROMOTED PIECE TO TARGET SQUARE
-                promoted_piece_offset = self.zobrist_indizes[move.promotion]
-                self.hash_value ^= ZOBRIST_TABLE[target_index + promoted_piece_offset]
             # complete ep move
             if self.ep_square_bb:
                 if target_square_bb == self.ep_square_bb:
@@ -653,10 +639,6 @@ cdef class Board:
                     captured_pawn = self.get_piece_on_square(captured_pawn_bb)
                     self.pieces[captured_pawn] &= ~captured_pawn_bb
                     self.enemies_bb &= ~captured_pawn_bb
-                    # ZOBRIST REMOVE EP CAPTURED ENEMY PAWN
-                    captured_pawn_index = 63 - bitScanForward(captured_pawn_bb)
-                    captured_pawn_offset = self.zobrist_indizes[captured_pawn]
-                    self.hash_value ^= ZOBRIST_TABLE[captured_pawn_index + captured_pawn_offset]
                 self.ep_square_bb = 0
                 capture = True
             # check for resulting en passant
@@ -707,14 +689,7 @@ cdef class Board:
                     self.pieces[rook_piece] &= ~rook_square
                     self.pieces[rook_piece] |= target_square
                     self.friendlies_bb &= ~rook_square
-                    self.friendlies_bb |= target_square
-                    # ZOBRIST REMOVE ROOK FROM PREVIOUES SQUARE 
-                    rook_index = 63 - bitScanForward(rook_square)
-                    rook_piece_offset = self.zobrist_indizes[rook_piece]
-                    self.hash_value ^= ZOBRIST_TABLE[rook_index + rook_piece_offset]
-                    # ZOBRIST ADD ROOK TO NEW SQUARE
-                    new_rook_index = 63 - bitScanForward(target_square)
-                    self.hash_value ^= ZOBRIST_TABLE[new_rook_index + rook_piece_offset]             
+                    self.friendlies_bb |= target_square          
                 # castle queen side
                 else:
                     # get rook
@@ -725,14 +700,7 @@ cdef class Board:
                     self.pieces[rook_piece] &= ~rook_square
                     self.pieces[rook_piece] |= target_square
                     self.friendlies_bb &= ~rook_square
-                    self.friendlies_bb |= target_square
-                    # ZOBRIST REMOVE ROOK FROM PREVIOUES SQUARE 
-                    rook_index = 63 - bitScanForward(rook_square)
-                    rook_piece_offset = self.zobrist_indizes[rook_piece]
-                    self.hash_value ^= ZOBRIST_TABLE[rook_index + rook_piece_offset]
-                    # ZOBRIST ADD ROOK TO NEW SQUARE
-                    new_rook_index = 63 - bitScanForward(target_square)
-                    self.hash_value ^= ZOBRIST_TABLE[new_rook_index + rook_piece_offset]     
+                    self.friendlies_bb |= target_square    
 
         # update board properties
         self.friendlies_bb &= ~origin_square_bb
