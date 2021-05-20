@@ -11,70 +11,55 @@ the piece (bit) is then shifted
 if a shift results in a piece wrapping the board (going from line A to H) it gets returned as 0
 """
 
-@lru_cache(maxsize=None)
-def move_left(u64 bb):
+cpdef u64 move_left(u64 bb):
     return (bb << 1 & ~H) & FULL_BB_MASK
 
 
-@lru_cache(maxsize=None)
-def move_right(u64 bb):
+cpdef u64 move_right(u64 bb):
     return bb >> 1 & ~A
 
 
-@lru_cache(maxsize=None)
-def move_up(u64 bb):
+cpdef u64 move_up(u64 bb):
     return bb << 8 & FULL_BB_MASK
 
-
-@lru_cache(maxsize=None)
-def move_down(u64 bb):
+cpdef u64 move_down(u64 bb):
     return bb >> 8
 
 
 # castle optimizations
-@lru_cache(maxsize=None)
-def move_leftx2(u64 bb):
+cpdef u64 move_leftx2(u64 bb):
     return ((bb << 2 & ~H) & ~G) & FULL_BB_MASK
 
 
-@lru_cache(maxsize=None)
-def move_leftx3(u64 bb):
+cpdef u64 move_leftx3(u64 bb):
     return (((bb << 3 & ~H) & ~G) & ~F) & FULL_BB_MASK
 
 
-@lru_cache(maxsize=None)
-def move_rightx2(u64 bb):
+cpdef u64 move_rightx2(u64 bb):
     return ((bb >> 2 & ~A) & ~ B)
 
 
 # pawn optimizations
-@lru_cache(maxsize=None)
-def move_downx2(u64 bb):
+
+cpdef u64 move_downx2(u64 bb):
     return bb >> 16
 
-
-@lru_cache(maxsize=None)
-def move_upx2(u64 bb):
+cpdef u64 move_upx2(u64 bb):
     return bb << 16 & FULL_BB_MASK
 
 
-@lru_cache(maxsize=None)
-def move_left_up(u64 bb):
+
+cpdef u64 move_left_up(u64 bb):
     return (bb << 9 & ~H) & FULL_BB_MASK
 
-
-@lru_cache(maxsize=None)
-def move_left_down(u64 bb):
+cpdef u64 move_left_down(u64 bb):
     return bb >> 7 & ~H
 
 
-@lru_cache(maxsize=None)
-def move_right_up(u64 bb):
+cpdef u64 move_right_up(u64 bb):
     return (bb << 7 & ~A) & FULL_BB_MASK
 
-
-@lru_cache(maxsize=None)
-def move_right_down(u64 bb):
+cpdef u64 move_right_down(u64 bb):
     return bb >> 9 & ~A
 
 
@@ -101,149 +86,97 @@ KNIGHT_MOVES = [
 """
 Following Board Filling Functions are using the Kogge-Stone Algorithm
 """
-# @lru_cache(maxsize=None)
-# def south_occluded(u64 bb, u64 empty_bb):
-#     bb |= empty_bb & (bb >> 8)
-#     empty_bb &= (empty_bb >> 8)
-#     bb |= empty_bb & (bb >> 16)
-#     empty_bb &= (empty_bb >> 16)
-#     bb |= empty_bb & (bb >> 32)
-#     return bb
+
+cdef u64 north_occluded_attacks(u64 bb, u64 empty_bb):
+    bb |= empty_bb & (bb << 8)
+    empty_bb &= (empty_bb << 8)
+    bb |= empty_bb & (bb << 16)
+    empty_bb &= (empty_bb << 16)
+    bb |= empty_bb & (bb << 32)
+    return bb << 8 & FULL_BB_MASK
+
+cdef u64 east_occluded_attacks(u64 bb, u64 empty_bb):
+    empty_bb &= NOT_A
+    bb |= empty_bb & (bb >> 1)
+    empty_bb &= (empty_bb >> 1)
+    bb |= empty_bb & (bb >> 2)
+    empty_bb &= (empty_bb >> 2)
+    bb |= empty_bb & (bb >> 4)
+    return bb >> 1 & ~A
+
+cdef u64 south_occluded_attacks(u64 bb, u64 empty_bb):
+    bb |= empty_bb & (bb >> 8)
+    empty_bb &= (empty_bb >> 8)
+    bb |= empty_bb & (bb >> 16)
+    empty_bb &= (empty_bb >> 16)
+    bb |= empty_bb & (bb >> 32)
+    return bb >> 8
+
+cdef u64 west_occluded_attacks(u64 bb,u64  empty_bb):
+    empty_bb &= NOT_H
+    bb |= empty_bb & (bb << 1)
+    empty_bb &= (empty_bb << 1)
+    bb |= empty_bb & (bb << 2)
+    empty_bb &= (empty_bb << 2)
+    bb |= empty_bb & (bb << 4)
+    return (bb << 1 & ~H) & FULL_BB_MASK
+
+cdef u64 no_we_occluded_attacks(u64 bb, u64 empty_bb):
+    empty_bb &= NOT_H
+    bb |= empty_bb & (bb << 9)
+    empty_bb &= (empty_bb << 9)
+    bb |= empty_bb & (bb << 18)
+    empty_bb &= (empty_bb << 18)
+    bb |= empty_bb & (bb << 36)
+    return (bb << 9 & ~H) & FULL_BB_MASK
 
 
-# @lru_cache(maxsize=None)
-# def north_occluded(u64 bb, u64 empty_bb):
-#     bb |= empty_bb & (bb << 8)
-#     empty_bb &= (empty_bb << 8)
-#     bb |= empty_bb & (bb << 16)
-#     empty_bb &= (empty_bb << 16)
-#     bb |= empty_bb & (bb << 32)
-#     return bb
+cdef u64 so_we_occluded_attacks(u64 bb, u64 empty_bb):
+    empty_bb &= NOT_H
+    bb |= empty_bb & (bb >> 7)
+    empty_bb &= (empty_bb >> 7)
+    bb |= empty_bb & (bb >> 14)
+    empty_bb &= (empty_bb >> 14)
+    bb |= empty_bb & (bb >> 28)
+    return bb >> 7 & ~H
 
 
-# @lru_cache(maxsize=None)
-# def west_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_H
-#     bb |= empty_bb & (bb << 1)
-#     empty_bb &= (empty_bb << 1)
-#     bb |= empty_bb & (bb << 2)
-#     empty_bb &= (empty_bb << 2)
-#     bb |= empty_bb & (bb << 4)
-#     return bb
+cdef u64 so_ea_occluded_attacks(u64 bb, u64 empty_bb):
+    empty_bb &= NOT_A
+    bb |= empty_bb & (bb >> 9)
+    empty_bb &= (empty_bb >> 9)
+    bb |= empty_bb & (bb >> 18)
+    empty_bb &= (empty_bb >> 18)
+    bb |= empty_bb & (bb >> 36)
+    return bb >> 9 & ~A
+
+cdef u64 no_ea_occluded_attacks(u64 bb, u64 empty_bb):
+    empty_bb &= NOT_A
+    bb |= empty_bb & (bb << 7)
+    empty_bb &= (empty_bb << 7)
+    bb |= empty_bb & (bb << 14)
+    empty_bb &= (empty_bb << 14)
+    bb |= empty_bb & (bb << 28)
+    return (bb << 7 & ~A) & FULL_BB_MASK
 
 
-# @lru_cache(maxsize=None)
-# def no_we_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_H
-#     bb |= empty_bb & (bb << 9)
-#     empty_bb &= (empty_bb << 9)
-#     bb |= empty_bb & (bb << 18)
-#     empty_bb &= (empty_bb << 18)
-#     bb |= empty_bb & (bb << 36)
-#     return bb
+cdef u64 horizontal_vertical_moves(u64 bb,u64 empty_bb):
+    cdef u64 acc = 0
+    acc |= north_occluded_attacks(bb, empty_bb)
+    acc |= east_occluded_attacks(bb, empty_bb)
+    acc |= south_occluded_attacks(bb, empty_bb)
+    acc |= west_occluded_attacks(bb, empty_bb)
+    return acc
+
+cdef u64 diagonal_moves(u64 bb, u64 empty_bb):
+    cdef u64 acc = 0
+    acc |= no_ea_occluded_attacks(bb, empty_bb)
+    acc |= so_ea_occluded_attacks(bb, empty_bb)
+    acc |= so_we_occluded_attacks(bb, empty_bb)
+    acc |= no_we_occluded_attacks(bb, empty_bb)
+    return acc
 
 
-# @lru_cache(maxsize=None)
-# def so_we_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_H
-#     bb |= empty_bb & (bb >> 7)
-#     empty_bb &= (empty_bb >> 7)
-#     bb |= empty_bb & (bb >> 14)
-#     empty_bb &= (empty_bb >> 14)
-#     bb |= empty_bb & (bb >> 28)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def east_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_A
-#     bb |= empty_bb & (bb >> 1)
-#     empty_bb &= (empty_bb >> 1)
-#     bb |= empty_bb & (bb >> 2)
-#     empty_bb &= (empty_bb >> 2)
-#     bb |= empty_bb & (bb >> 4)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def so_ea_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_A
-#     bb |= empty_bb & (bb >> 9)
-#     empty_bb &= (empty_bb >> 9)
-#     bb |= empty_bb & (bb >> 18)
-#     empty_bb &= (empty_bb >> 18)
-#     bb |= empty_bb & (bb >> 36)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def no_ea_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_A
-#     bb |= empty_bb & (bb << 7)
-#     empty_bb &= (empty_bb << 7)
-#     bb |= empty_bb & (bb << 14)
-#     empty_bb &= (empty_bb << 14)
-#     bb |= empty_bb & (bb << 28)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def south_occluded_attacks(u64 bb, empty: int):
-#     return move_down(south_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def north_occluded_attacks(u64 bb, u64 empty):
-#     return move_up(north_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def east_occluded_attacks(u64 bb, u64 empty):
-#     return move_right(east_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def no_ea_occluded_attacks(u64 bb, empty: int):
-#     return move_right_up(no_ea_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def so_ea_occluded_attacks(u64 bb, empty: int):
-#     return move_right_down(so_ea_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def west_occluded_attacks(u64 bb,u64  empty):
-#     return move_left(west_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def so_we_occluded_attacks(u64 bb, empty: int):
-#     return move_left_down(so_we_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def no_we_occluded_attacks(u64 bb, empty: int):
-#     return move_left_up(no_we_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def horizontal_vertical_moves(u64 bb,u64 empty_bb):
-#     cdef u64 acc = 0
-#     acc |= north_occluded_attacks(bb, empty_bb)
-#     acc |= east_occluded_attacks(bb, empty_bb)
-#     acc |= south_occluded_attacks(bb, empty_bb)
-#     acc |= west_occluded_attacks(bb, empty_bb)
-#     return acc
-
-# @lru_cache(maxsize=None)
-# def diagonal_moves(u64 bb, u64 empty_bb):
-#     cdef u64 acc = 0
-#     acc |= no_ea_occluded_attacks(bb, empty_bb)
-#     acc |= so_ea_occluded_attacks(bb, empty_bb)
-#     acc |= so_we_occluded_attacks(bb, empty_bb)
-#     acc |= no_we_occluded_attacks(bb, empty_bb)
-#     return acc
 def traverse_bb(bb: int, directions, friendlies_bb: int, enemies_bb: int):
     result_bb = 0
     for move_func in directions:
@@ -267,18 +200,21 @@ def king_moves(u64 bb, u64 friendlies_bb):
 
 
 @lru_cache(maxsize=None)
-def queen_moves(u64 bb, u64 friendlies_bb, u64 enemies_bb):
-    return traverse_bb(bb, DIRECTIONS, friendlies_bb, enemies_bb)
+def queen_moves(u64 bb, u64 empties_bb, u64 friendlies_bb):
+    return rook_moves(bb, empties_bb, friendlies_bb) | bishop_moves(bb, empties_bb, friendlies_bb)
+    #return traverse_bb(bb, DIRECTIONS, friendlies_bb, enemies_bb)
 
 
 @lru_cache(maxsize=None)
-def rook_moves(u64 bb, u64 friendlies_bb, u64 enemies_bb):
-    return traverse_bb(bb, HORIZONTAL_VERTICAL_MOVES, friendlies_bb, enemies_bb)
+def rook_moves(u64 bb, u64 empties_bb, u64 friendlies_bb):
+    return horizontal_vertical_moves(bb, empties_bb) & ~friendlies_bb
+   # return traverse_bb(bb, HORIZONTAL_VERTICAL_MOVES, friendlies_bb, enemies_bb)
 
 
 @lru_cache(maxsize=None)
-def bishop_moves(u64 bb, u64 friendlies_bb, u64 enemies_bb):
-    return traverse_bb(bb, DIAGONALS_MOVES, friendlies_bb, enemies_bb)
+def bishop_moves(u64 bb, u64 empties_bb, u64 friendlies_bb):
+    return diagonal_moves(bb, empties_bb) & ~friendlies_bb
+    #return traverse_bb(bb, DIAGONALS_MOVES, friendlies_bb, enemies_bb)
 
 
 @lru_cache(maxsize=None)
