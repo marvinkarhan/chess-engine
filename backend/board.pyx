@@ -8,33 +8,6 @@ import time
 import cProfile, pstats
 from functools import lru_cache
 
-
-
-@lru_cache(maxsize=None)
-def bitScanForward(u64 bb):
-  """
-    bitScanForward
-    @author Kim Walisch (2012)
-    @param bb bitboard to scan
-    @precondition bb != 0
-    @return index (0..63) of least significant one bit
-  """
-  return debruijn64_index64[((bb ^ (bb-1)) * debruijn64) >> 58]
-
-
-@lru_cache(maxsize=None)
-def get_lsb_array(u64 bb):
-    cdef list bbs = []
-    cdef u64 new_bb
-    while bb:
-        index = bitScanForward(bb)
-        new_bb = 1 << index
-        bbs.append(new_bb)
-        bb &= bb - 1
-    return bbs
-
-
-
 cdef class Board:
     cdef:
         dict pieces, current_opening_table
@@ -173,7 +146,7 @@ cdef class Board:
             lsb_array = get_lsb_array(amount)
             score += PIECE_VALUES[piece] * len(lsb_array)
             for position in lsb_array:
-                index = 63 - bitScanForward(position) # index from behind
+                index = 63 - position # index from behind
                 #print(index, piece, PIECE_SQUARE_TABLES[piece][index] )
 
                 score += PIECE_SQUARE_TABLES[piece][index] * (1 if piece.isupper() else -1)
@@ -283,93 +256,124 @@ cdef class Board:
         self.friendlies_bb = self.w_pieces_bb() if self.active_side else self.b_pieces_bb()
         self.enemies_bb = self.b_pieces_bb() if self.active_side else self.w_pieces_bb()
 
-    cdef u64 attacked_squares(self, bint active_side):
-        cdef u64 attacked_bb, friendlies_bb, enemies_bb, empty_bb, pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb
-        cdef list active_pieces
-        attacked_bb = 0
-
-        # swap friendlies and enemies locally
-        friendlies_bb = self.enemies_bb if active_side != self.active_side else self.friendlies_bb
-        enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
-        empty_bb = ~(friendlies_bb | enemies_bb) & FULL_BB_MASK
-
-        active_pieces = self.get_active_pieces(active_side)
-        # filter pieces in case they got removed (eg. in legal_moves_generator)
-        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = [
-            x & friendlies_bb for x in active_pieces]
-
-        attacked_bb |= king_moves(king_bb, friendlies_bb)
-        attacked_bb |= pawn_attacks(pawn_bb, active_side, friendlies_bb)
-        attacked_bb |= knight_moves(knight_bb, friendlies_bb)
-
-        for pieces_bb, move_func in zip([rook_bb, bishop_bb, queen_bb], SLIDING_MOVES):
-            for piece_bb in get_lsb_array(pieces_bb):
-                attacked_bb |= move_func(piece_bb, friendlies_bb, enemies_bb)
         
-        return attacked_bb
+    cdef u64 attackers(self, int square, bint active_side):
+        cdef u64 pot_attackers_bb, attackers_bb, move_bb, pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb, occupied_bb
+        
+        occupied_bb = self.enemies_bb | self.friendlies_bb
+        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(not active_side)
+        pot_attackers_bb = 0
+        pot_attackers_bb |= DIAGONALS_MOVE_BBS[square] & (bishop_bb | queen_bb)
+        pot_attackers_bb |= HORIZONTAL_VERTICAL_MOVE_BBS[square] & (rook_bb | queen_bb)
+        pot_attackers_bb |= KNIGHT_MOVE_BBS[square] & knight_bb
+        pot_attackers_bb |= PAWN_ATTACKS_BBS[square][not active_side] & pawn_bb
+        pot_attackers_bb |= KING_MOVES_BBS[square] & king_bb
+
+        attackers_bb = 0
+        for move_square in get_lsb_array(pot_attackers_bb):
+            if may_move(move_square, square, occupied_bb):
+                attackers_bb |= SQUARE_BBS[move_square]
+        return attackers_bb
+
 
     def pseudo_legal_moves_generator(self, bint active_side):
-        cdef u64 attacked_squares_bb, empty_bb, pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb, pawn, rook, bishop, queen, knight, way_bb, way_rook_bb, move
-        attacked_squares_bb = self.attacked_squares(not active_side)
-        empty_bb = ~(self.friendlies_bb | self.enemies_bb) & FULL_BB_MASK
-        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
-            active_side)
-        # pawn moves
-        for pawn in get_lsb_array(pawn_bb):
-            for move in get_lsb_array(pawn_attacks(pawn, active_side, self.friendlies_bb) & self.enemies_bb | pawn_moves(pawn, active_side, self.friendlies_bb, self.enemies_bb)):
-                # check for promotion
-                if move & R1:
-                    for promotion in PROMOTION_OPTIONS_B:
-                        yield Move(pawn, move, promotion)
-                elif move & R8:
-                    for promotion in PROMOTION_OPTIONS_W:
-                        yield Move(pawn, move, promotion)
-                else:
-                    yield Move(pawn, move)
+        cdef u64 pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb, king_attackers_bb, friendlies_bb, not_friendlies_bb, enemies_bb, occupied_bb, empty_bb, R2_or_R7, R3_or_R6, promotion_rank, bb, pawn_on_promotion_rank
+        cdef int king_square, direction, rook, bishop, queen, knight, move, ep_square
+        pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(active_side)
+        king_square = bitScanForward(king_bb)
+        king_attackers_bb = self.attackers(king_square, active_side)
+        friendlies_bb = self.enemies_bb if active_side != self.active_side else self.friendlies_bb
+        not_friendlies_bb = ~friendlies_bb
+        enemies_bb = self.friendlies_bb if active_side != self.active_side else self.enemies_bb
+        occupied_bb = friendlies_bb | enemies_bb
+        empty_bb = ~occupied_bb
+
+        # more than one king attacker = only king moves possible
+        if not pop_last_bb(king_attackers_bb):
+            # pawn moves
+            # generate vars to hande pawn colors easier
+            R2_or_R7 = R2 if active_side else R7
+            R3_or_R6 = R3 if active_side else R6
+            promotion_rank = R7 if active_side else R2
+            direction = 1 if active_side else -1
+            move_up_f = move_up if active_side else move_down
+            move_left_up_f = move_left_up if active_side else move_left_down
+            move_right_up_f = move_right_up if active_side else move_right_down
+            # normal moves
+            # pawns that can move one
+            pawn_not_on_promotion_rank = pawn_bb & ~promotion_rank
+            bb = move_up_f(pawn_not_on_promotion_rank) & empty_bb
+            for move in get_lsb_array(bb):
+                yield Move(move - 8 * direction, move)
+            # pawns that can move two
+            bb = move_up_f(R3_or_R6 & bb) & empty_bb
+            for move in get_lsb_array(bb):
+                yield Move(move - (8 << 1) * direction, move)
+            # promotions by move and by capture
+            pawn_on_promotion_rank = pawn_bb & promotion_rank
+            if pawn_on_promotion_rank:
+                promotion_options = PROMOTION_OPTIONS_W if active_side else PROMOTION_OPTIONS_B
+                bb = move_up_f(pawn_on_promotion_rank) & enemies_bb
+                for move in get_lsb_array(bb):
+                    for promotion in promotion_options:
+                        yield Move(move - 8 * direction, move, move_type.PROMOTION, promtion)
+                bb = move_left_up_f(pawn_on_promotion_rank) & enemies_bb
+                for move in get_lsb_array(bb):
+                    for promotion in promotion_options:
+                        yield Move(move - 7 * direction, move, move_type.PROMOTION, promtion)
+                bb = move_right_up_f(pawn_on_promotion_rank) & enemies_bb
+                for move in get_lsb_array(bb):
+                    for promotion in promotion_options:
+                        yield Move(move - 9 * direction, move, move_type.PROMOTION, promtion)
+            # captures
+            bb = move_left_up_f(pawn_on_promotion_rank) & enemies_bb
+            for move in get_lsb_array(bb):
+                yield Move(move - 7 * direction, move)
+            bb = move_right_up_f(pawn_on_promotion_rank) & enemies_bb
+            for move in get_lsb_array(bb):
+                yield Move(move - 9 * direction, move)
             # en passant
             if self.ep_square_bb:
-                move = pawn_attacks(pawn, active_side,
-                                    self.friendlies_bb) & self.ep_square_bb
-                if move:
-                    yield Move(pawn, move)
+                ep_square = bitScanForward(self.ep_square_bb)
+                bb = pawn_not_on_promotion_rank & PAWN_ATTACKS_BBS[ep_square][active_side]
+                for move in get_lsb_array(bb):
+                    yield Move(move, ep_square)
+            # rook moves
+            for rook in get_lsb_array(rook_bb):
+                for move in get_lsb_array(rook_moves(SQUARE_BBS[rook], friendlies_bb, enemies_bb)):
+                    yield Move(rook, move)
 
-        # rook moves
-        for rook in get_lsb_array(rook_bb):
-            for move in get_lsb_array(rook_moves(rook, self.friendlies_bb, self.enemies_bb)):
-                yield Move(rook, move)
+            # bishop moves
+            for bishop in get_lsb_array(bishop_bb):
+                for move in get_lsb_array(bishop_moves(SQUARE_BBS[bishop], friendlies_bb, enemies_bb)):
+                    yield Move(bishop, move)
 
-        # bishop moves
-        for bishop in get_lsb_array(bishop_bb):
-            for move in get_lsb_array(bishop_moves(bishop, self.friendlies_bb, self.enemies_bb)):
-                yield Move(bishop, move)
+            # queen moves
+            for queen in get_lsb_array(queen_bb):
+                for move in get_lsb_array(queen_moves(SQUARE_BBS[queen], friendlies_bb, enemies_bb)):
+                    yield Move(queen, move)
 
-        # queen moves
-        for queen in get_lsb_array(queen_bb):
-            for move in get_lsb_array(queen_moves(queen, self.friendlies_bb, self.enemies_bb)):
-                yield Move(queen, move)
+            # king moves (there is always only one king)
+            for knight in get_lsb_array(knight_bb):
+                for move in get_lsb_array(KNIGHT_MOVE_BBS[knight] & not_friendlies_bb):
+                    yield Move(knight, move)
+        # king moves
+        bb = KING_MOVES_BBS[king_square] & ~friendlies_bb
+        for move in get_lsb_array(bb):
+            yield Move(king_square, move, move_type.NORMAL)
+        # castle
+        if active_side:
+            # check if sth is in the way, dont check if is legal to castle
+            if self.castle_w_king_side and not (CASTLING_W_KING_SIDE_WAY & occupied_bb):
+                yield Move(king_square, CASTLING_W_KING_SIDE_SQUARE, move_type.CASTLING)
+            if self.castle_w_queen_side and not (CASTLING_W_QUEEN_SIDE_WAY & occupied_bb):
+                yield Move(king_square, CASTLING_W_QUEEN_SIDE_SQUARE, move_type.CASTLING)
+        else:
+            if self.castle_b_king_side and not (CASTLING_B_KING_SIDE_WAY & occupied_bb):
+                yield Move(king_square, CASTLING_B_KING_SIDE_SQUARE, move_type.CASTLING)
+            if self.castle_b_queen_side and not (CASTLING_B_QUEEN_SIDE_WAY & occupied_bb):
+                yield Move(king_square, CASTLING_B_QUEEN_SIDE_SQUARE, move_type.CASTLING)
 
-        # knight moves
-        for knight in get_lsb_array(knight_bb):
-            for move in get_lsb_array(knight_moves(knight, self.friendlies_bb)):
-                yield Move(knight, move)
-
-        # king moves (there is always only one king)
-        for move in get_lsb_array(king_moves(king_bb, self.friendlies_bb) & ~attacked_squares_bb):
-            yield Move(king_bb, move)
-
-        # king castle
-        if king_bb & ~attacked_squares_bb:
-            if active_side and self.castle_w_king_side or not active_side and self.castle_b_king_side:
-                way_bb = (move_right(king_bb) | move_rightx2(king_bb))
-                # check if there is sth in the way of the king
-                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb:
-                    yield Move(king_bb, move_rightx2(king_bb))
-            if active_side and self.castle_w_queen_side or not active_side and self.castle_b_queen_side:
-                way_bb = (move_left(king_bb) | move_leftx2(king_bb))
-                way_rook_bb = move_leftx3(king_bb)
-                # check if there is sth in the way of the king and if there is sth in the way of the rook
-                if (way_bb & ~self.friendlies_bb & ~attacked_squares_bb & ~self.enemies_bb) == way_bb and (way_rook_bb & ~self.friendlies_bb & ~self.enemies_bb) == way_rook_bb:
-                    yield Move(king_bb, move_leftx2(king_bb))
 
     def legal_moves_generator(self, active_side = None):
         cdef dict previous_board_state
@@ -381,17 +385,38 @@ cdef class Board:
                 self.restore(previous_board_state)
                 yield move
 
+    # new move generation based on king blockers and attackers (WIP)
+    # def new_legal_moves_generator(self):
+    #     cdef u64 king_bb, blockers_bb, attackers_bb
+    #     cdef int king_square
+        
+    #     pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(
+    #         not self.active_side)
+    #     true_king_bb = self.pieces['K' if self.active_side else 'k']
+    #     king_square = bitScanForward(true_king_bb)
+    #     blockers_bb = blockers(king_square, self.active_side, king_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb, pawn_bb, self.friendlies_bb)
+    #     attackers_bb = attackers(king_square, 0, self.friendlies_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb, pawn_bb)
+    #     self.print_bitboard(attackers_bb)
+    #     if attackers_bb:
+    #         for move in self._generate_evasions(king, attackers_bb, from_mask, to_mask):
+    #             if self._is_safe(king, blockers, move):
+    #                 yield move
+    #     else:
+    #         for move in self.pseudo_legal_moves_generator():
+    #             if self._is_safe(king, blockers, move):
+    #                 yield move
+    #     pass
+
+
     def stalemate(self):
-        is_king_attacked = self.attacked_squares(
-            not self.active_side) & self.pieces['K' if self.active_side else 'k']
+        king_attackers_bb = self.attackers(bitScanForward(self.pieces['K' if self.active_side else 'k']), self.active_side)
         has_legal_moves = len(list(self.legal_moves_generator()))
-        return bool(not has_legal_moves and not is_king_attacked)
+        return bool(not has_legal_moves and not king_attackers_bb)
 
     def checkmate(self):
-        is_king_attacked = self.attacked_squares(
-            not self.active_side) & self.pieces['K' if self.active_side else 'k']
+        king_attackers_bb = self.attackers(bitScanForward(self.pieces['K' if self.active_side else 'k']), self.active_side)
         has_legal_moves = len(list(self.legal_moves_generator()))
-        return bool(not has_legal_moves and is_king_attacked)
+        return bool(not has_legal_moves and king_attackers_bb)
 
     def get_moves_tree(self, depth: int):
         move_tree = {}
@@ -434,22 +459,23 @@ cdef class Board:
         self.ep_square_bb = restore_dict['ep_square_bb']
 
     def make_move(self, move: Move):
-        cdef u64 captured_pawn_bb, moved_upx2, moved_downx2, rook_square, target_square
+        cdef u64 captured_pawn_bb, moved_upx2, moved_downx2, rook_square, target_square, origin_square_bb, target_square_bb
         cdef bint capture
         cdef dict stored_board
         stored_board = self.store()
         # track if capture for half_moves
         capture = False
-        # print(move)
-        origin_piece = self.get_piece_on_square(move.origin_square_bb)
-        target_piece = self.get_piece_on_square(move.target_square_bb)
+        origin_square_bb =SQUARE_BBS[move.origin_square]
+        target_square_bb = SQUARE_BBS[move.target_square]
+        origin_piece = self.get_piece_on_square(origin_square_bb)
+        target_piece = self.get_piece_on_square(target_square_bb)
 
         # update bitboards to represent change
-        self.pieces[origin_piece] &= ~move.origin_square_bb
-        self.pieces[origin_piece] |= move.target_square_bb
+        self.pieces[origin_piece] &= ~origin_square_bb
+        self.pieces[origin_piece] |= target_square_bb
         # target piece only exists on capture
         if target_piece:
-            self.pieces[target_piece] &= ~move.target_square_bb
+            self.pieces[target_piece] &= ~target_square_bb
             capture = True
 
         # en passant
@@ -457,12 +483,12 @@ cdef class Board:
             # promotion
             if move.promotion:
                 # remove pawn
-                self.pieces[origin_piece] &= ~move.target_square_bb
+                self.pieces[origin_piece] &= ~target_square_bb
                 # add promoted piece
-                self.pieces[move.promotion] |= move.target_square_bb
+                self.pieces[move.promotion] |= target_square_bb
             # complete ep move
             if self.ep_square_bb:
-                if move.target_square_bb == self.ep_square_bb:
+                if target_square_bb == self.ep_square_bb:
                     captured_pawn_bb = move_down(
                         self.ep_square_bb) if self.active_side else move_up(self.ep_square_bb)
                     captured_pawn = self.get_piece_on_square(captured_pawn_bb)
@@ -471,31 +497,31 @@ cdef class Board:
                 self.ep_square_bb = 0
                 capture = True
             # check for resulting en passant
-            moved_upx2 = move.origin_square_bb & R2 and move.target_square_bb & R4
-            moved_downx2 = move.origin_square_bb & R7 and move.target_square_bb & R5
+            moved_upx2 = origin_square_bb & R2 and target_square_bb & R4
+            moved_downx2 = origin_square_bb & R7 and target_square_bb & R5
             if moved_upx2 or moved_downx2:
                 left_square_piece = self.get_piece_on_square(
-                    move_left(move.target_square_bb))
+                    move_left(target_square_bb))
                 right_square_piece = self.get_piece_on_square(
-                    move_right(move.target_square_bb))
+                    move_right(target_square_bb))
                 enemy_pawn_key = 'p' if self.active_side else 'P'
                 if left_square_piece == enemy_pawn_key or right_square_piece == enemy_pawn_key:
-                    self.ep_square_bb = move_down(move.target_square_bb & R4) | move_up(
-                        move.target_square_bb & R5)
+                    self.ep_square_bb = move_down(target_square_bb & R4) | move_up(
+                        target_square_bb & R5)
         else:
             self.ep_square_bb = 0
 
         # castles
         # check rook moves
         if origin_piece == 'R' or target_piece == 'R':
-            if move.origin_square_bb == (H & R1) or move.target_square_bb == (H & R1):
+            if origin_square_bb == (H & R1) or target_square_bb == (H & R1):
                 self.castle_w_king_side = False
-            elif move.origin_square_bb == (A & R1) or move.target_square_bb == (A & R1):
+            elif origin_square_bb == (A & R1) or target_square_bb == (A & R1):
                 self.castle_w_queen_side = False
         elif origin_piece == 'r' or target_piece == 'r':
-            if move.origin_square_bb == (H & R8) or move.target_square_bb == (H & R8):
+            if origin_square_bb == (H & R8) or target_square_bb == (H & R8):
                 self.castle_b_king_side = False
-            elif move.origin_square_bb == (A & R8) or move.target_square_bb == (A & R8):
+            elif origin_square_bb == (A & R8) or target_square_bb == (A & R8):
                 self.castle_b_queen_side = False
         # king moves
         if origin_piece in ['K', 'k']:
@@ -506,9 +532,9 @@ cdef class Board:
                 self.castle_b_king_side = False
                 self.castle_b_queen_side = False
             # check if king move was castle
-            if not (king_moves(move.origin_square_bb, self.friendlies_bb) & move.target_square_bb):
+            if not (king_moves(origin_square_bb, self.friendlies_bb) & target_square_bb):
                 # castle king side
-                if move.target_square_bb & move_rightx2(move.origin_square_bb):
+                if target_square_bb & move_rightx2(origin_square_bb):
                     # get rook
                     rook_square = (H & R1) if self.active_side else (H & R8)
                     target_square = move_leftx2(rook_square)
@@ -531,11 +557,11 @@ cdef class Board:
                     self.friendlies_bb |= target_square
 
         # update board properties
-        self.friendlies_bb &= ~move.origin_square_bb
-        self.friendlies_bb |= move.target_square_bb
+        self.friendlies_bb &= ~origin_square_bb
+        self.friendlies_bb |= target_square_bb
         if capture:
             self.half_moves = 0
-            self.enemies_bb &= ~move.target_square_bb
+            self.enemies_bb &= ~target_square_bb
         else:
             self.half_moves += 1
         if self.active_side:
@@ -544,7 +570,7 @@ cdef class Board:
         self.active_side = not self.active_side
         self.friendlies_bb, self.enemies_bb = self.enemies_bb, self.friendlies_bb
         # unmake move if it was illegal
-        if self.attacked_squares(self.active_side) & self.pieces['K' if not self.active_side else 'k']:
+        if self.attackers(bitScanForward(self.pieces['k' if self.active_side else 'K']), not self.active_side):
             self.restore(stored_board)
             return False
         return True

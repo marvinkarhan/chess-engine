@@ -3,6 +3,42 @@ from move cimport *
 from functools import lru_cache, cache
 import re
 
+@lru_cache(maxsize=None)
+def bitScanForward(u64 bb):
+  """
+    bitScanForward
+    @author Kim Walisch (2012)
+    @param bb bitboard to scan
+    @precondition bb != 0
+    @return index (0..63) of least significant one bit
+  """
+  return debruijn64_index64[((bb ^ (bb-1)) * debruijn64) >> 58]
+
+
+@lru_cache(maxsize=None)
+def get_lsb_bb_array(u64 bb):
+    cdef list bbs = []
+    cdef u64 new_bb
+    while bb:
+        index = bitScanForward(bb)
+        new_bb = 1 << index
+        bbs.append(new_bb)
+        bb &= bb - 1
+    return bbs
+
+def get_lsb_array(u64 bb):
+    cdef list array = []
+    while bb:
+        index = bitScanForward(bb)
+        array.append(index)
+        bb &= bb - 1
+    return array
+
+def pop_last_bb(u64 bb):
+    bb &= bb - 1
+    return bb
+
+
 """
 following functions are helper functions
 they take a bitboard (bb)
@@ -84,6 +120,8 @@ they take a bitboard (bb) containing one pice
 the bb must only contain one piece
 """
 HORIZONTAL_VERTICAL_MOVES = [move_left, move_right, move_up, move_down]
+HORIZONTAL_MOVES = [move_left, move_right]
+VERTICAL_MOVES = [move_up, move_down]
 DIAGONALS_MOVES = [move_left_up, move_left_down,
                    move_right_up, move_right_down]
 DIRECTIONS = HORIZONTAL_VERTICAL_MOVES + DIAGONALS_MOVES
@@ -98,152 +136,6 @@ KNIGHT_MOVES = [
     lambda x: move_downx2(move_right(x))
 ]
 
-"""
-Following Board Filling Functions are using the Kogge-Stone Algorithm
-"""
-# @lru_cache(maxsize=None)
-# def south_occluded(u64 bb, u64 empty_bb):
-#     bb |= empty_bb & (bb >> 8)
-#     empty_bb &= (empty_bb >> 8)
-#     bb |= empty_bb & (bb >> 16)
-#     empty_bb &= (empty_bb >> 16)
-#     bb |= empty_bb & (bb >> 32)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def north_occluded(u64 bb, u64 empty_bb):
-#     bb |= empty_bb & (bb << 8)
-#     empty_bb &= (empty_bb << 8)
-#     bb |= empty_bb & (bb << 16)
-#     empty_bb &= (empty_bb << 16)
-#     bb |= empty_bb & (bb << 32)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def west_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_H
-#     bb |= empty_bb & (bb << 1)
-#     empty_bb &= (empty_bb << 1)
-#     bb |= empty_bb & (bb << 2)
-#     empty_bb &= (empty_bb << 2)
-#     bb |= empty_bb & (bb << 4)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def no_we_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_H
-#     bb |= empty_bb & (bb << 9)
-#     empty_bb &= (empty_bb << 9)
-#     bb |= empty_bb & (bb << 18)
-#     empty_bb &= (empty_bb << 18)
-#     bb |= empty_bb & (bb << 36)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def so_we_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_H
-#     bb |= empty_bb & (bb >> 7)
-#     empty_bb &= (empty_bb >> 7)
-#     bb |= empty_bb & (bb >> 14)
-#     empty_bb &= (empty_bb >> 14)
-#     bb |= empty_bb & (bb >> 28)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def east_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_A
-#     bb |= empty_bb & (bb >> 1)
-#     empty_bb &= (empty_bb >> 1)
-#     bb |= empty_bb & (bb >> 2)
-#     empty_bb &= (empty_bb >> 2)
-#     bb |= empty_bb & (bb >> 4)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def so_ea_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_A
-#     bb |= empty_bb & (bb >> 9)
-#     empty_bb &= (empty_bb >> 9)
-#     bb |= empty_bb & (bb >> 18)
-#     empty_bb &= (empty_bb >> 18)
-#     bb |= empty_bb & (bb >> 36)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def no_ea_occluded(u64 bb, u64 empty_bb):
-#     empty_bb &= NOT_A
-#     bb |= empty_bb & (bb << 7)
-#     empty_bb &= (empty_bb << 7)
-#     bb |= empty_bb & (bb << 14)
-#     empty_bb &= (empty_bb << 14)
-#     bb |= empty_bb & (bb << 28)
-#     return bb
-
-
-# @lru_cache(maxsize=None)
-# def south_occluded_attacks(u64 bb, empty: int):
-#     return move_down(south_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def north_occluded_attacks(u64 bb, u64 empty):
-#     return move_up(north_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def east_occluded_attacks(u64 bb, u64 empty):
-#     return move_right(east_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def no_ea_occluded_attacks(u64 bb, empty: int):
-#     return move_right_up(no_ea_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def so_ea_occluded_attacks(u64 bb, empty: int):
-#     return move_right_down(so_ea_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def west_occluded_attacks(u64 bb,u64  empty):
-#     return move_left(west_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def so_we_occluded_attacks(u64 bb, empty: int):
-#     return move_left_down(so_we_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def no_we_occluded_attacks(u64 bb, empty: int):
-#     return move_left_up(no_we_occluded(bb, empty))
-
-
-# @lru_cache(maxsize=None)
-# def horizontal_vertical_moves(u64 bb,u64 empty_bb):
-#     cdef u64 acc = 0
-#     acc |= north_occluded_attacks(bb, empty_bb)
-#     acc |= east_occluded_attacks(bb, empty_bb)
-#     acc |= south_occluded_attacks(bb, empty_bb)
-#     acc |= west_occluded_attacks(bb, empty_bb)
-#     return acc
-
-# @lru_cache(maxsize=None)
-# def diagonal_moves(u64 bb, u64 empty_bb):
-#     cdef u64 acc = 0
-#     acc |= no_ea_occluded_attacks(bb, empty_bb)
-#     acc |= so_ea_occluded_attacks(bb, empty_bb)
-#     acc |= so_we_occluded_attacks(bb, empty_bb)
-#     acc |= no_we_occluded_attacks(bb, empty_bb)
-#     return acc
 def traverse_bb(bb: int, directions, friendlies_bb: int, enemies_bb: int):
     result_bb = 0
     for move_func in directions:
@@ -311,6 +203,31 @@ def pawn_attacks(u64 bb, int active_side, u64 friendlies_bb):
 
 
 SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
+
+cdef u64 in_between(u64 origin_bb, u64 target_bb):
+   return REY_BBS[origin_bb][target_bb]
+
+
+cpdef u64 may_move(u64 origin_bb, u64 target_bb, u64 occupied_bb):
+   return not in_between(origin_bb, target_bb) & occupied_bb
+
+
+def blockers(int square, bint active_side, u64 rook_bb, u64 knight_bb, u64 bishop_bb, u64 queen_bb, u64 king_bb, u64 pawn_bb, u64 friendlies_bb):
+    cdef u64 sliding_attackers_bb, blockers_bb, sliding_attacker_bb, blocker_bb, square_bb
+    square_bb = SQUARE_BBS[square]
+    # sliding pieces
+    sliding_attackers_bb = 0
+    sliding_attackers_bb |= DIAGONALS_MOVE_BBS[square] & (bishop_bb | queen_bb)
+    sliding_attackers_bb |= HORIZONTAL_VERTICAL_MOVE_BBS[square] & (rook_bb | queen_bb)
+
+    blockers_bb = 0
+    for sliding_attacker_bb in get_lsb_array(sliding_attackers_bb):
+        blocker_bb = in_between(square_bb, sliding_attacker_bb) & friendlies_bb
+        # is only one piece
+        if blocker_bb and SQUARE_BBS[bitScanForward(blocker_bb)] == blocker_bb:
+            blockers_bb |= blocker_bb
+
+    return blockers_bb
 
 
 def uci_to_Move(uci: str):

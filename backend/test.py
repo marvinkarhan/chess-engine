@@ -40,7 +40,7 @@ class Perft(unittest.TestCase):
 
     def test_perft2_promotion(self):
         board = Board('8/1k5P/8/8/8/8/8/7K w - - 0 1')
-        moves_tree = board.get_moves_tree(3)
+        moves_tree = board.get_moves_tree(2)
         _count = count_root(moves_tree)
         self.assertEqual(_count, 50)
 
