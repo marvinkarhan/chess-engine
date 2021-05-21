@@ -1,8 +1,8 @@
 #ifndef WSListener_hpp
 #define WSListener_hpp
 
-#include "../oatpp-websocket/ConnectionHandler.hpp"
-#include "../oatpp-websocket/WebSocket.hpp"
+#include "oatpp-websocket/ConnectionHandler.hpp"
+#include "oatpp-websocket/WebSocket.hpp"
 
 /**
  * WebSocket listener listens on incoming WebSocket events.
