@@ -1,14 +1,11 @@
 #include "WSListener.hpp"
 #include <map>
-
+#include "BoardEvents.hpp"
+#include "SocketResponse.hpp"
+#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // WSListener
 
-enum EVENTS
-{
-  NEW_BOARD
-};
-static const std::string enum_str[1] = {"new_board"};
 std::map<long, int> SessionMap;
 void WSListener::onPing(const WebSocket &socket, const oatpp::String &message)
 {
@@ -44,7 +41,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
 
     //OATPP_LOGD(TAG, "onMessage message='%s'", wholeMessage->c_str());
     oatpp::String startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    int compare = enum_str[NEW_BOARD].compare(wholeMessage->c_str());
+    int compare = BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD].compare(wholeMessage->c_str());
     if (compare == 0)
     {
       SessionMap[pointerToSession] += 1;
@@ -52,7 +49,14 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       {
         OATPP_LOGD(TAG, "Connection %d: %d", x.first,x.second);
       }
-      socket.sendOneFrameText("{\"fen\": \"" + startPos + "\", \"moves\": [\"A1\"], \"evaluation\": \"0\"}");
+      auto socketResponse = SocketResponse::createShared();
+      socketResponse->fen = startPos;
+      socketResponse->moves = {"A1","A2","A3"};
+      socketResponse->evaluation = 0;
+      socketResponse->aiMoves = {""};
+      auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+      oatpp::String json = jsonObjectMapper->writeToString(socketResponse); 
+      socket.sendOneFrameText(json);
     }
     /* Send message in reply */
     //socket.sendOneFrameText( "Hello from oatpp!: " + wholeMessage);
