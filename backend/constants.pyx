@@ -23,6 +23,29 @@ cdef u64 R6 = 0xff0000000000
 cdef u64 R7 = 0xff000000000000
 cdef u64 R8 = 0xff00000000000000
 
+
+cdef u64 CASTLING_W_KING_SIDE_WAY = 0x6
+cdef u64 CASTLING_W_KING_SIDE_KING_WAY = 0xe
+cdef u64 CASTLING_W_KING_SIDE_SQUARE = 1
+
+cdef u64 CASTLING_W_QUEEN_SIDE_WAY = 0x70
+cdef u64 CASTLING_W_QUEEN_SIDE_KING_WAY = 0x38
+cdef u64 CASTLING_W_QUEEN_SIDE_SQUARE = 5
+
+cdef u64 CASTLING_B_KING_SIDE_WAY = 0x600000000000000
+cdef u64 CASTLING_B_KING_SIDE_KING_WAY = 0xe00000000000000
+cdef u64 CASTLING_B_KING_SIDE_SQUARE = 57
+
+cdef u64 CASTLING_B_QUEEN_SIDE_WAY = 0x7000000000000000
+cdef u64 CASTLING_B_QUEEN_SIDE_KING_WAY = 0x3800000000000000
+cdef u64 CASTLING_B_QUEEN_SIDE_SQUARE = 61
+cdef u64[4][2] CASTELING_ARR = [
+      [CASTLING_W_KING_SIDE_SQUARE, CASTLING_W_KING_SIDE_KING_WAY],
+      [CASTLING_W_QUEEN_SIDE_SQUARE, CASTLING_W_QUEEN_SIDE_KING_WAY],
+      [CASTLING_B_KING_SIDE_SQUARE, CASTLING_B_KING_SIDE_KING_WAY],
+      [CASTLING_B_QUEEN_SIDE_SQUARE, CASTLING_B_QUEEN_SIDE_KING_WAY],
+]
+
 cdef u64 debruijn64 = 0x03f79d71b4cb0a89
 cdef int[64] debruijn64_index64 = [
     0, 47,  1, 56, 48, 27,  2, 60,
@@ -172,6 +195,77 @@ PIECE_SQUARE_TABLES = {
 PROMOTION_OPTIONS_W = ['N', 'B', 'Q', 'R']
 PROMOTION_OPTIONS_B = ['n', 'b', 'q', 'r']
 
+from move_helper import *
+
+# precalculate moves for squares
+DIAGONALS_MOVE_BBS = [traverse_bb(1 << i, DIAGONALS_MOVES, 0, 0) for i in range(0, 64)]
+HORIZONTAL_VERTICAL_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
+HORIZONTAL_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_MOVES, 0, 0) for i in range(0, 64)]
+VERTICAL_MOVE_BBS = [traverse_bb(1 << i, VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
+ROOK_MOVE_BBS = HORIZONTAL_VERTICAL_MOVE_BBS
+BISHOP_MOVE_BBS = DIAGONALS_MOVE_BBS
+QUEEN_MOVE_BBS = [HORIZONTAL_VERTICAL_MOVE_BBS[i] | DIAGONALS_MOVE_BBS[i] for i in range(0, 64)]
+KNIGHT_MOVE_BBS  = [knight_moves(1 << i, 0) for i in range(0, 64)]
+PAWN_MOVE_BBS = [[pawn_moves(1 << i, j, 0, 0) for j in [0, 1]] for i in range(0, 64)]
+PAWN_ATTACKS_BBS = [[pawn_attacks(1 << i, j, 0) for j in [0, 1]] for i in range(0, 64)]
+KING_MOVES_BBS = [king_moves(1 << i, 0) for i in range(0, 64)]
+SQUARE_BBS = [1 << i for i in range(0, 64)]
+
+
+def arr_Rectangular():
+      cdef u64[64][64] rays
+      rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
+      for i, bb_1 in enumerate(SQUARE_BBS):
+            for j, bb_2 in enumerate(SQUARE_BBS):
+                  if DIAGONALS_MOVE_BBS[i] & bb_2:
+                        way_bb_1 = traverse_bb(bb_1, [move_left_up], 0, bb_2)
+                        way_bb_2 = traverse_bb(bb_1, [move_left_down], 0, bb_2)
+                        way_bb_3 = traverse_bb(bb_1, [move_right_up], 0, bb_2)
+                        way_bb_4 = traverse_bb(bb_1, [move_right_down], 0, bb_2)
+                        if way_bb_1 & bb_2:
+                              rays[i][j] = way_bb_1 & ~bb_2
+                        elif way_bb_2 & bb_2:
+                              rays[i][j] = way_bb_2 & ~bb_2
+                        elif way_bb_3 & bb_2:
+                              rays[i][j] = way_bb_3 & ~bb_2
+                        elif way_bb_4 & bb_2:
+                              rays[i][j] = way_bb_4 & ~bb_2
+                  elif HORIZONTAL_MOVE_BBS[i] & bb_2:
+                        way_bb_1 = traverse_bb(bb_1, [move_left], 0, bb_2)
+                        way_bb_2 = traverse_bb(bb_1, [move_right], 0, bb_2)
+                        if way_bb_1 & bb_2:
+                              rays[i][j] = way_bb_1 & ~bb_2
+                        elif way_bb_2 & bb_2:
+                              rays[i][j] = way_bb_2 & ~bb_2
+                  elif VERTICAL_MOVE_BBS[i] & bb_2:
+                        way_bb_1 = traverse_bb(bb_1, [move_up], 0, bb_2)
+                        way_bb_2 = traverse_bb(bb_1, [move_down], 0, bb_2)
+                        if way_bb_1 & bb_2:
+                              rays[i][j] = way_bb_1 & ~bb_2
+                        elif way_bb_2 & bb_2:
+                              rays[i][j] = way_bb_2 & ~bb_2
+                  else:
+                        rays[i][j] = 0
+      return rays
+
+cdef u64[64][64] REY_BBS = arr_Rectangular()
+
+def arr_Rectangular_lines():
+      cdef u64[64][64] rays
+      rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
+      for i, bb_1 in enumerate(SQUARE_BBS):
+            for j, bb_2 in enumerate(SQUARE_BBS):
+                  if DIAGONALS_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = DIAGONALS_MOVE_BBS[i] & DIAGONALS_MOVE_BBS[j] | bb_1 | bb_2
+                  elif HORIZONTAL_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2
+                  elif VERTICAL_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j] | bb_1 | bb_2
+                  else:
+                        rays[i][j] = 0
+      return rays
+
+cdef u64[64][64] LINE_BBS = arr_Rectangular_lines()
 
 # Based on https://en.wikipedia.org/wiki/Linear_congruential_generator
 cdef lcg(u64 modulus, u64 a, u64 b, u64 c, u64 seed, int amount):

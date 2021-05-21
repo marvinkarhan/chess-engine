@@ -1,7 +1,45 @@
+# cython: profile=True
 from constants cimport *
 from move cimport *
 from functools import lru_cache, cache
 import re
+
+@lru_cache(maxsize=None)
+def bitScanForward(u64 bb):
+  """
+    bitScanForward
+    @author Kim Walisch (2012)
+    @param bb bitboard to scan
+    @precondition bb != 0
+    @return index (0..63) of least significant one bit
+  """
+  return debruijn64_index64[((bb ^ (bb-1)) * debruijn64) >> 58]
+
+
+@lru_cache(maxsize=None)
+def get_lsb_bb_array(u64 bb):
+    cdef list bbs = []
+    cdef u64 new_bb
+    while bb:
+        index = bitScanForward(bb)
+        new_bb = 1 << index
+        bbs.append(new_bb)
+        bb &= bb - 1
+    return bbs
+
+@lru_cache(maxsize=None)
+def get_lsb_array(u64 bb):
+    cdef list array = []
+    while bb:
+        index = bitScanForward(bb)
+        array.append(index)
+        bb &= bb - 1
+    return array
+
+def pop_last_bb(u64 bb):
+    bb &= bb - 1
+    return bb
+
 
 """
 following functions are helper functions
@@ -69,6 +107,8 @@ they take a bitboard (bb) containing one pice
 the bb must only contain one piece
 """
 HORIZONTAL_VERTICAL_MOVES = [move_left, move_right, move_up, move_down]
+HORIZONTAL_MOVES = [move_left, move_right]
+VERTICAL_MOVES = [move_up, move_down]
 DIAGONALS_MOVES = [move_left_up, move_left_down,
                    move_right_up, move_right_down]
 DIRECTIONS = HORIZONTAL_VERTICAL_MOVES + DIAGONALS_MOVES
@@ -248,6 +288,13 @@ def pawn_attacks(u64 bb, int active_side, u64 friendlies_bb):
 
 SLIDING_MOVES = [rook_moves, bishop_moves, queen_moves]
 
+cpdef u64 in_between(int origin, int target):
+   return REY_BBS[origin][target]
+
+
+cpdef u64 may_move(int origin, int target, u64 occupied_bb):
+   return not in_between(origin, target) & occupied_bb
+
 
 def uci_to_Move(uci: str):
     m = re.match('([a-h][1-8])([a-h][1-8])(.)?', uci)
@@ -260,7 +307,6 @@ def uci_to_Move(uci: str):
     if promotion is not None and promotion not in PROMOTION_OPTIONS_W + PROMOTION_OPTIONS_B:
         print('Invalid promotion in uci')
         return
-    origin_square_bb = 1 << ALGEBRAIC_TO_INDEX[m.group(1)]
-    target_square_bb = 1 << ALGEBRAIC_TO_INDEX[m.group(2)]
-    print(uci, Move(origin_square_bb, target_square_bb, promotion), ALGEBRAIC_TO_INDEX[m.group(1)], m.group(2))
-    return Move(origin_square_bb, target_square_bb, promotion)
+    origin_square = ALGEBRAIC_TO_INDEX[m.group(1)]
+    target_square = ALGEBRAIC_TO_INDEX[m.group(2)]
+    return Move(origin_square, target_square, prmtn=promotion)
