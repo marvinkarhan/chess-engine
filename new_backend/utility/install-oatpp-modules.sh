@@ -12,6 +12,8 @@ MODULE_NAME="oatpp"
 
 git clone --depth=1 https://github.com/oatpp/$MODULE_NAME
 
+cp -R ./$MODULE_NAME/src/$MODULE_NAME ./../src/
+
 cd $MODULE_NAME
 mkdir build
 cd build
@@ -27,6 +29,9 @@ cd ../../
 MODULE_NAME="oatpp-websocket"
 
 git clone --depth=1 https://github.com/oatpp/$MODULE_NAME
+
+cp -R ./$MODULE_NAME/src/$MODULE_NAME ./../src/
+
 
 cd $MODULE_NAME
 mkdir build
