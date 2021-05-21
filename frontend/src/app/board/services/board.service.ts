@@ -27,7 +27,10 @@ export class BoardService implements OnDestroy {
   public evaluation$ = this._evaluation$.asObservable();
   private _subs$ = new Subscription();
 
-  constructor(private chessApi: ChessApiService, private _boardAudio: BoardAudioService) {
+  constructor(
+    private chessApi: ChessApiService,
+    private _boardAudio: BoardAudioService
+  ) {
     this._setupBoardInformationListener();
   }
 
@@ -42,7 +45,7 @@ export class BoardService implements OnDestroy {
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
     this.chessApi.requestNewMove(uciMove);
-    this._clearMoves()
+    this._clearMoves();
     // let pieces = this._pieces$.value;
     // pieces[newPositionIndex] = pieces[oldPositionIndex];
     // pieces[oldPositionIndex] = undefined;
@@ -51,28 +54,30 @@ export class BoardService implements OnDestroy {
   private _clearMoves() {
     let currentPieces = this._pieces$.value;
     currentPieces.forEach((piece) => {
-      if(piece) {
-        piece.possibleTargetSquares = []
+      if (piece) {
+        piece.possibleTargetSquares = [];
       }
-    })
-    this._pieces$.next(currentPieces)
+    });
+    this._pieces$.next(currentPieces);
   }
 
-  private _setupBoardInformationListener() : void {
+  private _setupBoardInformationListener(): void {
     this._subs$.add(
-      this.chessApi.onNewBoardInformation().subscribe((boardInformation: BoardInformation) => {
-        let pieces = this._loadFENString(boardInformation.fen);
-        this._uciToBoard(pieces, boardInformation.moves);
-        this._pieces$.next(pieces);
-        this._evaluation$.next(boardInformation.evaluation);
-        this._boardAudio.playMoveSound()
-        console.log('DEBUG BOARDINFO', boardInformation)
-      })
-    )
+      this.chessApi
+        .onNewBoardInformation()!
+        .subscribe((boardInformation) => {
+          let pieces = this._loadFENString(boardInformation.fen);
+          this._uciToBoard(pieces, boardInformation.moves);
+          this._pieces$.next(pieces);
+          this._evaluation$.next(boardInformation.evaluation);
+          this._boardAudio.playMoveSound();
+          console.log('DEBUG BOARDINFO', boardInformation);
+        })
+    );
   }
 
   requestNewBoard() {
-    this.chessApi.requestNewBoard();
+    this.chessApi.connect().subscribe(()=>this.chessApi.requestNewBoard());
   }
 
   private _uciToBoard(currentPieces: Board, uciMoves: string[]) {
@@ -80,9 +85,11 @@ export class BoardService implements OnDestroy {
       let startSquare: string = uciMove[0] + uciMove[1];
       let targetSquare = uciMove[2] + uciMove[3];
       let promotion = uciMove[4] ? true : false || false;
-      const length: number = Object.keys(ALGEBRAIC_TO_INDEX).length
-      let startSquareIndex: number = length - ALGEBRAIC_TO_INDEX[startSquare] - 1;
-      let targetSquareIndex: number = length - ALGEBRAIC_TO_INDEX[targetSquare] - 1;
+      const length: number = Object.keys(ALGEBRAIC_TO_INDEX).length;
+      let startSquareIndex: number =
+        length - ALGEBRAIC_TO_INDEX[startSquare] - 1;
+      let targetSquareIndex: number =
+        length - ALGEBRAIC_TO_INDEX[targetSquare] - 1;
       currentPieces[startSquareIndex]?.possibleTargetSquares.push(
         targetSquareIndex
       );
@@ -122,7 +129,7 @@ export class BoardService implements OnDestroy {
           pieces.push({
             type: (color + char.toLowerCase()) as PieceTypes,
             possibleTargetSquares: [],
-            promotion: false
+            promotion: false,
           });
         }
       });
