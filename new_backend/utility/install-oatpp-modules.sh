@@ -15,6 +15,7 @@ MODULE_NAME="oatpp"
 git clone --depth=1 https://github.com/oatpp/$MODULE_NAME
 
 cp -R ./$MODULE_NAME/src/$MODULE_NAME ./../src/vendor/$MODULE_NAME
+cp -R ./$MODULE_NAME/src/$MODULE_NAME-test ./../src/vendor/$MODULE_NAME-test
 
 cd $MODULE_NAME
 mkdir build
