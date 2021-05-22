@@ -4,4 +4,4 @@ backend/build
 *.pyd
 build
 utility/build
-src/vendor
+new_backend/src/vendor
