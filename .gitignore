@@ -2,3 +2,6 @@
 backend/__pycache__
 backend/build
 *.pyd
+build
+utility/build
+src/vendor
