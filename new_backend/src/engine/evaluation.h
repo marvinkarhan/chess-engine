@@ -1,5 +1,4 @@
-#ifndef EVALUATION_H
-#define EVALUATION_H
+#pragma once
 
 enum PieceValues : int
 {
@@ -114,4 +113,4 @@ constexpr int PIECE_SQUARE_TABLES[12][64] = {
      -30, -40, -40, -50, -50, -40, -40, -30,
      -30, -40, -40, -50, -50, -40, -40, -30,
      -30, -40, -40, -50, -50, -40, -40, -30}};
-#endif /* EVALUATION_H */
+     

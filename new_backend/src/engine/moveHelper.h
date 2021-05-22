@@ -1,5 +1,4 @@
-#ifndef MOVE_HELPER_H
-#define MOVE_HELPER_H
+#pragma once
 
 #include "constants.h"
 #include <algorithm>
@@ -34,4 +33,14 @@ Direction KNIGHT_MOVES[8][3] = {
 
 inline BB traverse_bb(BB bb, Direction directions[], BB friendlies_bb, BB enemies_bb);
 
-#endif /* MOVE_HELPER_H */
+inline BB rook_moves(BB bb, BB empties_bb, BB friendlies_bb);
+
+inline BB bishop_moves(BB bb, BB empties_bb, BB friendlies_bb);
+
+inline BB queen_moves(BB bb, BB empties_bb, BB friendlies_bb);
+
+inline BB king_moves(BB bb, BB friendlies_bb);
+
+inline BB knight_moves(BB bb, BB friendlies_bb);
+
+inline BB pawn_attacks(BB bb, int active_side, BB friendlies_bb);

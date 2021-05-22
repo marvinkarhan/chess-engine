@@ -1,8 +1,7 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#pragma once
 #include <stdint.h>
 #include <string>
-#include "moveHelper.h"
+
 typedef uint64_t BB;
 typedef uint64_t u64;
 typedef std::string FenString;
@@ -258,102 +257,14 @@ BB PAWN_ATTACKS_BBS[64][2];
 BB REY_BBS[64][64];
 BB LINE_BBS[64][64];
 
-void initConstants() {
-    for (int i = 0; i <= 63; i++)
-        SQUARE_BBS[i] = 1ULL << i;
-    
-    for (int i = 0; i <= 63; i++)
-        HORIZONTAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], HORIZONTAL_MOVES, 0, 0);
-
-    for (int i = 0; i <= 63; i++)
-        VERTICAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], VERTICAL_MOVES, 0, 0);
-
-    for (int i = 0; i <= 63; i++)
-        ROOK_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], HORIZONTAL_VERTICAL_MOVES, 0, 0);
-
-    for (int i = 0; i <= 63; i++)
-        BISHOP_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], DIAGONALS_MOVES, 0, 0);
-
-    for (int i = 0; i <= 63; i++)
-        QUEEN_MOVE_BBS[i] = ROOK_MOVE_BBS[i] | BISHOP_MOVE_BBS[i];
-
-    for (int i = 0; i <= 63; i++)
-        KNIGHT_MOVE_BBS[i] = knight_moves(SQUARE_BBS[i], 0);
-
-    for (int i = 0; i <= 63; i++)
-        KING_MOVES_BBS[i] = king_moves(SQUARE_BBS[i], 0);
-
-    for (int i = 0; i <= 63; i++) {
-        for (int j = 0; j <= 1; j++)
-            PAWN_ATTACKS_BBS[i][j] = pawn_attacks(SQUARE_BBS[i], j, 0);
-    }
-
-    initArrRectangular();
-
-    initArrRectangularLines();
-}
-
-void initArrRectangular() {
-    for (int i = 0; i <= 63; i++) {
-        BB bb_1 = SQUARE_BBS[i];
-        for (int j = 0; j <= 63; j++) {
-            BB bb_2 = SQUARE_BBS[j];
-            if (BISHOP_MOVE_BBS[i] & bb_2) {
-                BB way_bb_1 = traverse_bb(bb_1, new Direction[] {LEFT_UP}, 0, bb_2);
-                BB way_bb_2 = traverse_bb(bb_1, new Direction[] {LEFT_DOWN}, 0, bb_2);
-                BB way_bb_3 = traverse_bb(bb_1, new Direction[] {RIGHT_UP}, 0, bb_2);
-                BB way_bb_4 = traverse_bb(bb_1, new Direction[] {RIGHT_DOWN}, 0, bb_2);
-                if (way_bb_1 & bb_2)
-                        REY_BBS[i][j] = way_bb_1 & ~bb_2;
-                else if (way_bb_2 & bb_2)
-                        REY_BBS[i][j] = way_bb_2 & ~bb_2;
-                else if (way_bb_3 & bb_2)
-                        REY_BBS[i][j] = way_bb_3 & ~bb_2;
-                else if (way_bb_4 & bb_2)
-                        REY_BBS[i][j] = way_bb_4 & ~bb_2;
-            } else if (HORIZONTAL_MOVE_BBS[i] & bb_2) {
-                BB way_bb_1 = traverse_bb(bb_1, new Direction[] {LEFT}, 0, bb_2);
-                BB way_bb_2 = traverse_bb(bb_1, new Direction[] {RIGHT}, 0, bb_2);
-                if (way_bb_1 & bb_2)
-                    REY_BBS[i][j] = way_bb_1 & ~bb_2;
-                else if (way_bb_2 & bb_2)
-                    REY_BBS[i][j] = way_bb_2 & ~bb_2;
-            } else if (VERTICAL_MOVE_BBS[i] & bb_2) {
-                BB way_bb_1 = traverse_bb(bb_1, new Direction[] {UP}, 0, bb_2);
-                BB way_bb_2 = traverse_bb(bb_1, new Direction[] {DOWN}, 0, bb_2);
-                if (way_bb_1 & bb_2)
-                    REY_BBS[i][j] = way_bb_1 & ~bb_2;
-                else if (way_bb_2 & bb_2)
-                    REY_BBS[i][j] = way_bb_2 & ~bb_2;
-            } else
-                REY_BBS[i][j] = 0;
-        }
-    }
-}
-
-void initArrRectangularLines() {
-    for (int i = 0; i <= 63; i++) {
-        BB bb_1 = SQUARE_BBS[i];
-        for (int j = 0; j <= 63; j++) {
-            BB bb_2 = SQUARE_BBS[j];
-            if (BISHOP_MOVE_BBS[i] & bb_2)
-                LINE_BBS[i][j] = BISHOP_MOVE_BBS[i] & BISHOP_MOVE_BBS[j] | bb_1 | bb_2;
-            else if (HORIZONTAL_MOVE_BBS[i] & bb_2)
-                LINE_BBS[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2;
-            else if (VERTICAL_MOVE_BBS[i] & bb_2)
-                LINE_BBS[i][j] = VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j] | bb_1 | bb_2;
-            else
-                LINE_BBS[i][j] = 0;
-        }
-    }
-}
+void initConstants();
 
 /** Based on https: //en.wikipedia.org/wiki/Linear_congruential_generator */
 constexpr u64 lcg(u64 seed)
 {
     return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
 }
-constexpr int ZOBRIST_TABLE[781];
+// constexpr int ZOBRIST_TABLE[781];
 
 // EVALUATE_TABLE = {}
 
@@ -361,5 +272,3 @@ constexpr int ZOBRIST_TABLE[781];
 
 // with open('opening-extractor/output/openings.json') as json_file:
 //     OPENING_TABLE = json.load(json_file)
-
-#endif // CONSTANTS_H

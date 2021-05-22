@@ -4,6 +4,7 @@
 #include <regex>
 #include <string>
 
+
 inline int bitScanForward(BB bb) {
   /* OLD (NOT C++ Way) */
   // """
@@ -13,10 +14,10 @@ inline int bitScanForward(BB bb) {
   //   @precondition bb != 0
   //   @return index (0..63) of least significant one bit
   // """
-  // return debruijn64_index64[((bb ^ (bb-1)) * debruijn64) >> 58]
-  unsigned long index;
-  _BitScanForward64(&index, bb);
-  return index;
+  return DEBRUIJN_INDEX[((bb ^ (bb-1)) * DEBRUIJN) >> 58];
+//   unsigned long index;
+//   _BitScanForward64(&index, bb);
+//   return index;
 }
 
 inline int pop_lsb(BB& bb) {
@@ -239,11 +240,11 @@ inline BB pawn_attacks(BB bb, int active_side, BB friendlies_bb) {
     return (move(bb, LEFT_DOWN) | move(bb, RIGHT_DOWN)) & ~friendlies_bb;
 }
 
-constexpr BB in_between(int origin, int target) {
+inline BB in_between(int origin, int target) {
    return REY_BBS[origin][target];
 }
 
-constexpr BB may_move(int origin, int target, BB occupied_bb) {
+inline BB may_move(int origin, int target, BB occupied_bb) {
    return !(in_between(origin, target) & occupied_bb);
 }
 
