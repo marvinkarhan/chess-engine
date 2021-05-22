@@ -274,8 +274,8 @@ cdef class Board:
         pawn_bb, rook_bb, knight_bb, bishop_bb, queen_bb, king_bb = self.get_active_pieces(not active_side)
         pot_attackers_bb = 0
         if not exclude_sliders:
-            pot_attackers_bb |= DIAGONALS_MOVE_BBS[square] & (bishop_bb | queen_bb)
-            pot_attackers_bb |= HORIZONTAL_VERTICAL_MOVE_BBS[square] & (rook_bb | queen_bb)
+            pot_attackers_bb |= BISHOP_MOVE_BBS[square] & (bishop_bb | queen_bb)
+            pot_attackers_bb |= ROOK_MOVE_BBS[square] & (rook_bb | queen_bb)
         if not only_sliders:
             pot_attackers_bb |= KNIGHT_MOVE_BBS[square] & knight_bb
             pot_attackers_bb |= PAWN_ATTACKS_BBS[square][active_side] & pawn_bb
@@ -678,7 +678,7 @@ cdef class Board:
                 self.castle_b_king_side = False
                 self.castle_b_queen_side = False
             # check if king move was castle
-            if not (king_moves(origin_square_bb, self.friendlies_bb) & target_square_bb):
+            if not (KING_MOVES_BBS[king_square] & ~self.friendlies_bb & target_square_bb):
                 # castle king side
                 if target_square_bb & move_rightx2(origin_square_bb):
                     # get rook

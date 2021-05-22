@@ -2,6 +2,7 @@
 #define CONSTANTS_H
 #include <stdint.h>
 #include <string>
+#include "moveHelper.h"
 typedef uint64_t BB;
 typedef uint64_t u64;
 typedef std::string FenString;
@@ -49,7 +50,7 @@ enum File : int
     H
 };
 
-enum Masks : BB
+enum Mask : BB
 {
     FULL = 0xffffffffffffffff,
     A_FILE = 0x8080808080808080,
@@ -245,73 +246,107 @@ const std::string SQUARE_TO_ALGEBRAIC[64] = {
 
 // TODO MARVIN
 // #precalculate moves for squares
-// DIAGONALS_MOVE_BBS = [traverse_bb(1 << i, DIAGONALS_MOVES, 0, 0) for i in range(0, 64)]
-// HORIZONTAL_VERTICAL_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
-// HORIZONTAL_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_MOVES, 0, 0) for i in range(0, 64)]
-// VERTICAL_MOVE_BBS = [traverse_bb(1 << i, VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
-// ROOK_MOVE_BBS = HORIZONTAL_VERTICAL_MOVE_BBS
-// BISHOP_MOVE_BBS = DIAGONALS_MOVE_BBS
-// QUEEN_MOVE_BBS = [HORIZONTAL_VERTICAL_MOVE_BBS[i] | DIAGONALS_MOVE_BBS[i] for i in range(0, 64)]
-// KNIGHT_MOVE_BBS  = [knight_moves(1 << i, 0) for i in range(0, 64)]
-// PAWN_MOVE_BBS = [[pawn_moves(1 << i, j, 0, 0) for j in [0, 1]] for i in range(0, 64)]
-// PAWN_ATTACKS_BBS = [[pawn_attacks(1 << i, j, 0) for j in [0, 1]] for i in range(0, 64)]
-// KING_MOVES_BBS = [king_moves(1 << i, 0) for i in range(0, 64)]
-// SQUARE_BBS = [1 << i for i in range(0, 64)]
+BB SQUARE_BBS[64];
+BB HORIZONTAL_MOVE_BBS[64];
+BB VERTICAL_MOVE_BBS[64];
+BB ROOK_MOVE_BBS[64];
+BB BISHOP_MOVE_BBS[64];
+BB QUEEN_MOVE_BBS[64];
+BB KNIGHT_MOVE_BBS[64];
+BB KING_MOVES_BBS[64];
+BB PAWN_ATTACKS_BBS[64][2];
+BB REY_BBS[64][64];
+BB LINE_BBS[64][64];
 
-// def arr_Rectangular():
-//       cdef u64[64][64] rays
-//       rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
-//       for i, bb_1 in enumerate(SQUARE_BBS):
-//             for j, bb_2 in enumerate(SQUARE_BBS):
-//                   if DIAGONALS_MOVE_BBS[i] & bb_2:
-//                         way_bb_1 = traverse_bb(bb_1, [move_left_up], 0, bb_2)
-//                         way_bb_2 = traverse_bb(bb_1, [move_left_down], 0, bb_2)
-//                         way_bb_3 = traverse_bb(bb_1, [move_right_up], 0, bb_2)
-//                         way_bb_4 = traverse_bb(bb_1, [move_right_down], 0, bb_2)
-//                         if way_bb_1 & bb_2:
-//                               rays[i][j] = way_bb_1 & ~bb_2
-//                         elif way_bb_2 & bb_2:
-//                               rays[i][j] = way_bb_2 & ~bb_2
-//                         elif way_bb_3 & bb_2:
-//                               rays[i][j] = way_bb_3 & ~bb_2
-//                         elif way_bb_4 & bb_2:
-//                               rays[i][j] = way_bb_4 & ~bb_2
-//                   elif HORIZONTAL_MOVE_BBS[i] & bb_2:
-//                         way_bb_1 = traverse_bb(bb_1, [move_left], 0, bb_2)
-//                         way_bb_2 = traverse_bb(bb_1, [move_right], 0, bb_2)
-//                         if way_bb_1 & bb_2:
-//                               rays[i][j] = way_bb_1 & ~bb_2
-//                         elif way_bb_2 & bb_2:
-//                               rays[i][j] = way_bb_2 & ~bb_2
-//                   elif VERTICAL_MOVE_BBS[i] & bb_2:
-//                         way_bb_1 = traverse_bb(bb_1, [move_up], 0, bb_2)
-//                         way_bb_2 = traverse_bb(bb_1, [move_down], 0, bb_2)
-//                         if way_bb_1 & bb_2:
-//                               rays[i][j] = way_bb_1 & ~bb_2
-//                         elif way_bb_2 & bb_2:
-//                               rays[i][j] = way_bb_2 & ~bb_2
-//                   else:
-//                         rays[i][j] = 0
-//       return rays
+void initConstants() {
+    for (int i = 0; i <= 63; i++)
+        SQUARE_BBS[i] = 1ULL << i;
+    
+    for (int i = 0; i <= 63; i++)
+        HORIZONTAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], HORIZONTAL_MOVES, 0, 0);
 
-// cdef u64[64][64] REY_BBS = arr_Rectangular()
+    for (int i = 0; i <= 63; i++)
+        VERTICAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], VERTICAL_MOVES, 0, 0);
 
-// def arr_Rectangular_lines():
-//       cdef u64[64][64] rays
-//       rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
-//       for i, bb_1 in enumerate(SQUARE_BBS):
-//             for j, bb_2 in enumerate(SQUARE_BBS):
-//                   if DIAGONALS_MOVE_BBS[i] & bb_2:
-//                         rays[i][j] = DIAGONALS_MOVE_BBS[i] & DIAGONALS_MOVE_BBS[j] | bb_1 | bb_2
-//                   elif HORIZONTAL_MOVE_BBS[i] & bb_2:
-//                         rays[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2
-//                   elif VERTICAL_MOVE_BBS[i] & bb_2:
-//                         rays[i][j] = VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j] | bb_1 | bb_2
-//                   else:
-//                         rays[i][j] = 0
-//       return rays
+    for (int i = 0; i <= 63; i++)
+        ROOK_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], HORIZONTAL_VERTICAL_MOVES, 0, 0);
 
-// cdef u64[64][64] LINE_BBS = arr_Rectangular_lines()
+    for (int i = 0; i <= 63; i++)
+        BISHOP_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], DIAGONALS_MOVES, 0, 0);
+
+    for (int i = 0; i <= 63; i++)
+        QUEEN_MOVE_BBS[i] = ROOK_MOVE_BBS[i] | BISHOP_MOVE_BBS[i];
+
+    for (int i = 0; i <= 63; i++)
+        KNIGHT_MOVE_BBS[i] = knight_moves(SQUARE_BBS[i], 0);
+
+    for (int i = 0; i <= 63; i++)
+        KING_MOVES_BBS[i] = king_moves(SQUARE_BBS[i], 0);
+
+    for (int i = 0; i <= 63; i++) {
+        for (int j = 0; j <= 1; j++)
+            PAWN_ATTACKS_BBS[i][j] = pawn_attacks(SQUARE_BBS[i], j, 0);
+    }
+
+    initArrRectangular();
+
+    initArrRectangularLines();
+}
+
+void initArrRectangular() {
+    for (int i = 0; i <= 63; i++) {
+        BB bb_1 = SQUARE_BBS[i];
+        for (int j = 0; j <= 63; j++) {
+            BB bb_2 = SQUARE_BBS[j];
+            if (BISHOP_MOVE_BBS[i] & bb_2) {
+                BB way_bb_1 = traverse_bb(bb_1, new Direction[] {LEFT_UP}, 0, bb_2);
+                BB way_bb_2 = traverse_bb(bb_1, new Direction[] {LEFT_DOWN}, 0, bb_2);
+                BB way_bb_3 = traverse_bb(bb_1, new Direction[] {RIGHT_UP}, 0, bb_2);
+                BB way_bb_4 = traverse_bb(bb_1, new Direction[] {RIGHT_DOWN}, 0, bb_2);
+                if (way_bb_1 & bb_2)
+                        REY_BBS[i][j] = way_bb_1 & ~bb_2;
+                else if (way_bb_2 & bb_2)
+                        REY_BBS[i][j] = way_bb_2 & ~bb_2;
+                else if (way_bb_3 & bb_2)
+                        REY_BBS[i][j] = way_bb_3 & ~bb_2;
+                else if (way_bb_4 & bb_2)
+                        REY_BBS[i][j] = way_bb_4 & ~bb_2;
+            } else if (HORIZONTAL_MOVE_BBS[i] & bb_2) {
+                BB way_bb_1 = traverse_bb(bb_1, new Direction[] {LEFT}, 0, bb_2);
+                BB way_bb_2 = traverse_bb(bb_1, new Direction[] {RIGHT}, 0, bb_2);
+                if (way_bb_1 & bb_2)
+                    REY_BBS[i][j] = way_bb_1 & ~bb_2;
+                else if (way_bb_2 & bb_2)
+                    REY_BBS[i][j] = way_bb_2 & ~bb_2;
+            } else if (VERTICAL_MOVE_BBS[i] & bb_2) {
+                BB way_bb_1 = traverse_bb(bb_1, new Direction[] {UP}, 0, bb_2);
+                BB way_bb_2 = traverse_bb(bb_1, new Direction[] {DOWN}, 0, bb_2);
+                if (way_bb_1 & bb_2)
+                    REY_BBS[i][j] = way_bb_1 & ~bb_2;
+                else if (way_bb_2 & bb_2)
+                    REY_BBS[i][j] = way_bb_2 & ~bb_2;
+            } else
+                REY_BBS[i][j] = 0;
+        }
+    }
+}
+
+void initArrRectangularLines() {
+    for (int i = 0; i <= 63; i++) {
+        BB bb_1 = SQUARE_BBS[i];
+        for (int j = 0; j <= 63; j++) {
+            BB bb_2 = SQUARE_BBS[j];
+            if (BISHOP_MOVE_BBS[i] & bb_2)
+                LINE_BBS[i][j] = BISHOP_MOVE_BBS[i] & BISHOP_MOVE_BBS[j] | bb_1 | bb_2;
+            else if (HORIZONTAL_MOVE_BBS[i] & bb_2)
+                LINE_BBS[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2;
+            else if (VERTICAL_MOVE_BBS[i] & bb_2)
+                LINE_BBS[i][j] = VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j] | bb_1 | bb_2;
+            else
+                LINE_BBS[i][j] = 0;
+        }
+    }
+}
 
 /** Based on https: //en.wikipedia.org/wiki/Linear_congruential_generator */
 constexpr u64 lcg(u64 seed)
