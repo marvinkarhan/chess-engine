@@ -1,4 +1,6 @@
 #pragma once
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
 #include <stdint.h>
 #include <string>
 
@@ -243,19 +245,19 @@ const std::string SQUARE_TO_ALGEBRAIC[64] = {
     "a8",
 };
 
-// TODO MARVIN
+
 // #precalculate moves for squares
-BB SQUARE_BBS[64];
-BB HORIZONTAL_MOVE_BBS[64];
-BB VERTICAL_MOVE_BBS[64];
-BB ROOK_MOVE_BBS[64];
-BB BISHOP_MOVE_BBS[64];
-BB QUEEN_MOVE_BBS[64];
-BB KNIGHT_MOVE_BBS[64];
-BB KING_MOVES_BBS[64];
-BB PAWN_ATTACKS_BBS[64][2];
-BB REY_BBS[64][64];
-BB LINE_BBS[64][64];
+extern BB SQUARE_BBS[] = {0};
+static BB HORIZONTAL_MOVE_BBS[64]  = {0};
+static BB VERTICAL_MOVE_BBS[64];
+static BB ROOK_MOVE_BBS[64];
+static BB BISHOP_MOVE_BBS[64];
+static BB QUEEN_MOVE_BBS[64];
+static BB KNIGHT_MOVE_BBS[64];
+static BB KING_MOVES_BBS[64];
+static BB PAWN_ATTACKS_BBS[64][2];
+static BB REY_BBS[64][64];
+static BB LINE_BBS[64][64];
 
 void initConstants();
 
@@ -272,3 +274,5 @@ constexpr u64 lcg(u64 seed)
 
 // with open('opening-extractor/output/openings.json') as json_file:
 //     OPENING_TABLE = json.load(json_file)
+
+#endif // CONSTANTS_H

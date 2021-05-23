@@ -61,7 +61,7 @@ std::vector<int> get_lsb_array(BB bb) {
 // if a shift results in a piece wrapping the board (going from line A to H) it gets returned as 0
 // """
 
-constexpr BB move(BB bb, Direction dir) {
+inline BB move(BB bb, Direction dir) {
     switch(dir) {
         case LEFT:
             return (bb << 1 & ~H) & FULL;
@@ -88,11 +88,12 @@ constexpr BB move(BB bb, Direction dir) {
             return bb >> 9 & ~A;
             break;
     }
+    return 0;
 }
 
 /* Following Board Filling Functions are using the Kogge-Stone Algorithm */
 
-constexpr BB north_occluded_attacks(BB bb, BB empty_bb) {
+inline BB north_occluded_attacks(BB bb, BB empty_bb) {
     bb |= empty_bb & (bb << 8);
     empty_bb &= (empty_bb << 8);
     bb |= empty_bb & (bb << 16);
@@ -101,7 +102,7 @@ constexpr BB north_occluded_attacks(BB bb, BB empty_bb) {
     return bb << 8 & FULL;
 }
 
-constexpr BB east_occluded_attacks(BB bb, BB empty_bb) {
+inline BB east_occluded_attacks(BB bb, BB empty_bb) {
     empty_bb &= NOT_A;
     bb |= empty_bb & (bb >> 1);
     empty_bb &= (empty_bb >> 1);
@@ -111,7 +112,7 @@ constexpr BB east_occluded_attacks(BB bb, BB empty_bb) {
     return bb >> 1 & ~A;
 }
 
-constexpr BB south_occluded_attacks(BB bb, BB empty_bb) {
+inline BB south_occluded_attacks(BB bb, BB empty_bb) {
     bb |= empty_bb & (bb >> 8);
     empty_bb &= (empty_bb >> 8);
     bb |= empty_bb & (bb >> 16);
@@ -120,7 +121,7 @@ constexpr BB south_occluded_attacks(BB bb, BB empty_bb) {
     return bb >> 8;
 }
 
-constexpr BB west_occluded_attacks(BB bb,BB  empty_bb) {
+inline BB west_occluded_attacks(BB bb,BB  empty_bb) {
     empty_bb &= NOT_H;
     bb |= empty_bb & (bb << 1);
     empty_bb &= (empty_bb << 1);
@@ -130,7 +131,7 @@ constexpr BB west_occluded_attacks(BB bb,BB  empty_bb) {
     return (bb << 1 & ~H) & FULL;
 }
 
-constexpr BB no_we_occluded_attacks(BB bb, BB empty_bb) {
+inline BB no_we_occluded_attacks(BB bb, BB empty_bb) {
     empty_bb &= NOT_H;
     bb |= empty_bb & (bb << 9);
     empty_bb &= (empty_bb << 9);
@@ -140,7 +141,7 @@ constexpr BB no_we_occluded_attacks(BB bb, BB empty_bb) {
     return (bb << 9 & ~H) & FULL;
 }
 
-constexpr BB so_we_occluded_attacks(BB bb, BB empty_bb) {
+inline BB so_we_occluded_attacks(BB bb, BB empty_bb) {
     empty_bb &= NOT_H;
     bb |= empty_bb & (bb >> 7);
     empty_bb &= (empty_bb >> 7);
@@ -150,7 +151,7 @@ constexpr BB so_we_occluded_attacks(BB bb, BB empty_bb) {
     return bb >> 7 & ~H;
 }
 
-constexpr BB so_ea_occluded_attacks(BB bb, BB empty_bb) {
+inline BB so_ea_occluded_attacks(BB bb, BB empty_bb) {
     empty_bb &= NOT_A;
     bb |= empty_bb & (bb >> 9);
     empty_bb &= (empty_bb >> 9);
@@ -160,7 +161,7 @@ constexpr BB so_ea_occluded_attacks(BB bb, BB empty_bb) {
     return bb >> 9 & ~A;
 }
 
-constexpr BB no_ea_occluded_attacks(BB bb, BB empty_bb) {
+inline BB no_ea_occluded_attacks(BB bb, BB empty_bb) {
     empty_bb &= NOT_A;
     bb |= empty_bb & (bb << 7);
     empty_bb &= (empty_bb << 7);
@@ -170,7 +171,7 @@ constexpr BB no_ea_occluded_attacks(BB bb, BB empty_bb) {
     return (bb << 7 & ~A) & FULL;
 }
 
-constexpr BB horizontal_vertical_moves(BB bb,BB empty_bb) {
+inline BB horizontal_vertical_moves(BB bb,BB empty_bb) {
     BB acc = 0;
     acc |= north_occluded_attacks(bb, empty_bb);
     acc |= east_occluded_attacks(bb, empty_bb);
@@ -179,7 +180,7 @@ constexpr BB horizontal_vertical_moves(BB bb,BB empty_bb) {
     return acc;
 }
 
-constexpr BB diagonal_moves(BB bb, BB empty_bb) {
+inline BB diagonal_moves(BB bb, BB empty_bb) {
     BB acc = 0;
     acc |= no_ea_occluded_attacks(bb, empty_bb);
     acc |= so_ea_occluded_attacks(bb, empty_bb);
@@ -188,7 +189,7 @@ constexpr BB diagonal_moves(BB bb, BB empty_bb) {
     return acc;
 }
 
-inline BB traverse_bb(BB bb, Direction directions[], BB friendlies_bb, BB enemies_bb) {
+BB traverse_bb(BB bb, Direction directions[], BB friendlies_bb, BB enemies_bb) {
     BB result_bb = 0;
     for(int i = 0; i <= sizeof(directions); i++) {
         BB square_bb = bb;
@@ -204,26 +205,26 @@ inline BB traverse_bb(BB bb, Direction directions[], BB friendlies_bb, BB enemie
     return result_bb;
 }
 
-inline BB rook_moves(BB bb, BB empties_bb, BB friendlies_bb) {
+BB rook_moves(BB bb, BB empties_bb, BB friendlies_bb) {
     return horizontal_vertical_moves(bb, empties_bb) & ~friendlies_bb;
 }
 
-inline BB bishop_moves(BB bb, BB empties_bb, BB friendlies_bb) {
+BB bishop_moves(BB bb, BB empties_bb, BB friendlies_bb) {
     return diagonal_moves(bb, empties_bb) & ~friendlies_bb;
 }
 
-inline BB queen_moves(BB bb, BB empties_bb, BB friendlies_bb) {
+BB queen_moves(BB bb, BB empties_bb, BB friendlies_bb) {
     return rook_moves(bb, empties_bb, friendlies_bb) | bishop_moves(bb, empties_bb, friendlies_bb);
 }
 
-inline BB king_moves(BB bb, BB friendlies_bb) {
+BB king_moves(BB bb, BB friendlies_bb) {
     BB moves_bb = BB(0);
     for (Direction& dir : DIRECTION_MOVES)
         moves_bb |= move(bb, dir);
     return moves_bb & ~friendlies_bb;
 }
 
-inline BB knight_moves(BB bb, BB friendlies_bb) {
+BB knight_moves(BB bb, BB friendlies_bb) {
     BB moves_bb = 0;
     for (auto& moves : KNIGHT_MOVES) {
         BB moveAcc = BB(0);
@@ -234,17 +235,17 @@ inline BB knight_moves(BB bb, BB friendlies_bb) {
     return moves_bb & ~friendlies_bb;
 }
 
-inline BB pawn_attacks(BB bb, int active_side, BB friendlies_bb) {
+BB pawn_attacks(BB bb, int active_side, BB friendlies_bb) {
     if (active_side)
         return (move(bb, LEFT_UP) | move(bb, RIGHT_UP)) & ~friendlies_bb;
     return (move(bb, LEFT_DOWN) | move(bb, RIGHT_DOWN)) & ~friendlies_bb;
 }
 
-inline BB in_between(int origin, int target) {
+BB in_between(int origin, int target) {
    return REY_BBS[origin][target];
 }
 
-inline BB may_move(int origin, int target, BB occupied_bb) {
+BB may_move(int origin, int target, BB occupied_bb) {
    return !(in_between(origin, target) & occupied_bb);
 }
 

@@ -3,15 +3,23 @@
 
 
 void initArrRectangular() {
+    Direction leftUp[1] = {LEFT_UP};
+    Direction leftDown[1] = {LEFT_DOWN};
+    Direction rightUp[1] = {RIGHT_UP};
+    Direction rightDown[1] = {RIGHT_DOWN};
+    Direction left[1] = {LEFT};
+    Direction right[1] = {RIGHT};
+    Direction up[1] = {UP};
+    Direction down[1] = {DOWN};
     for (int i = 0; i <= 63; i++) {
         BB bb_1 = SQUARE_BBS[i];
         for (int j = 0; j <= 63; j++) {
             BB bb_2 = SQUARE_BBS[j];
             if (BISHOP_MOVE_BBS[i] & bb_2) {
-                BB way_bb_1 = traverse_bb(bb_1, new Direction[1] {LEFT_UP}, 0, bb_2);
-                BB way_bb_2 = traverse_bb(bb_1, new Direction[1] {LEFT_DOWN}, 0, bb_2);
-                BB way_bb_3 = traverse_bb(bb_1, new Direction[1] {RIGHT_UP}, 0, bb_2);
-                BB way_bb_4 = traverse_bb(bb_1, new Direction[1] {RIGHT_DOWN}, 0, bb_2);
+                BB way_bb_1 = traverse_bb(bb_1, leftUp, 0, bb_2);
+                BB way_bb_2 = traverse_bb(bb_1, leftDown, 0, bb_2);
+                BB way_bb_3 = traverse_bb(bb_1, rightUp, 0, bb_2);
+                BB way_bb_4 = traverse_bb(bb_1, rightDown, 0, bb_2);
                 if (way_bb_1 & bb_2)
                         REY_BBS[i][j] = way_bb_1 & ~bb_2;
                 else if (way_bb_2 & bb_2)
@@ -21,15 +29,15 @@ void initArrRectangular() {
                 else if (way_bb_4 & bb_2)
                         REY_BBS[i][j] = way_bb_4 & ~bb_2;
             } else if (HORIZONTAL_MOVE_BBS[i] & bb_2) {
-                BB way_bb_1 = traverse_bb(bb_1, new Direction[1] {LEFT}, 0, bb_2);
-                BB way_bb_2 = traverse_bb(bb_1, new Direction[1] {RIGHT}, 0, bb_2);
+                BB way_bb_1 = traverse_bb(bb_1, left, 0, bb_2);
+                BB way_bb_2 = traverse_bb(bb_1, right, 0, bb_2);
                 if (way_bb_1 & bb_2)
                     REY_BBS[i][j] = way_bb_1 & ~bb_2;
                 else if (way_bb_2 & bb_2)
                     REY_BBS[i][j] = way_bb_2 & ~bb_2;
             } else if (VERTICAL_MOVE_BBS[i] & bb_2) {
-                BB way_bb_1 = traverse_bb(bb_1, new Direction[1] {UP}, 0, bb_2);
-                BB way_bb_2 = traverse_bb(bb_1, new Direction[1] {DOWN}, 0, bb_2);
+                BB way_bb_1 = traverse_bb(bb_1, up, 0, bb_2);
+                BB way_bb_2 = traverse_bb(bb_1, down, 0, bb_2);
                 if (way_bb_1 & bb_2)
                     REY_BBS[i][j] = way_bb_1 & ~bb_2;
                 else if (way_bb_2 & bb_2)
@@ -58,11 +66,14 @@ void initArrRectangularLines() {
 }
 
 void initConstants() {
-    for (int i = 0; i <= 63; i++)
-        SQUARE_BBS[i] = 1ULL << i;
+    for (int i = 0; i <= 63; i++) {
+        SQUARE_BBS[i] = 4;
+        printf("%d",SQUARE_BBS[i]);
+
+    }
     
     for (int i = 0; i <= 63; i++)
-        HORIZONTAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], HORIZONTAL_MOVES, 0, 0);
+        HORIZONTAL_MOVE_BBS[i] =  traverse_bb(SQUARE_BBS[i], HORIZONTAL_MOVES, 0, 0);
 
     for (int i = 0; i <= 63; i++)
         VERTICAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], VERTICAL_MOVES, 0, 0);
