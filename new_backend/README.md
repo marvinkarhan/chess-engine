@@ -55,8 +55,12 @@ After all dependencies satisfied:
 ```
 $ mkdir build && cd build
 $ cmake ..
+$ ON LINUX
 $ make 
 $ ./chess-server-exe       # - run application.
+$ ON WINDOWS
+$ Open chess-server.sln under Visual Studio and build the files
+$ ./Debug/chess-server-exe.exe
 ```
 
 
