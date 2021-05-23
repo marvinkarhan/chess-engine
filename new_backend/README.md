@@ -50,17 +50,16 @@ See more:
 modules installed. You may run `utility/install-oatpp-modules.sh` 
 script to install required oatpp modules.
 
+GET MAKE FOR WINDOWS
 After all dependencies satisfied:
 
 ```
 $ mkdir build && cd build
 $ cmake ..
-$ ON LINUX
+$ ON LINUX / Windows
 $ make 
 $ ./chess-server-exe       # - run application.
-$ ON WINDOWS
-$ Open chess-server.sln under Visual Studio and build the files
-$ ./Debug/chess-server-exe.exe
+
 ```
 
 
