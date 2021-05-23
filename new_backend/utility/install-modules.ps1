@@ -16,8 +16,8 @@ cd $MODULE_NAME
 mkdir build
 cd build
 
-cmake -DCMAKE_INSTALL_PREFIX="$VENDOR"  ..
-cmake --build . --target INSTALL
+cmake -DCMAKE_INSTALL_PREFIX="$VENDOR"  -G "Unix Makefiles" ..
+make install
 
 cd ../../
 
@@ -32,8 +32,8 @@ cd $MODULE_NAME
 mkdir build
 cd build
 
-cmake -DCMAKE_INSTALL_PREFIX="$VENDOR"  ..
-cmake --build . --target INSTALL
+cmake -DCMAKE_INSTALL_PREFIX="$VENDOR" -G "Unix Makefiles"  ..
+make install
 
 cd ../../
 
