@@ -1,4 +1,8 @@
 .vscode
+.vs
+Debug
+*.sln
+*.vcxproj*
 backend/__pycache__
 backend/build
 *.pyd
