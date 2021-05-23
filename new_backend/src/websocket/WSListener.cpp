@@ -21,7 +21,7 @@ void WSListener::onPong(const WebSocket &socket, const oatpp::String &message)
 void WSListener::onClose(const WebSocket &socket, v_uint16 code, const oatpp::String &message)
 {
   auto shared = socket.getListener();
-  long pointerToSession = (long)shared.get();
+  long long pointerToSession = (long long)shared.get();
   SessionMap.erase(pointerToSession);
   OATPP_LOGD(TAG, "onClose code=%d", code);
 }
@@ -35,7 +35,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     auto wholeMessage = m_messageBuffer.toString();
     m_messageBuffer.clear();
     auto shared = socket.getListener();
-    long pointerToSession = (long)shared.get();
+    long long pointerToSession = (long long)shared.get();
 
     //OATPP_LOGD(TAG,"Connection %s", shared);
 
