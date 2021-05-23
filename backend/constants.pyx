@@ -198,13 +198,11 @@ PROMOTION_OPTIONS_B = ['n', 'b', 'q', 'r']
 from move_helper import *
 
 # precalculate moves for squares
-DIAGONALS_MOVE_BBS = [traverse_bb(1 << i, DIAGONALS_MOVES, 0, 0) for i in range(0, 64)]
-HORIZONTAL_VERTICAL_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
 HORIZONTAL_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_MOVES, 0, 0) for i in range(0, 64)]
 VERTICAL_MOVE_BBS = [traverse_bb(1 << i, VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
-ROOK_MOVE_BBS = HORIZONTAL_VERTICAL_MOVE_BBS
-BISHOP_MOVE_BBS = DIAGONALS_MOVE_BBS
-QUEEN_MOVE_BBS = [HORIZONTAL_VERTICAL_MOVE_BBS[i] | DIAGONALS_MOVE_BBS[i] for i in range(0, 64)]
+ROOK_MOVE_BBS = [traverse_bb(1 << i, HORIZONTAL_VERTICAL_MOVES, 0, 0) for i in range(0, 64)]
+BISHOP_MOVE_BBS = [traverse_bb(1 << i, DIAGONALS_MOVES, 0, 0) for i in range(0, 64)]
+QUEEN_MOVE_BBS = [ROOK_MOVE_BBS[i] | BISHOP_MOVE_BBS[i] for i in range(0, 64)]
 KNIGHT_MOVE_BBS  = [knight_moves(1 << i, 0) for i in range(0, 64)]
 PAWN_MOVE_BBS = [[pawn_moves(1 << i, j, 0, 0) for j in [0, 1]] for i in range(0, 64)]
 PAWN_ATTACKS_BBS = [[pawn_attacks(1 << i, j, 0) for j in [0, 1]] for i in range(0, 64)]
@@ -217,7 +215,7 @@ def arr_Rectangular():
       rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
       for i, bb_1 in enumerate(SQUARE_BBS):
             for j, bb_2 in enumerate(SQUARE_BBS):
-                  if DIAGONALS_MOVE_BBS[i] & bb_2:
+                  if BISHOP_MOVE_BBS[i] & bb_2:
                         way_bb_1 = traverse_bb(bb_1, [move_left_up], 0, bb_2)
                         way_bb_2 = traverse_bb(bb_1, [move_left_down], 0, bb_2)
                         way_bb_3 = traverse_bb(bb_1, [move_right_up], 0, bb_2)
@@ -255,8 +253,8 @@ def arr_Rectangular_lines():
       rays = [[0 for i in range(0, 64)] for j in range(0, 64)]
       for i, bb_1 in enumerate(SQUARE_BBS):
             for j, bb_2 in enumerate(SQUARE_BBS):
-                  if DIAGONALS_MOVE_BBS[i] & bb_2:
-                        rays[i][j] = DIAGONALS_MOVE_BBS[i] & DIAGONALS_MOVE_BBS[j] | bb_1 | bb_2
+                  if BISHOP_MOVE_BBS[i] & bb_2:
+                        rays[i][j] = BISHOP_MOVE_BBS[i] & BISHOP_MOVE_BBS[j] | bb_1 | bb_2
                   elif HORIZONTAL_MOVE_BBS[i] & bb_2:
                         rays[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2
                   elif VERTICAL_MOVE_BBS[i] & bb_2:
