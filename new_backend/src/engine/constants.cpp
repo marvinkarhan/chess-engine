@@ -1,16 +1,95 @@
 #include "constants.h"
-#include "moveHelper.h"
+#include "movehelper.h"
+#include <vector>
 
+std::string SQUARE_TO_ALGEBRAIC[64] = {
+    "h1",
+    "g1",
+    "f1",
+    "e1",
+    "d1",
+    "c1",
+    "b1",
+    "a1",
+    "h2",
+    "g2",
+    "f2",
+    "e2",
+    "d2",
+    "c2",
+    "b2",
+    "a2",
+    "h3",
+    "g3",
+    "f3",
+    "e3",
+    "d3",
+    "c3",
+    "b3",
+    "a3",
+    "h4",
+    "g4",
+    "f4",
+    "e4",
+    "d4",
+    "c4",
+    "b4",
+    "a4",
+    "h5",
+    "g5",
+    "f5",
+    "e5",
+    "d5",
+    "c5",
+    "b5",
+    "a5",
+    "h6",
+    "g6",
+    "f6",
+    "e6",
+    "d6",
+    "c6",
+    "b6",
+    "a6",
+    "h7",
+    "g7",
+    "f7",
+    "e7",
+    "d7",
+    "c7",
+    "b7",
+    "a7",
+    "h8",
+    "g8",
+    "f8",
+    "e8",
+    "d8",
+    "c8",
+    "b8",
+    "a8",
+};
+
+BB SQUARE_BBS[64];
+BB HORIZONTAL_MOVE_BBS[64];
+BB VERTICAL_MOVE_BBS[64];
+BB ROOK_MOVE_BBS[64];
+BB BISHOP_MOVE_BBS[64];
+BB QUEEN_MOVE_BBS[64];
+BB KNIGHT_MOVE_BBS[64];
+BB KING_MOVES_BBS[64];
+BB PAWN_ATTACKS_BBS[64][2];
+BB REY_BBS[64][64];
+BB LINE_BBS[64][64];
 
 void initArrRectangular() {
-    Direction leftUp[1] = {LEFT_UP};
-    Direction leftDown[1] = {LEFT_DOWN};
-    Direction rightUp[1] = {RIGHT_UP};
-    Direction rightDown[1] = {RIGHT_DOWN};
-    Direction left[1] = {LEFT};
-    Direction right[1] = {RIGHT};
-    Direction up[1] = {UP};
-    Direction down[1] = {DOWN};
+    std::vector<Direction> leftUp {LEFT_UP};
+    std::vector<Direction> leftDown {LEFT_DOWN};
+    std::vector<Direction> rightUp {RIGHT_UP};
+    std::vector<Direction> rightDown {RIGHT_DOWN};
+    std::vector<Direction> left {LEFT};
+    std::vector<Direction> right {RIGHT};
+    std::vector<Direction> up {UP};
+    std::vector<Direction> down {DOWN};
     for (int i = 0; i <= 63; i++) {
         BB bb_1 = SQUARE_BBS[i];
         for (int j = 0; j <= 63; j++) {
@@ -66,11 +145,8 @@ void initArrRectangularLines() {
 }
 
 void initConstants() {
-    for (int i = 0; i <= 63; i++) {
-        SQUARE_BBS[i] = 4;
-        printf("%d",SQUARE_BBS[i]);
-
-    }
+    for (int i = 0; i <= 63; i++)
+        SQUARE_BBS[i] = 1 << i;
     
     for (int i = 0; i <= 63; i++)
         HORIZONTAL_MOVE_BBS[i] =  traverse_bb(SQUARE_BBS[i], HORIZONTAL_MOVES, 0, 0);
