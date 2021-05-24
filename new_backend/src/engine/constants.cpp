@@ -159,7 +159,7 @@ void initArrRectangularLines()
 void initConstants()
 {
   for (int i = 0; i <= 63; i++)
-    SQUARE_BBS[i] = 1 << i;
+    SQUARE_BBS[i] = BB(1) << i;
 
   for (int i = 0; i <= 63; i++)
     HORIZONTAL_MOVE_BBS[i] = traverse_bb(SQUARE_BBS[i], HORIZONTAL_MOVES, 0, 0);

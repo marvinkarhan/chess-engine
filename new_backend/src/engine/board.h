@@ -6,13 +6,14 @@
 
 using namespace std;
 
-
-struct Evaluation {
+struct Evaluation
+{
     int evaluation;
     string moves[];
 };
 
-struct StoredBoard {
+struct StoredBoard
+{
     std::map<Piece, BB> pieces;
     bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide;
     BB friendlies, enemies, epSquare;
@@ -35,13 +36,12 @@ public:
     void printBitboard(BB bb);
     Evaluation evaluateMoves(int depth, string lastMove);
     FenString toFenString();
-    bool getActiveSide();
     void printEveryPiece();
     BB whitePiecesBB();
     BB blackPiecesBB();
     BB allPiecesBB();
-    int* getActivePieces(bool activeSide);
-    BB getPieceOnSquare(BB bb);
+    BB *getActivePieces(bool activeSide);
+    Piece getPieceOnSquare(BB bb);
     void parseFenString(FenString fen);
     BB potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
     BB atackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
@@ -58,10 +58,7 @@ public:
     void hash();
     bool makeMove(Move move);
 
-
 private:
     Evaluation negaMax(int depth, int alpha, int beta);
     int evaluate();
-
-
 };

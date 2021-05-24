@@ -23,7 +23,8 @@ enum Piece : char
   BLACK_BISHOP = 'b',
   BLACK_ROOK = 'r',
   BLACK_QUEEN = 'q',
-  BLACK_KING = 'k'
+  BLACK_KING = 'k',
+  NO_PIECE = 0
 };
 
 constexpr int PROMOTION_OPTIONS_WHITE[4] = {
