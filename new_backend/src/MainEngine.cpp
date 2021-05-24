@@ -1,4 +1,5 @@
 #include "engine/constants.h"
+#include "engine/move.h"
 #include <iostream>
 #include <chrono>
 
