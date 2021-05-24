@@ -1,6 +1,5 @@
 #pragma once
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+
 #include <stdint.h>
 #include <string>
 
@@ -209,4 +208,3 @@ constexpr u64 lcg(u64 seed)
 
 // with open('opening-extractor/output/openings.json') as json_file:
 //     OPENING_TABLE = json.load(json_file)
-#endif // CONSTANTS_H
