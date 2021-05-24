@@ -1,3 +1,8 @@
+#include "constants.h"
+#include "board.h"
+
+
+
 #include "board.h"
 #include "moveHelper.h"
 #include <string>
@@ -61,6 +66,49 @@ void Board::printBitboard(BB bb)
   std::cout << result;
 }
 
+int Board::evaluate() {
+  int sideMultiplier = activeSide? 1 : -1;
+  int score = 0;
+  return 1;
+}
+
+Evaluation Board::negaMax(int depth, int alpha, int beta)
+{
+  int score;
+  StoredBoard backup;
+  Evaluation bestEvaluation;
+  bestEvaluation.evaluation = alpha;
+  bestEvaluation.moves = new string[depth];
+  if (depth == 0)
+  {
+    bestEvaluation.evaluation = evaluate();
+    bestEvaluation.moves = {};
+    return bestEvaluation;
+  }
+  Move *move;
+  while ((move = legalMovesGenerator(activeSide)) != nullptr)
+  {
+    backup = store();
+    if(makeMove(*move)) {
+      Evaluation newEvaluation = negaMax(depth -1, -beta, -alpha);
+      score = -newEvaluation.evaluation;
+      restore(backup);
+      if(score >= beta) {
+        bestEvaluation.evaluation = beta;
+        addMovesToList(bestEvaluation, newEvaluation, depth, *move);
+        delete &newEvaluation;
+        return bestEvaluation;
+      }
+      if(score > bestEvaluation.evaluation) {
+        bestEvaluation.evaluation = score;
+        addMovesToList(bestEvaluation, newEvaluation, depth, *move);
+        delete &newEvaluation;
+      }
+    }
+  }
+  return bestEvaluation;
+}
+
 FenString Board::toFenString()
 {
   FenString fen = "";
@@ -81,19 +129,13 @@ FenString Board::toFenString()
         fen += piece;
       }
       else
-      {
         counter++;
-      }
       bb >>= 1;
     }
     if (counter > 0)
-    {
       fen += std::to_string(counter);
-    }
     if (row < 7)
-    {
       fen += "/";
-    }
   }
   fen += activeSide ? " w " : " b ";
   std::string castleRights = "";
@@ -102,18 +144,12 @@ FenString Board::toFenString()
   castleRights += castleBlackKingSide ? "k" : "";
   castleRights += castleBlackQueenSide ? "q" : "";
   if (castleRights == "")
-  {
     castleRights += "-";
-  }
   fen += castleRights + " ";
   if (epSquareBB == BB(0))
-  {
     fen += "- ";
-  }
   else
-  {
     fen += SQUARE_TO_ALGEBRAIC[bitScanForward(epSquareBB)] + " ";
-  }
   fen += std::to_string(halfMoves) + " ";
   fen += std::to_string(fullMoves);
   return fen;
@@ -246,3 +282,17 @@ void Board::parseFenString(FenString fen)
   /* TODO Hash */
   // hashValue = hash();
 }
+
+BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /*= false*/, bool excludeSliders /*= false*/) {}
+BB Board::blockers(int square, bool activeSide, BB occupied) {}
+auto Board::pseudoLegalMovesGenerator(bool activeSide, bool onlyEvasions /*= false*/) {}
+Move* Board::legalMovesGenerator(bool activeSide /*= 0*/) {}
+bool Board::moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied) {}
+bool Board::stalemate() {}
+bool Board::checkmate() {}
+auto Board::getMovesTree(int depth) {}
+u64 Board::perft(int depth) {}
+StoredBoard Board::store() {}
+void Board::restore(StoredBoard board) {}
+void Board::hash() {}
+bool Board::makeMove(Move move) {}
