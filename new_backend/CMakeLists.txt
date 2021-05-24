@@ -4,7 +4,7 @@ set(project_name chess-server) ## rename your project here
 
 project(${project_name})
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 
 include_directories(src)
 
@@ -63,7 +63,7 @@ target_link_libraries(${project_name}-engine-exe ${project_name}-lib)
 add_dependencies(${project_name}-engine-exe ${project_name}-lib)
 
 set_target_properties(${project_name}-lib ${project_name}-exe ${project_name}-test ${project_name}-engine-exe PROPERTIES
-        CXX_STANDARD 11
+        CXX_STANDARD 20
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
         LINKER_LANGUAGE CXX
