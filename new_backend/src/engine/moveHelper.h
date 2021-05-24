@@ -71,10 +71,10 @@ inline BB move(BB bb, Direction dir)
   switch (dir)
   {
   case LEFT:
-    return (bb << 1 & ~H) & FULL;
+    return (bb << 1 & ~FILE_H) & FULL;
     break;
   case RIGHT:
-    return bb >> 1 & ~A;
+    return bb >> 1 & ~FILE_A;
     break;
   case UP:
     return bb << 8 & FULL;
@@ -83,16 +83,16 @@ inline BB move(BB bb, Direction dir)
     return bb >> 8;
     break;
   case LEFT_UP:
-    return (bb << 9 & ~H) & FULL;
+    return (bb << 9 & ~FILE_H) & FULL;
     break;
   case LEFT_DOWN:
-    return bb >> 7 & ~H;
+    return bb >> 7 & ~FILE_H;
     break;
   case RIGHT_UP:
-    return (bb << 7 & ~A) & FULL;
+    return (bb << 7 & ~FILE_A) & FULL;
     break;
   case RIGHT_DOWN:
-    return bb >> 9 & ~A;
+    return bb >> 9 & ~FILE_A;
     break;
   }
   return 0;
@@ -118,7 +118,7 @@ inline BB east_occluded_attacks(BB bb, BB empty_bb)
   bb |= empty_bb & (bb >> 2);
   empty_bb &= (empty_bb >> 2);
   bb |= empty_bb & (bb >> 4);
-  return bb >> 1 & ~A;
+  return bb >> 1 & ~FILE_A;
 }
 
 inline BB south_occluded_attacks(BB bb, BB empty_bb)
@@ -139,7 +139,7 @@ inline BB west_occluded_attacks(BB bb, BB empty_bb)
   bb |= empty_bb & (bb << 2);
   empty_bb &= (empty_bb << 2);
   bb |= empty_bb & (bb << 4);
-  return (bb << 1 & ~H) & FULL;
+  return (bb << 1 & ~FILE_H) & FULL;
 }
 
 inline BB no_we_occluded_attacks(BB bb, BB empty_bb)
@@ -150,7 +150,7 @@ inline BB no_we_occluded_attacks(BB bb, BB empty_bb)
   bb |= empty_bb & (bb << 18);
   empty_bb &= (empty_bb << 18);
   bb |= empty_bb & (bb << 36);
-  return (bb << 9 & ~H) & FULL;
+  return (bb << 9 & ~FILE_H) & FULL;
 }
 
 inline BB so_we_occluded_attacks(BB bb, BB empty_bb)
@@ -161,7 +161,7 @@ inline BB so_we_occluded_attacks(BB bb, BB empty_bb)
   bb |= empty_bb & (bb >> 14);
   empty_bb &= (empty_bb >> 14);
   bb |= empty_bb & (bb >> 28);
-  return bb >> 7 & ~H;
+  return bb >> 7 & ~FILE_H;
 }
 
 inline BB so_ea_occluded_attacks(BB bb, BB empty_bb)
@@ -172,7 +172,7 @@ inline BB so_ea_occluded_attacks(BB bb, BB empty_bb)
   bb |= empty_bb & (bb >> 18);
   empty_bb &= (empty_bb >> 18);
   bb |= empty_bb & (bb >> 36);
-  return bb >> 9 & ~A;
+  return bb >> 9 & ~FILE_A;
 }
 
 inline BB no_ea_occluded_attacks(BB bb, BB empty_bb)
@@ -183,7 +183,7 @@ inline BB no_ea_occluded_attacks(BB bb, BB empty_bb)
   bb |= empty_bb & (bb << 14);
   empty_bb &= (empty_bb << 14);
   bb |= empty_bb & (bb << 28);
-  return (bb << 7 & ~A) & FULL;
+  return (bb << 7 & ~FILE_A) & FULL;
 }
 
 inline BB horizontal_vertical_moves(BB bb, BB empty_bb)
