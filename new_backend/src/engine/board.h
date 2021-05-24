@@ -1,6 +1,7 @@
 #pragma once
 #include "constants.h"
 #include <string>
+#include <map>
 #include "move.h"
 
 using namespace std;
@@ -12,24 +13,23 @@ struct Evaluation {
 };
 
 struct StoredBoard {
-    int pieces[12][1];
+    std::map<Piece, BB> pieces;
     bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide;
     BB friendlies, enemies, epSquare;
     int fullMoves, halfMoves;
 };
 
-class board
+class Board
 {
 private:
-    int pieces[12][1];
+    std::map<Piece, BB> pieces;
     /** current_opening_table **/
     bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished;
-    u64 friendlieBB, enemiesBB, epSquareBB, hashValue;
+    u64 friendliesBB, enemiesBB, epSquareBB, hashValue;
     int fullMoves, halfMoves, openingMoves;
 
 public:
-    board(string fen = "");
-    ~board();
+    Board(FenString fen = START_POS_FEN);
     u64 getHash();
     void resetBoard();
     void printBitboard(BB bb);
