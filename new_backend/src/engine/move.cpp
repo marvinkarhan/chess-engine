@@ -1,11 +1,6 @@
 #include "move.h"
 #include <string>
 
-int originSquare;
-int targetSquare;
-char promotion;
-MoveType type;
-
 Move::Move()
 {
   originSquare = 0;
