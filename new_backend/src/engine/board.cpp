@@ -1,8 +1,6 @@
 #include "constants.h"
 #include "board.h"
 
-
-
 #include "board.h"
 #include "moveHelper.h"
 #include <string>
@@ -66,8 +64,9 @@ void Board::printBitboard(BB bb)
   std::cout << result;
 }
 
-int Board::evaluate() {
-  int sideMultiplier = activeSide? 1 : -1;
+int Board::evaluate()
+{
+  int sideMultiplier = activeSide ? 1 : -1;
   int score = 0;
   return 1;
 }
@@ -89,17 +88,20 @@ Evaluation Board::negaMax(int depth, int alpha, int beta)
   while ((move = legalMovesGenerator(activeSide)) != nullptr)
   {
     backup = store();
-    if(makeMove(*move)) {
-      Evaluation newEvaluation = negaMax(depth -1, -beta, -alpha);
+    if (makeMove(*move))
+    {
+      Evaluation newEvaluation = negaMax(depth - 1, -beta, -alpha);
       score = -newEvaluation.evaluation;
       restore(backup);
-      if(score >= beta) {
+      if (score >= beta)
+      {
         bestEvaluation.evaluation = beta;
         addMovesToList(bestEvaluation, newEvaluation, depth, *move);
         delete &newEvaluation;
         return bestEvaluation;
       }
-      if(score > bestEvaluation.evaluation) {
+      if (score > bestEvaluation.evaluation)
+      {
         bestEvaluation.evaluation = score;
         addMovesToList(bestEvaluation, newEvaluation, depth, *move);
         delete &newEvaluation;
@@ -160,7 +162,7 @@ void Board::printEveryPiece()
   for (auto [k, v] : pieces)
   {
     std::string key(1, k);
-    std::cout <<  key + ":" << std::endl;
+    std::cout << key + ":" << std::endl;
     printBitboard(v);
     std::cout << std::endl;
   }
@@ -212,6 +214,13 @@ BB *Board::getActivePieces(bool activeSide)
   }
 }
 
+
+template<PieceType pt>
+BB Board::getPieceForSide(bool activeSide) {
+  return pieces[(Piece) (pt + (activeSide ? 0 : 32))]; 
+}
+
+
 Piece Board::getPieceOnSquare(BB bb)
 {
   for (auto const &[k, v] : pieces)
@@ -233,9 +242,7 @@ void Board::parseFenString(FenString fen)
   while ((ss >> character) && !isspace(character))
   {
     if (isdigit(character))
-    {
       placementMask >>= character - '0';
-    }
     else if (character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z')
     {
       pieces[(Piece)character] |= placementMask;
@@ -261,9 +268,9 @@ void Board::parseFenString(FenString fen)
   // en passant
   ss >> character;
   if (character == '-')
-  {
     epSquareBB = BB(0);
-  } else {
+  else
+  {
     unsigned char file = (character - 'a');
     ss >> character;
     unsigned char rank = (character - '1');
@@ -283,10 +290,57 @@ void Board::parseFenString(FenString fen)
   // hashValue = hash();
 }
 
-BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /*= false*/, bool excludeSliders /*= false*/) {}
-BB Board::blockers(int square, bool activeSide, BB occupied) {}
+BB Board::potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders /*= false*/, bool excludeSliders /*= false*/)
+{
+  BB *pieces = getActivePieces(!activeSide);
+  BB pawn_bb = pieces[0], rook_bb = pieces[1], knight_bb = pieces[2], bishop_bb = pieces[3], queen_bb = pieces[4], king_bb = pieces[5];
+  BB potentialAttackersBB = BB(0);
+  if (!excludeSliders)
+  {
+    potentialAttackersBB |= BISHOP_MOVE_BBS[square] & (bishop_bb | queen_bb);
+    potentialAttackersBB |= ROOK_MOVE_BBS[square] & (rook_bb | queen_bb);
+  }
+  if (!onlySliders)
+  {
+    potentialAttackersBB |= KNIGHT_MOVE_BBS[square] & knight_bb;
+    potentialAttackersBB |= PAWN_ATTACKS_BBS[square][activeSide] & pawn_bb;
+    potentialAttackersBB |= KING_MOVES_BBS[square] & king_bb;
+  }
+  return potentialAttackersBB;
+}
+
+BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /*= false*/, bool excludeSliders /*= false*/)
+{
+  BB potentialAttackersBB = potentialAttackers(square, activeSide, occupied, onlySliders, excludeSliders);
+
+  BB attackersBB = BB(0);
+  while(potentialAttackersBB)
+  {
+    int moveSquare = pop_lsb(potentialAttackersBB);
+    if (may_move(moveSquare, square, occupied))
+      attackersBB |= SQUARE_BBS[moveSquare];
+  }
+  return attackersBB;
+}
+BB Board::blockers(int square, bool activeSide, BB occupied) 
+{
+  BB blockersBB = BB(0);
+
+  BB potentialAttackersBB = potentialAttackers(square, activeSide, occupied, true);
+  occupied ^= potentialAttackersBB;
+
+  while (potentialAttackersBB)
+  {
+    BB potentialPinnedBB = in_between(square, pop_lsb(potentialAttackersBB)) & occupied;
+    // if there ist at most one piece between king and a potential pinned piece it is pinned
+    if (potentialPinnedBB && !pop_last_bb(potentialPinnedBB))
+      blockersBB |= potentialPinnedBB;
+  }
+  return blockersBB;
+}
 auto Board::pseudoLegalMovesGenerator(bool activeSide, bool onlyEvasions /*= false*/) {}
-Move* Board::legalMovesGenerator(bool activeSide /*= 0*/) {}
+Move *Board::legalMovesGenerator(bool activeSide /*= 0*/) {}
+
 bool Board::moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied) {}
 bool Board::stalemate() {}
 bool Board::checkmate() {}

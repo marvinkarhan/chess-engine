@@ -33,7 +33,7 @@ inline void addMovesToList(Evaluation &bestEvaluation, Evaluation &newEvaluation
 
 class Board
 {
-private:
+public:
   std::map<Piece, BB> pieces;
   /** current_opening_table **/
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished;
@@ -54,6 +54,8 @@ public:
   BB blackPiecesBB();
   BB allPiecesBB();
   BB *getActivePieces(bool activeSide);
+  template<PieceType pt>
+  BB getPieceForSide(bool activeSide);
   Piece getPieceOnSquare(BB bb);
   void parseFenString(FenString fen);
   BB potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);

@@ -27,6 +27,16 @@ enum Piece : char
   NO_PIECE = 0
 };
 
+enum PieceType : char
+{
+  PAWN = 'P',
+  KNIGHT = 'N',
+  BISHOP = 'B',
+  ROOK = 'R',
+  QUEEN = 'Q',
+  KING = 'K',
+};
+
 constexpr int PROMOTION_OPTIONS_WHITE[4] = {
     Piece::WHITE_KNIGHT,
     Piece::WHITE_BISHOP,
