@@ -1,4 +1,6 @@
+#pragma once
 #include "constants.h"
+#include <string>
 
 enum MoveType {
     NORMAL,
@@ -13,5 +15,8 @@ class Move{
         int targetSquare;
         char promotion;
         MoveType type;
+        Move();
+        Move(int originSquare, int targetSquare, MoveType type = NORMAL, char promotion = 0);
+        bool operator==(const Move& other);
         std::string to_uci_string();
 };
