@@ -55,7 +55,7 @@ After all dependencies satisfied:
 
 ```
 $ mkdir build && cd build
-$ cmake -G "Unix Makefiles"
+$ cmake .. -G "Unix Makefiles"
 $ ON LINUX / Windows
 $ make 
 $ ./chess-server-exe       # - run application.
