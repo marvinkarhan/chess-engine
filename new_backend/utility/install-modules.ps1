@@ -7,7 +7,7 @@ cd tmp
 $VENDOR = '../../../src/vendor/'
 ## install oatpp
 
-$MODULE_NAME="oatpp"
+$MODULE_NAME = "oatpp"
 
 git clone --depth=1 https://github.com/oatpp/$MODULE_NAME
 
@@ -24,7 +24,7 @@ cd ../../
 ##########################################################
 ## install oatpp-websocket
 
-$MODULE_NAME="oatpp-websocket"
+$MODULE_NAME = "oatpp-websocket"
 
 git clone --depth=1 https://github.com/oatpp/$MODULE_NAME
 

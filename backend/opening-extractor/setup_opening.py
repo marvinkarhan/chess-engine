@@ -1,12 +1,14 @@
 from os import truncate
 import re
-import sys, getopt
+import sys
+import getopt
 import json
+
 
 def extract_moves_from_pgn_to_dict(filename: str, amount_of_moves: int) -> dict:
     move_dict = {}
     file = open(filename, 'r')
-    for line in file: 
+    for line in file:
         all_moves = line.strip().split(" ")
         all_moves_len = len(all_moves)
         if(amount_of_moves >= all_moves_len):
@@ -20,6 +22,7 @@ def extract_moves_from_pgn_to_dict(filename: str, amount_of_moves: int) -> dict:
             current_dict_level = current_dict_level[move]
 
     return move_dict
+
 
 def write_dict_to_json(dict: dict, filename: str) -> None:
     with open(filename, 'w') as outfile:
@@ -42,11 +45,11 @@ if __name__ == '__main__':
                 moves = int(argument_value)
             elif argument in ("-o", "--output"):
                 output_file = argument_value
-                
+
     except getopt.error as err:
         # output error, and return with an error code
-        print (str(err))
-    
+        print(str(err))
+
     if not input_file or not output_file:
         print("ERROR: No input file or output file given! Use -i for input file, -o for ouput file and -m for moves")
         exit()

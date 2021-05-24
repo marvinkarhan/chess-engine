@@ -1,7 +1,8 @@
 import board
 import time
 import move_helper
-import cProfile, pstats
+import cProfile
+import pstats
 # import pyximport
 # pyximport.install()
 
@@ -12,9 +13,9 @@ _board = board.Board()
 
 my_board = board.Board()
 start_time = time.time()
-#profiler = cProfile.Profile() 
-#profiler.enable()
-[move, score] = my_board.nega_max(5,-200000,200000)
+#profiler = cProfile.Profile()
+# profiler.enable()
+[move, score] = my_board.nega_max(5, -200000, 200000)
 # for n in range(100):
 #   start_time = time.time()
 #   [move, score] = my_board.nega_max(3,-200000,200000)
@@ -26,18 +27,18 @@ start_time = time.time()
 # "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
 # "rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1",
 # "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1"]
-# for fen in fen_list: 
+# for fen in fen_list:
 #     new_board = board.Board(fen)
 #     key = board.hash_board(new_board)
 #     print(key)
 #     key ^= board.get_zobrist()[768]
 #     print(key)
 #     key ^= board.get_zobrist()[768]
-#     print(key) 
+#     print(key)
 
-#profiler.disable()
+# profiler.disable()
 #stats = pstats.Stats(profiler).sort_stats('tottime')
-#stats.print_stats()
+# stats.print_stats()
 # cProfile.runctx("my_board.nega_max(5,-200000,200000)", globals(), locals(), "Profile.prof")
 
 # stats = pstats.Stats("Profile.prof").sort_stats('tottime')

@@ -6,5 +6,6 @@ from Cython.Build import cythonize
 # ext = Extension(name='cython_test', sources=['helloworld.pyx'])
 setup(
     name='cython_test',
-    ext_modules=cythonize(['*.pyx'], language_level='3', annotate=True, build_dir='build')
+    ext_modules=cythonize(['*.pyx'], language_level='3',
+                          annotate=True, build_dir='build')
 )

@@ -1,7 +1,7 @@
 import unittest
 from board import *
 
-## Performance test to test the move generation algorithm
+# Performance test to test the move generation algorithm
 
 
 class TestFullGame(unittest.TestCase):
@@ -18,17 +18,20 @@ class TestFullGame(unittest.TestCase):
 
 
 class Perft(unittest.TestCase):
-    
+
     def test_perft1_one_move(self):
-        board = Board('rrrrrrrr/rrrrrrrr/rrrrrrrr/rrrrrrrr/rbrrrrrr/pbprrrrp/nbbpnPnN/knbbnKn1 b - - 0 1')
+        board = Board(
+            'rrrrrrrr/rrrrrrrr/rrrrrrrr/rrrrrrrr/rbrrrrrr/pbprrrrp/nbbpnPnN/knbbnKn1 b - - 0 1')
         self.assertEqual(board.perft(1), 1)
 
     def test_perft1_checkmate(self):
-        board = Board('rrrrrrrr/rrrrrrrr/rrrrrrrr/rrrrrrrr/rbrrrrrr/pbprr1rp/nbbpnrnN/knbbnKn1 w - - 0 2')
+        board = Board(
+            'rrrrrrrr/rrrrrrrr/rrrrrrrr/rrrrrrrr/rbrrrrrr/pbprr1rp/nbbpnrnN/knbbnKn1 w - - 0 2')
         self.assertEqual(board.perft(2), 0)
 
     def test_perft1_stalemate(self):
-        board = Board('rrrrrrrr/rrrrrrrr/rrrrrrrr/rrrrrrrr/rbrrrrrr/pbprrrrp/nbbpnrnN/knbbnrnK b - - 0 1')
+        board = Board(
+            'rrrrrrrr/rrrrrrrr/rrrrrrrr/rrrrrrrr/rbrrrrrr/pbprrrrp/nbbpnrnN/knbbnrnK b - - 0 1')
         self.assertEqual(board.perft(2), 0)
 
     def test_perft2_promotion(self):
@@ -61,19 +64,23 @@ class Perft(unittest.TestCase):
         self.assertEqual(board.perft(5), 4865609)
 
     def test_perft2_Kiwipete(self):
-        board = Board('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
+        board = Board(
+            'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
         self.assertEqual(board.perft(2), 2039)
 
     def test_perft3_Kiwipete(self):
-        board = Board('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
+        board = Board(
+            'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
         self.assertEqual(board.perft(3), 97862)
 
     def test_perft4_Kiwipete(self):
-        board = Board('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
+        board = Board(
+            'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0')
         self.assertEqual(board.perft(4), 4085603)
-    
+
     def test_perft_iter_Kiwipete(self):
-        board = Board('r3k2r/p1ppqpb1/bn2pQp1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R b KQkq - 0 1')
+        board = Board(
+            'r3k2r/p1ppqpb1/bn2pQp1/3PN3/1p2P3/2N4p/PPPBBPPP/R3K2R b KQkq - 0 1')
         self.assertEqual(board.perft(3), 77838)
 
     def test_perft_discover_promotions(self):

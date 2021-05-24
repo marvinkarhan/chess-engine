@@ -5,7 +5,8 @@
 
 #include OATPP_CODEGEN_BEGIN(DTO) ///< Begin DTO codegen section
 
-class SocketResponse : public oatpp::DTO {
+class SocketResponse : public oatpp::DTO
+{
 
   DTO_INIT(SocketResponse, DTO /* extends */)
   DTO_FIELD(String, fen);

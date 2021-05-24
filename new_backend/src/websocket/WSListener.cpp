@@ -45,17 +45,17 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     if (compare == 0)
     {
       SessionMap[pointerToSession] += 1;
-      for (auto const& x : SessionMap)
+      for (auto const &x : SessionMap)
       {
-        OATPP_LOGD(TAG, "Connection %d: %d", x.first,x.second);
+        OATPP_LOGD(TAG, "Connection %d: %d", x.first, x.second);
       }
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = startPos;
-      socketResponse->moves = {"A1","A2","A3"};
+      socketResponse->moves = {"A1", "A2", "A3"};
       socketResponse->evaluation = 0;
       socketResponse->aiMoves = {""};
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
-      oatpp::String json = jsonObjectMapper->writeToString(socketResponse); 
+      oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
     }
     /* Send message in reply */

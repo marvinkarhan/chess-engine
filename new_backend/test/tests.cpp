@@ -4,12 +4,13 @@
 #include "oatpp-test/UnitTest.hpp"
 #include <iostream>
 
-
-void runTests() {
+void runTests()
+{
   OATPP_RUN_TEST(WSTest);
 }
 
-int main() {
+int main()
+{
 
   oatpp::base::Environment::init();
 

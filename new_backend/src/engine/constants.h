@@ -13,18 +13,18 @@ const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w K
 /** TODO Fast Piece enums **/
 enum Piece : char
 {
-    WHITE_PAWN = 'P',
-    WHITE_KNIGHT = 'N',
-    WHITE_BISHOP = 'B',
-    WHITE_ROOK = 'R',
-    WHITE_QUEEN = 'Q',
-    WHITE_KING = 'K',
-    BLACK_PAWN = 'p',
-    BLACK_KNIGHT = 'n',
-    BLACK_BISHOP = 'b',
-    BLACK_ROOK = 'r',
-    BLACK_QUEEN = 'q',
-    BLACK_KING = 'k'
+  WHITE_PAWN = 'P',
+  WHITE_KNIGHT = 'N',
+  WHITE_BISHOP = 'B',
+  WHITE_ROOK = 'R',
+  WHITE_QUEEN = 'Q',
+  WHITE_KING = 'K',
+  BLACK_PAWN = 'p',
+  BLACK_KNIGHT = 'n',
+  BLACK_BISHOP = 'b',
+  BLACK_ROOK = 'r',
+  BLACK_QUEEN = 'q',
+  BLACK_KING = 'k'
 };
 
 constexpr int PROMOTION_OPTIONS_WHITE[4] = {
@@ -41,56 +41,56 @@ constexpr int PROMOTION_OPTIONS_BLACK[4] = {
 
 enum File : int
 {
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
-    H
+  A,
+  B,
+  C,
+  D,
+  E,
+  F,
+  G,
+  H
 };
 
 enum Mask : BB
 {
-    FULL = 0xffffffffffffffff,
-    A_FILE = 0x8080808080808080,
-    B_FILE = 0x4040404040404040,
-    C_FILE = 0x2020202020202020,
-    D_FILE = 0x1010101010101010,
-    E_FILE = 0x808080808080808,
-    F_FILE = 0x404040404040404,
-    G_FILE = 0x202020202020202,
-    H_FILE = 0x101010101010101,
-    NOT_H = 0xfefefefefefefefe,
-    NOT_A = 0x7f7f7f7f7f7f7f7f,
-    RANK_1 = 0xff,
-    RANK_2 = 0xff00,
-    RANK_3 = 0xff0000,
-    RANK_4 = 0xff000000,
-    RANK_5 = 0xff00000000,
-    RANK_6 = 0xff0000000000,
-    RANK_7 = 0xff000000000000,
-    RANK_8 = 0xff00000000000000
+  FULL = 0xffffffffffffffff,
+  A_FILE = 0x8080808080808080,
+  B_FILE = 0x4040404040404040,
+  C_FILE = 0x2020202020202020,
+  D_FILE = 0x1010101010101010,
+  E_FILE = 0x808080808080808,
+  F_FILE = 0x404040404040404,
+  G_FILE = 0x202020202020202,
+  H_FILE = 0x101010101010101,
+  NOT_H = 0xfefefefefefefefe,
+  NOT_A = 0x7f7f7f7f7f7f7f7f,
+  RANK_1 = 0xff,
+  RANK_2 = 0xff00,
+  RANK_3 = 0xff0000,
+  RANK_4 = 0xff000000,
+  RANK_5 = 0xff00000000,
+  RANK_6 = 0xff0000000000,
+  RANK_7 = 0xff000000000000,
+  RANK_8 = 0xff00000000000000
 };
 
 enum Castling : BB
 {
-    WHITE_KING_SIDE_WAY = 0x6,
-    WHITE_KING_SIDE_KING_WAY = 0xe,
-    WHITE_KING_SIDE_SQUARE = 1,
+  WHITE_KING_SIDE_WAY = 0x6,
+  WHITE_KING_SIDE_KING_WAY = 0xe,
+  WHITE_KING_SIDE_SQUARE = 1,
 
-    WHITE_QUEEN_SIDE_WAY = 0x70,
-    WHITE_QUEEN_SIDE_KING_WAY = 0x38,
-    WHITE_QUEEN_SIDE_SQUARE = 5,
+  WHITE_QUEEN_SIDE_WAY = 0x70,
+  WHITE_QUEEN_SIDE_KING_WAY = 0x38,
+  WHITE_QUEEN_SIDE_SQUARE = 5,
 
-    BLACK_KING_SIDE_WAY = 0x600000000000000,
-    BLACK_KING_SIDE_KING_WAY = 0xe00000000000000,
-    BLACK_KING_SIDE_SQUARE = 57,
+  BLACK_KING_SIDE_WAY = 0x600000000000000,
+  BLACK_KING_SIDE_KING_WAY = 0xe00000000000000,
+  BLACK_KING_SIDE_SQUARE = 57,
 
-    BLACK_QUEEN_SIDE_WAY = 0x7000000000000000,
-    BLACK_QUEEN_SIDE_KING_WAY = 0x3800000000000000,
-    BLACK_QUEEN_SIDE_SQUARE = 61
+  BLACK_QUEEN_SIDE_WAY = 0x7000000000000000,
+  BLACK_QUEEN_SIDE_KING_WAY = 0x3800000000000000,
+  BLACK_QUEEN_SIDE_SQUARE = 61
 };
 
 constexpr BB CASTLING_OPTIONS[4][2] = {
@@ -112,74 +112,73 @@ constexpr int DEBRUIJN_INDEX[64] = {
 
 enum Square : int
 {
-    H1,
-    G1,
-    F1,
-    E1,
-    D1,
-    C1,
-    B1,
-    A1,
-    H2,
-    G2,
-    F2,
-    E2,
-    D2,
-    C2,
-    B2,
-    A2,
-    H3,
-    G3,
-    F3,
-    E3,
-    D3,
-    C3,
-    B3,
-    A3,
-    H4,
-    G4,
-    F4,
-    E4,
-    D4,
-    C4,
-    B4,
-    A4,
-    H5,
-    G5,
-    F5,
-    E5,
-    D5,
-    C5,
-    B5,
-    A5,
-    H6,
-    G6,
-    F6,
-    E6,
-    D6,
-    C6,
-    B6,
-    A6,
-    H7,
-    G7,
-    F7,
-    E7,
-    D7,
-    C7,
-    B7,
-    A7,
-    H8,
-    G8,
-    F8,
-    E8,
-    D8,
-    C8,
-    B8,
-    A8
+  H1,
+  G1,
+  F1,
+  E1,
+  D1,
+  C1,
+  B1,
+  A1,
+  H2,
+  G2,
+  F2,
+  E2,
+  D2,
+  C2,
+  B2,
+  A2,
+  H3,
+  G3,
+  F3,
+  E3,
+  D3,
+  C3,
+  B3,
+  A3,
+  H4,
+  G4,
+  F4,
+  E4,
+  D4,
+  C4,
+  B4,
+  A4,
+  H5,
+  G5,
+  F5,
+  E5,
+  D5,
+  C5,
+  B5,
+  A5,
+  H6,
+  G6,
+  F6,
+  E6,
+  D6,
+  C6,
+  B6,
+  A6,
+  H7,
+  G7,
+  F7,
+  E7,
+  D7,
+  C7,
+  B7,
+  A7,
+  H8,
+  G8,
+  F8,
+  E8,
+  D8,
+  C8,
+  B8,
+  A8
 };
 
 extern std::string SQUARE_TO_ALGEBRAIC[64];
-
 
 // precalculate moves for squares
 extern BB SQUARE_BBS[64];
@@ -199,7 +198,7 @@ extern void initConstants();
 /** Based on https: //en.wikipedia.org/wiki/Linear_congruential_generator */
 constexpr u64 lcg(u64 seed)
 {
-    return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
+  return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
 }
 // constexpr int ZOBRIST_TABLE[781];
 

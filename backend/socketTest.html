@@ -1,14 +1,12 @@
 <html>
-    <head>
-
-    </head>
-    <body>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-        <script type="text/javascript" charset="utf-8">
-            var socket = io.connect('http://127.0.0.1:5000')
-            socket.on('connect', function() {
-                socket.emit('test_message', 'Test message!');
-            });
-        </script>
-    </body>
+  <head> </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script type="text/javascript" charset="utf-8">
+      var socket = io.connect("http://127.0.0.1:5000");
+      socket.on("connect", function () {
+        socket.emit("test_message", "Test message!");
+      });
+    </script>
+  </body>
 </html>

@@ -2,18 +2,18 @@
 
 enum PieceValues : int
 {
-    WHITE_PAWN = 100,
-    WHITE_BISHOP = 330,
-    WHITE_KNIGHT = 320,
-    WHITE_ROOK = 500,
-    WHITE_QUEEN = 900,
-    WHITE_KING = 20000,
-    BLACK_PAWN = -100,
-    BLACK_BISHOP = -330,
-    BLACK_KNIGHT = -320,
-    BLACK_ROOK = -500,
-    BLACK_QUEEN = -900,
-    BLACK_KING = -20000,
+  WHITE_PAWN = 100,
+  WHITE_BISHOP = 330,
+  WHITE_KNIGHT = 320,
+  WHITE_ROOK = 500,
+  WHITE_QUEEN = 900,
+  WHITE_KING = 20000,
+  BLACK_PAWN = -100,
+  BLACK_BISHOP = -330,
+  BLACK_KNIGHT = -320,
+  BLACK_ROOK = -500,
+  BLACK_QUEEN = -900,
+  BLACK_KING = -20000,
 };
 
 constexpr int PIECE_SQUARE_TABLES[12][64] = {
@@ -113,4 +113,3 @@ constexpr int PIECE_SQUARE_TABLES[12][64] = {
      -30, -40, -40, -50, -50, -40, -40, -30,
      -30, -40, -40, -50, -50, -40, -40, -30,
      -30, -40, -40, -50, -50, -40, -40, -30}};
-     

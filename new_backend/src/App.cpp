@@ -5,7 +5,8 @@
 
 #include <iostream>
 
-void run() {
+void run()
+{
 
   /* Register Components in scope of run() method */
   AppComponent components;
@@ -29,14 +30,14 @@ void run() {
   /* Priny info about server port */
   OATPP_LOGI("MyApp", "Server running on port %s", connectionProvider->getProperty("port").getData());
 
-  OATPP_LOGI("NoPy++","\r\n __    __            _______                                \r\n|  \\  |  \\          |       \\               __        __    \r\n| $$\\ | $$  ______  | $$$$$$$\\ __    __    |  \\      |  \\   \r\n| $$$\\| $$ /      \\ | $$__/ $$|  \\  |  \\ __| $$__  __| $$__ \r\n| $$$$\\ $$|  $$$$$$\\| $$    $$| $$  | $$|    $$  \\|    $$  \\\r\n| $$\\$$ $$| $$  | $$| $$$$$$$ | $$  | $$ \\$$$$$$$$ \\$$$$$$$$\r\n| $$ \\$$$$| $$__/ $$| $$      | $$__/ $$   | $$      | $$   \r\n| $$  \\$$$ \\$$    $$| $$       \\$$    $$    \\$$       \\$$   \r\n \\$$   \\$$  \\$$$$$$  \\$$       _\\$$$$$$$                    \r\n                              |  \\__| $$                    \r\n                               \\$$    $$                    \r\n                                \\$$$$$$               ");
+  OATPP_LOGI("NoPy++", "\r\n __    __            _______                                \r\n|  \\  |  \\          |       \\               __        __    \r\n| $$\\ | $$  ______  | $$$$$$$\\ __    __    |  \\      |  \\   \r\n| $$$\\| $$ /      \\ | $$__/ $$|  \\  |  \\ __| $$__  __| $$__ \r\n| $$$$\\ $$|  $$$$$$\\| $$    $$| $$  | $$|    $$  \\|    $$  \\\r\n| $$\\$$ $$| $$  | $$| $$$$$$$ | $$  | $$ \\$$$$$$$$ \\$$$$$$$$\r\n| $$ \\$$$$| $$__/ $$| $$      | $$__/ $$   | $$      | $$   \r\n| $$  \\$$$ \\$$    $$| $$       \\$$    $$    \\$$       \\$$   \r\n \\$$   \\$$  \\$$$$$$  \\$$       _\\$$$$$$$                    \r\n                              |  \\__| $$                    \r\n                               \\$$    $$                    \r\n                                \\$$$$$$               ");
 
   /* Run server */
   server.run();
-
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[])
+{
 
   oatpp::base::Environment::init();
 

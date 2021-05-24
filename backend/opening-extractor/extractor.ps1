@@ -8,7 +8,7 @@ $AMOUNT_OF_MOVES = 10
 Write-Output "----------------------TASK: SEARCH FOR PGN FILES-------------------"
 Get-ChildItem $FOLDER -Filter *.pgn | 
 Foreach-Object {
-    $files += $FOLDER + "/" + $_.Name + ' '
+  $files += $FOLDER + "/" + $_.Name + ' '
 }
 Write-Output "----------------------COMPLETED: SEARCH FOR PGN FILES--------------"
 Write-Output "Files to scan for: " $files
