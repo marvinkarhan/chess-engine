@@ -9,6 +9,7 @@
 #include <sstream>
 #include "../vendor/include/nlohmann/json.hpp"
 #include <fstream>
+#include "enviroment.h"
 
 using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
@@ -18,11 +19,8 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
   fullMoves = 0;
   openingMoves = 5;
   parseFenString(fen);
-  std::string filePath = "./new_backend/opening-extractor/output/openings.json";
-  std::ifstream fileStream(filePath);
-  json j;
-  fileStream >> j;
-  currentOpeningTable = j;
+  std::ifstream fileStream(enviroment::__OPENING_JSON__);
+  fileStream >> currentOpeningTable;
 }
 
 Evaluation Board::evaluateNextMove(int depth, string lastMove)
