@@ -10,7 +10,7 @@ namespace enviroment
   inline string getProjectDirectory()
   {
     string file = __FILE__;
-    int pos = ((string)__FILE__).find(__PROJECT_NAME__);
+    int pos = file.find(__PROJECT_NAME__);
     string split = file.substr(0, pos);
     return split + __PROJECT_NAME__ + "/";
   }
