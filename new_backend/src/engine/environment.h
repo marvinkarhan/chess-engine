@@ -3,7 +3,7 @@
 
 using namespace std;
 
-namespace enviroment
+namespace environment
 {
   const string __PROJECT_NAME__ = "chess-engine";
 
