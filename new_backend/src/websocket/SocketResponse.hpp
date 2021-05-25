@@ -8,7 +8,7 @@
 class SocketResponse : public oatpp::DTO
 {
 
-  DTO_INIT(SocketResponse, DTO /* extends */)
+  DTO_INIT(SocketResponse, DTO /* extends */);
   DTO_FIELD(String, fen);
   DTO_FIELD(List<String>, moves);
   DTO_FIELD(Int32, evaluation);
