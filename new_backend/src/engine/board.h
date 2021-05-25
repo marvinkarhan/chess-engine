@@ -16,7 +16,7 @@ struct StoredBoard
 {
   std::map<Piece, BB> pieces;
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide;
-  BB friendlies, enemies, epSquare;
+  BB friendliesBB, enemiesBB, epSquareBB;
   int fullMoves, halfMoves;
 };
 
@@ -69,7 +69,7 @@ public:
   auto getMovesTree(int depth);
   u64 perft(int depth);
   StoredBoard store();
-  void restore(StoredBoard board);
+  void restore(StoredBoard &board);
   void hash();
   bool makeMove(Move move);
 };

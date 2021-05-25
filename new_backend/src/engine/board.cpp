@@ -488,7 +488,8 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   if (activeSide)
   {
     // check if sth is in the way, dont check if is legal to castle
-    if (castleWhiteKingSide && WHITE_KING_SIDE_WAY & emptyBB) {
+    if (castleWhiteKingSide && WHITE_KING_SIDE_WAY & emptyBB)
+    {
       std::cout << "new Move: " + Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING).to_uci_string() << std::endl;
       *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
     }
@@ -566,7 +567,38 @@ bool Board::stalemate() {}
 bool Board::checkmate() {}
 auto Board::getMovesTree(int depth) {}
 u64 Board::perft(int depth) {}
-StoredBoard Board::store() {}
-void Board::restore(StoredBoard board) {}
+
+StoredBoard Board::store()
+{
+  StoredBoard stored;
+  stored.pieces = pieces;
+  stored.castleWhiteKingSide = castleWhiteKingSide;
+  stored.castleWhiteQueenSide = castleWhiteQueenSide;
+  stored.castleBlackKingSide = castleBlackKingSide;
+  stored.castleBlackQueenSide = castleBlackQueenSide;
+  stored.activeSide = activeSide;
+  stored.friendliesBB = friendliesBB;
+  stored.enemiesBB = enemiesBB;
+  stored.epSquareBB = epSquareBB;
+  stored.fullMoves = fullMoves;
+  stored.halfMoves = halfMoves;
+  return stored;
+}
+
+void Board::restore(StoredBoard &board)
+{
+  pieces = board.pieces;
+  castleWhiteKingSide = board.castleWhiteKingSide;
+  castleWhiteQueenSide = board.castleWhiteQueenSide;
+  castleBlackKingSide = board.castleBlackKingSide;
+  castleBlackQueenSide = board.castleBlackQueenSide;
+  activeSide = board.activeSide;
+  friendliesBB = board.friendliesBB;
+  enemiesBB = board.enemiesBB;
+  epSquareBB = board.epSquareBB;
+  fullMoves = board.fullMoves;
+  halfMoves = board.halfMoves;
+}
+
 void Board::hash() {}
 bool Board::makeMove(Move move) {}
