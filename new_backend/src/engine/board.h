@@ -3,8 +3,10 @@
 #include <string>
 #include <map>
 #include "move.h"
+#include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
+using namespace nlohmann;
 
 struct Evaluation
 {
@@ -33,16 +35,21 @@ inline void addMovesToList(Evaluation &bestEvaluation, Evaluation &newEvaluation
 
 class Board
 {
+
+private:
+  bool tableContainsKey(string moveKey, json openingTable);
+  string getRandomMove(json openingTable);
 public:
   std::map<Piece, BB> pieces;
   /** current_opening_table **/
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished;
   u64 friendliesBB, enemiesBB, epSquareBB, hashValue;
   int fullMoves, halfMoves, openingMoves;
+  nlohmann::json currentOpeningTable;
+
   Evaluation negaMax(int depth, int alpha, int beta);
   int evaluate();
-
-public:
+  Evaluation evaluateNextMove(int depth, string lastMove);
   Board(FenString fen = START_POS_FEN);
   u64 getHash();
   void resetBoard();

@@ -7,12 +7,60 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include "../vendor/include/nlohmann/json.hpp"
+#include <fstream>
 
+using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
   /* TODO: Opening init */
   openingFinished = false;
+  fullMoves = 0;
+  openingMoves = 5;
   parseFenString(fen);
+  std::string filePath = "./new_backend/opening-extractor/output/openings.json";
+  std::ifstream fileStream(filePath);
+  json j;
+  fileStream >> j;
+  currentOpeningTable = j;
+}
+
+Evaluation Board::evaluateNextMove(int depth, string lastMove)
+{
+  Evaluation eval;
+  eval.evaluation = 0;
+  eval.moves = new string[1];
+  auto currentKeys = currentOpeningTable;
+  if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
+  {
+    json newJson = currentOpeningTable[lastMove];
+    string nextMove = getRandomMove(newJson);
+    currentOpeningTable = currentOpeningTable[lastMove][nextMove];
+    eval.moves[0] = nextMove;
+    return eval;
+  }
+}
+
+bool Board::tableContainsKey(string moveKey, json openingTable)
+{
+  for (auto &[key, val] : openingTable.items())
+  {
+    if (moveKey == key)
+      return true;
+  }
+  return false;
+}
+
+string Board::getRandomMove(json openingTable)
+{
+  int randomKeyNumber = rand() % openingTable.size();
+  int i = 0;
+  for (auto &[key, val] : openingTable.items())
+  {
+    if (i == randomKeyNumber)
+      return key;
+    i++;
+  }
 }
 
 void Board::resetBoard()
@@ -214,12 +262,11 @@ BB *Board::getActivePieces(bool activeSide)
   }
 }
 
-
-template<PieceType pt>
-BB Board::getPieceForSide(bool activeSide) {
-  return pieces[(Piece) (pt + (activeSide ? 0 : 32))]; 
+template <PieceType pt>
+BB Board::getPieceForSide(bool activeSide)
+{
+  return pieces[(Piece)(pt + (activeSide ? 0 : 32))];
 }
-
 
 Piece Board::getPieceOnSquare(BB bb)
 {
@@ -314,7 +361,7 @@ BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /
   BB potentialAttackersBB = potentialAttackers(square, activeSide, occupied, onlySliders, excludeSliders);
 
   BB attackersBB = BB(0);
-  while(potentialAttackersBB)
+  while (potentialAttackersBB)
   {
     int moveSquare = pop_lsb(potentialAttackersBB);
     if (may_move(moveSquare, square, occupied))
@@ -322,7 +369,7 @@ BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /
   }
   return attackersBB;
 }
-BB Board::blockers(int square, bool activeSide, BB occupied) 
+BB Board::blockers(int square, bool activeSide, BB occupied)
 {
   BB blockersBB = BB(0);
 
