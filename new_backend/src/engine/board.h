@@ -61,8 +61,8 @@ public:
   BB potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
-  Move *pseudoLegalMovesGenerator(Move *moveList, bool activeSide, bool onlyEvasions = false);
-  Move *legalMovesGenerator(Move *moveList, bool activeSide);
+  Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions = false);
+  Move *generateLegalMoves(Move *moveList, bool activeSide);
   bool moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied);
   bool stalemate();
   bool checkmate();
@@ -80,9 +80,9 @@ struct MoveList
   Move moves[MAX_MOVES], *last;
   MoveList(Board& board, bool activeSide, bool onlyEvasions = false) {
     if (moveType == PSEUDO_LEGAL_MOVES)
-      last = board.pseudoLegalMovesGenerator(moves, activeSide, onlyEvasions);
+      last = board.generatePseudoLegalMoves(moves, activeSide, onlyEvasions);
     else if (moveType == LEGAL_MOVES)
-      last = board.legalMovesGenerator(moves, activeSide);
+      last = board.generateLegalMoves(moves, activeSide);
   }
   // implement iterator pattern
   const Move *begin() const { return moves; }

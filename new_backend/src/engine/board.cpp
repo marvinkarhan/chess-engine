@@ -337,7 +337,7 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
   }
   return blockersBB;
 }
-Move *Board::pseudoLegalMovesGenerator(Move *moveList, bool activeSide, bool onlyEvasions /*= false*/)
+Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions /*= false*/)
 {
   BB *pieces = getActivePieces(activeSide);
   BB pawnBB = pieces[0], rookBB = pieces[1], knightBB = pieces[2], bishopBB = pieces[3], queenBB = pieces[4], kingBB = pieces[5];
@@ -507,7 +507,7 @@ Move *Board::pseudoLegalMovesGenerator(Move *moveList, bool activeSide, bool onl
   return moveList;
 }
 
-Move *Board::legalMovesGenerator(Move *moveList, bool activeSide) {}
+Move *Board::generateLegalMoves(Move *moveList, bool activeSide) {}
 
 bool Board::moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied) {}
 bool Board::stalemate() {}

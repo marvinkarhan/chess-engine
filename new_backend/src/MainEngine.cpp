@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
   {
     std::cout << move.to_uci_string() + ", ";
   }
-  // std::cout << board.pseudoLegalMovesGenerator(true) << std::endl;
+  // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
