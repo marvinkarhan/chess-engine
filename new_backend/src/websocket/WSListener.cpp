@@ -2,6 +2,7 @@
 #include <map>
 #include "BoardEvents.hpp"
 #include "SocketResponse.hpp"
+#include "SocketRequest.hpp"
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 #include "../engine/board.h"
 #include "oatpp/core/Types.hpp"
@@ -37,32 +38,45 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
   if (size == 0)
   { // message transfer finished
 
-    auto wholeMessage = m_messageBuffer.toString();
+    const oatpp::String wholeMessage = m_messageBuffer.toString();
     m_messageBuffer.clear();
     auto shared = socket.getListener();
     long long pointerToSession = (long long)shared.get();
 
-    //OATPP_LOGD(TAG,"Connection %s", shared);
-
-    //OATPP_LOGD(TAG, "onMessage message='%s'", wholeMessage->c_str());
-    oatpp::String startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    int compare = BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD].compare(wholeMessage->c_str());
-    if (compare == 0)
-    {
+    const char *jsonData = wholeMessage->c_str();
+  	auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+    oatpp::Object<SocketRequest> request = jsonObjectMapper->readFromString<oatpp::Object<SocketRequest>>(wholeMessage);
+    const char *emitMessage = request->emitMessage->c_str();
+    cout << "Request: " << request->emitMessage->c_str() << endl;
+    if(strcmp(emitMessage,BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0) {
+      cout << "Requested new board!" << endl;
       Board *board = new Board();
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = board->toFenString().c_str();
-      socketResponse->moves = {"A1", "A2", "A3"};
+      socketResponse->moves = {"e2e4", "A2", "A3"};
       socketResponse->evaluation = 0;
       socketResponse->aiMoves = {""};
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
+    } else if(strcmp(emitMessage,BOARD_EVENTS_NAMES[BoardEvents::MAKE_MOVE]) == 0) {
+      cout << "Requested new Move " << endl;
+      //Map to NewBoardRequest;
+      oatpp::Object<MoveRequest> request = jsonObjectMapper->readFromString<oatpp::Object<MoveRequest>>(wholeMessage);
+      cout << "Requested move is: " << request->move->c_str() << endl;
+      Board *userBoard = SessionMap[pointerToSession];
+      //Evaluation newAiMove = userBoard->evaluateNextMove(4, request->move->c_str());
+      auto socketResponse = SocketResponse::createShared();
+      socketResponse->fen = userBoard->toFenString().c_str();
+      socketResponse->moves = {"e2e4", "A2", "A3"};
+      socketResponse->evaluation = 0;
+      socketResponse->aiMoves = {""};
+      auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+      oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
+      socket.sendOneFrameText(json);
+      // userBoard->makeMove();
     }
-    /* Send message in reply */
-    //socket.sendOneFrameText( "Hello from oatpp!: " + wholeMessage);
-    //socket.sendOneFrameText("{\"fen\": \"hier_fen\" ,\"moves\": [\"a1\",\"a2\"], \"evaluation\" : \"2\", \"aiMoves\": [\"a1\"]}");
   }
   else if (size > 0)
   { // message frame received
