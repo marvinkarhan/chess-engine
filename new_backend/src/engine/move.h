@@ -15,10 +15,10 @@ class Move
 public:
   int originSquare;
   int targetSquare;
-  char promotion;
+  Piece promotion;
   MoveType type;
   Move();
-  Move(int originSquare, int targetSquare, MoveType type = NORMAL, char promotion = 0);
+  Move(int originSquare, int targetSquare, MoveType type = NORMAL, Piece promotion = NO_PIECE);
   bool operator==(const Move &other);
   std::string to_uci_string();
 };

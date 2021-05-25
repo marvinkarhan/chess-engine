@@ -54,15 +54,15 @@ public:
   BB blackPiecesBB();
   BB allPiecesBB();
   BB *getActivePieces(bool activeSide);
-  template<PieceType pt>
+  template <PieceType pt>
   BB getPieceForSide(bool activeSide);
   Piece getPieceOnSquare(BB bb);
   void parseFenString(FenString fen);
   BB potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
-  auto pseudoLegalMovesGenerator(bool activeSide, bool onlyEvasions = false);
-  Move *legalMovesGenerator(bool activeSide = 0);
+  Move *pseudoLegalMovesGenerator(Move *moveList, bool activeSide, bool onlyEvasions = false);
+  Move *legalMovesGenerator(Move *moveList, bool activeSide);
   bool moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied);
   bool stalemate();
   bool checkmate();
@@ -72,4 +72,20 @@ public:
   void restore(StoredBoard board);
   void hash();
   bool makeMove(Move move);
+};
+
+template<MoveGenType moveType>
+struct MoveList
+{
+  Move moves[MAX_MOVES], *last;
+  MoveList(Board& board, bool activeSide, bool onlyEvasions = false) {
+    if (moveType == PSEUDO_LEGAL_MOVES)
+      last = board.pseudoLegalMovesGenerator(moves, activeSide, onlyEvasions);
+    else if (moveType == LEGAL_MOVES)
+      last = board.legalMovesGenerator(moves, activeSide);
+  }
+  // implement iterator pattern
+  const Move *begin() const { return moves; }
+  const Move *end() const { return last; }
+  size_t size() const { return last - moves; }
 };

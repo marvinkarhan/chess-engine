@@ -27,7 +27,7 @@ static std::vector<std::vector<Direction>> KNIGHT_MOVES{
     {RIGHT, RIGHT, UP},
     {RIGHT, RIGHT, DOWN},
     {DOWN, DOWN, LEFT},
-    {DOWN, DOWN, LEFT}};
+    {DOWN, DOWN, RIGHT}};
 
 inline int bitScanForward(BB bb)
 {
@@ -253,9 +253,9 @@ inline BB knight_moves(BB bb, BB friendlies_bb)
   BB moves_bb = 0;
   for (auto &moves : KNIGHT_MOVES)
   {
-    BB moveAcc = BB(0);
+    BB moveAcc = bb;
     for (Direction &dir : moves)
-      moveAcc |= move(bb, dir);
+      moveAcc = move(moveAcc, dir);
     moves_bb |= moveAcc;
   }
   return moves_bb & ~friendlies_bb;

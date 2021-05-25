@@ -9,6 +9,14 @@ typedef std::string FenString;
 
 const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+const int MAX_MOVES = 256;
+
+enum MoveGenType
+{
+  PSEUDO_LEGAL_MOVES,
+  LEGAL_MOVES
+};
+
 /** TODO Fast Piece enums **/
 enum Piece : char
 {
@@ -37,13 +45,13 @@ enum PieceType : char
   KING = 'K',
 };
 
-constexpr int PROMOTION_OPTIONS_WHITE[4] = {
+constexpr Piece PROMOTION_OPTIONS_WHITE[4] = {
     Piece::WHITE_KNIGHT,
     Piece::WHITE_BISHOP,
     Piece::WHITE_QUEEN,
     Piece::WHITE_ROOK};
 
-constexpr int PROMOTION_OPTIONS_BLACK[4] = {
+constexpr Piece PROMOTION_OPTIONS_BLACK[4] = {
     Piece::BLACK_KNIGHT,
     Piece::BLACK_BISHOP,
     Piece::BLACK_QUEEN,

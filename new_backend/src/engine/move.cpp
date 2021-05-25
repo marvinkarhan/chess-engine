@@ -8,12 +8,12 @@ Move::Move()
   type = NORMAL;
 }
 
-Move::Move(int originSquare, int targetSquare, MoveType type /*=NORMAL*/, char promotion /*=0*/)
+Move::Move(int originSquare, int targetSquare, MoveType type /*=NORMAL*/, Piece promotion /*=NO_PIECE*/)
 {
-  originSquare = 0;
-  targetSquare = 0;
-  promotion = promotion;
-  type = type;
+  this->originSquare = originSquare;
+  this->targetSquare = targetSquare;
+  this->promotion = promotion;
+  this->type = type;
 }
 
 bool Move::operator==(const Move &other)
@@ -25,5 +25,5 @@ bool Move::operator==(const Move &other)
 
 std::string Move::to_uci_string()
 {
-  return SQUARE_TO_ALGEBRAIC[originSquare] + SQUARE_TO_ALGEBRAIC[targetSquare] + (promotion ? "" + promotion : "");
+  return SQUARE_TO_ALGEBRAIC[originSquare] + SQUARE_TO_ALGEBRAIC[targetSquare] + (promotion ? std::string(1, promotion) : "");
 }
