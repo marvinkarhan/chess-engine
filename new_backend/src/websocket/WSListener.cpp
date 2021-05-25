@@ -3,10 +3,14 @@
 #include "BoardEvents.hpp"
 #include "SocketResponse.hpp"
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
+#include "../engine/board.h"
+#include "oatpp/core/Types.hpp"
+#include "oatpp/core/macro/codegen.hpp"
+#include <iostream>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // WSListener
 
-std::map<long, int> SessionMap;
+std::map<long, Board*> SessionMap;
 void WSListener::onPing(const WebSocket &socket, const oatpp::String &message)
 {
   OATPP_LOGD(TAG, "onPing");
@@ -22,6 +26,7 @@ void WSListener::onClose(const WebSocket &socket, v_uint16 code, const oatpp::St
 {
   auto shared = socket.getListener();
   long long pointerToSession = (long long)shared.get();
+  delete SessionMap[pointerToSession];
   SessionMap.erase(pointerToSession);
   OATPP_LOGD(TAG, "onClose code=%d", code);
 }
@@ -44,13 +49,10 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     int compare = BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD].compare(wholeMessage->c_str());
     if (compare == 0)
     {
-      SessionMap[pointerToSession] += 1;
-      for (auto const &x : SessionMap)
-      {
-        OATPP_LOGD(TAG, "Connection %d: %d", x.first, x.second);
-      }
+      Board *board = new Board();
+      SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
-      socketResponse->fen = startPos;
+      socketResponse->fen = board->toFenString().c_str();
       socketResponse->moves = {"A1", "A2", "A3"};
       socketResponse->evaluation = 0;
       socketResponse->aiMoves = {""};
