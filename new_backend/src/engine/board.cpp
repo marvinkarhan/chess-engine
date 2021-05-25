@@ -37,6 +37,7 @@ Evaluation Board::evaluateNextMove(int depth, string lastMove)
     eval.moves[0] = nextMove;
     return eval;
   }
+  return negaMax(depth, INT32_MIN, INT32_MAX);
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
