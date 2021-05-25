@@ -10,6 +10,7 @@
 #include "../vendor/include/nlohmann/json.hpp"
 #include <fstream>
 #include "environment.h"
+#include "time.h"
 
 using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
@@ -25,12 +26,11 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
 
 Evaluation Board::evaluateNextMove(int depth, string lastMove)
 {
-  Evaluation eval;
-  eval.evaluation = 0;
-  eval.moves = new string[1];
-  auto currentKeys = currentOpeningTable;
   if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
   {
+    Evaluation eval;
+    eval.evaluation = 0;
+    eval.moves = new string[1];
     json newJson = currentOpeningTable[lastMove];
     string nextMove = getRandomMove(newJson);
     currentOpeningTable = currentOpeningTable[lastMove][nextMove];
@@ -52,6 +52,8 @@ bool Board::tableContainsKey(string moveKey, json openingTable)
 
 string Board::getRandomMove(json openingTable)
 {
+  // Seeding. Turn it off if you want the same random moves on startup.
+  srand(time(0));
   int randomKeyNumber = rand() % openingTable.size();
   int i = 0;
   for (auto &[key, val] : openingTable.items())
