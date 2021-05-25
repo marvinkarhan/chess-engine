@@ -63,7 +63,7 @@ public:
   BB blockers(int square, bool activeSide, BB occupied);
   Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions = false);
   Move *generateLegalMoves(Move *moveList, bool activeSide);
-  bool moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied);
+  bool moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingAttackersBB, int kingSquare, BB occupied);
   bool stalemate();
   bool checkmate();
   auto getMovesTree(int depth);

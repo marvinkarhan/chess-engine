@@ -84,7 +84,7 @@ Evaluation Board::negaMax(int depth, int alpha, int beta)
     bestEvaluation.moves = {};
     return bestEvaluation;
   }
-  for (Move move: MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide))
+  for (Move move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide))
   {
     backup = store();
     if (makeMove(move))
@@ -350,10 +350,6 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
   BB evasionBB = FULL;
   BB bb, bb2;
-  // std::cout << "friendliesBB" << std::endl;
-  // printBitboard(friendliesBB);
-  // std::cout << "enemiesBB" << std::endl;
-  // printBitboard(enemiesBB);
   int originSquare, targetSquare;
   if (onlyEvasions)
   {
@@ -437,16 +433,16 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       }
     }
     // rook moves
-    while (rookBB)
-    {
-      originSquare = pop_lsb(rookBB);
-      bb = rook_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & evasionBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = Move(originSquare, targetSquare);
-      }
-    }
+    // while (rookBB)
+    // {
+    //   originSquare = pop_lsb(rookBB);
+    //   bb = rook_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & evasionBB;
+    //   while (bb)
+    //   {
+    //     targetSquare = pop_lsb(bb);
+    //     *moveList++ = Move(originSquare, targetSquare);
+    //   }
+    // }
     // bishop moves
     while (bishopBB)
     {
@@ -492,24 +488,80 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   if (activeSide)
   {
     // check if sth is in the way, dont check if is legal to castle
-    if (castleWhiteKingSide && !WHITE_KING_SIDE_KING_WAY & occupiedBB)
+    if (castleWhiteKingSide && WHITE_KING_SIDE_WAY & emptyBB) {
+      std::cout << "new Move: " + Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING).to_uci_string() << std::endl;
       *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
-    if (castleWhiteQueenSide && !WHITE_QUEEN_SIDE_KING_WAY & occupiedBB)
+    }
+    if (castleWhiteQueenSide && WHITE_QUEEN_SIDE_WAY & emptyBB)
       *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE, CASTLING);
   }
   else
   {
-    if (castleBlackKingSide && !BLACK_KING_SIDE_KING_WAY & occupiedBB)
+    if (castleBlackKingSide && BLACK_KING_SIDE_WAY & emptyBB)
       *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE, CASTLING);
-    if (castleBlackQueenSide && !BLACK_QUEEN_SIDE_KING_WAY & occupiedBB)
+    if (castleBlackQueenSide && BLACK_QUEEN_SIDE_WAY & emptyBB)
       *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE, CASTLING);
   }
   return moveList;
 }
 
-Move *Board::generateLegalMoves(Move *moveList, bool activeSide) {}
+Move *Board::generateLegalMoves(Move *moveList, bool activeSide)
+{
+  BB kingBB = getPieceForSide<KING>(activeSide);
+  int kingSquare = bitScanForward(kingBB);
+  BB occupiedBB = friendliesBB | enemiesBB;
+  BB blockersBB = blockers(kingSquare, activeSide, occupiedBB);
+  BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
+  bool onlyEvasions = (bool)kingAttackersBB;
+  for (const Move &move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide, onlyEvasions))
+  {
+    // only check if move is legal is it is one of:
+    // case 1: piece is pinned
+    // case 2: piece is king
+    // case 3: move is en passant
+    if ((blockersBB && blockersBB & SQUARE_BBS[move.originSquare]) || move.originSquare == kingSquare || move.type == EN_PASSANT)
+    {
+      if (moveIsLegal(move, activeSide, blockersBB, kingAttackersBB, kingSquare, occupiedBB))
+        *moveList++ = move;
+    }
+    else
+    {
+      *moveList++ = move;
+    }
+  }
+  return moveList;
+}
 
-bool Board::moveIsLegal(Move move, bool activeSide, u64 blockers, int kingSquare, u64 occupied) {}
+bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingAttackersBB, int kingSquare, BB occupied)
+{
+  BB kingNoSlideAttackersBB = attackers(kingSquare, activeSide, occupied, false, true);
+  BB kingSlideAttackersBB = attackers(kingSquare, activeSide, occupied, true);
+  // special case: castle
+  if (move.type == CASTLING)
+  {
+    for (auto &castle : CASTLING_OPTIONS)
+    {
+      int cSquare = castle[0];
+      BB cWay = castle[1];
+      if (move.targetSquare == cSquare)
+        while (cWay)
+          // check is attacked on any square he has to move over in order to castle
+          if (attackers(pop_lsb(cWay), activeSide, occupied))
+            return false;
+    }
+  }
+  // special case: en passant
+  if (move.type == EN_PASSANT)
+    // if piece is pinned it has to move in the ray it is pinned
+    return (!blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
+  // special case: king is moving
+  if (move.originSquare == kingSquare)
+    // is king attacked after moving
+    return !attackers(move.targetSquare, activeSide, occupied ^ SQUARE_BBS[move.originSquare]);
+  // rest is eiter not a blocker or is moving along the ray of him and the king
+  return (!blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
+}
+
 bool Board::stalemate() {}
 bool Board::checkmate() {}
 auto Board::getMovesTree(int depth) {}
