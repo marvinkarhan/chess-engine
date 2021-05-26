@@ -30,6 +30,13 @@ int main(int argc, char *argv[])
   board.makeMove(uciToMove("h7h8Q"));
   board.printEveryPiece();
   // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
+  // Evaluation eval = board.evaluateNextMove(3, "e2e4");
+  // std::cout << eval.evaluation << "," << eval.moves[0] << endl;
+  // eval = board.evaluateNextMove(3, "d2d4");
+  // std::cout << eval.evaluation << "," << eval.moves[0] << endl;
+  // board.printBitboard(board.blockers(35, true, board.friendliesBB | board.enemiesBB));
+  // board.printBitboard(board.friendliesBB);
+  // std::cout << getPieceForSide<QUEEN>(false) << std::endl;
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;

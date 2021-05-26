@@ -37,6 +37,22 @@ make install
 
 cd ../../
 
+##########################################################
+## install json parser
+$MODULE_NAME = "json"
+
+git clone --depth=1 https://github.com/nlohmann/$MODULE_NAME
+
+cd $MODULE_NAME
+mkdir build
+cd build
+
+cmake -DCMAKE_INSTALL_PREFIX="$VENDOR" -G "Unix Makefiles"  ..
+make install
+
+cd ../../
+
+
 #End
 cd ../
 

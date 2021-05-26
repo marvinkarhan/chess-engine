@@ -7,12 +7,61 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include "../vendor/include/nlohmann/json.hpp"
+#include <fstream>
+#include "environment.h"
+#include "time.h"
 
+using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
   /* TODO: Opening init */
   openingFinished = false;
+  fullMoves = 0;
+  openingMoves = 5;
   parseFenString(fen);
+  std::ifstream fileStream(environment::__OPENING_JSON__);
+  fileStream >> currentOpeningTable;
+}
+
+Evaluation Board::evaluateNextMove(int depth, string lastMove)
+{
+  if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
+  {
+    Evaluation eval;
+    eval.evaluation = 0;
+    eval.moves = new string[1];
+    json newJson = currentOpeningTable[lastMove];
+    string nextMove = getRandomMove(newJson);
+    currentOpeningTable = currentOpeningTable[lastMove][nextMove];
+    eval.moves[0] = nextMove;
+    return eval;
+  }
+  return negaMax(depth, INT32_MIN, INT32_MAX);
+}
+
+bool Board::tableContainsKey(string moveKey, json openingTable)
+{
+  for (auto &[key, val] : openingTable.items())
+  {
+    if (moveKey == key)
+      return true;
+  }
+  return false;
+}
+
+string Board::getRandomMove(json openingTable)
+{
+  // Seeding. Turn it off if you want the same random moves on startup.
+  srand(time(0));
+  int randomKeyNumber = rand() % openingTable.size();
+  int i = 0;
+  for (auto &[key, val] : openingTable.items())
+  {
+    if (i == randomKeyNumber)
+      return key;
+    i++;
+  }
 }
 
 void Board::resetBoard()
