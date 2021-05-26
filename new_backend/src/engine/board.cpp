@@ -273,7 +273,7 @@ void Board::parseFenString(FenString fen)
     unsigned char file = (character - 'a');
     ss >> character;
     unsigned char rank = (character - '1');
-    epSquareBB = SQUARE_BBS[(7 - file) + 7 * rank];
+    epSquareBB = SQUARE_BBS[(7 - file) + 8 * rank];
   }
   ss >> character;
   // half moves

@@ -1,8 +1,6 @@
 #include "movehelper.h"
-#include <vector>
-#include <algorithm>
-#include <regex>
-#include <string>
+#include <sstream>
+#include <iostream>
 
 std::vector<BB> get_lsb_bb_array(BB bb)
 {
@@ -28,21 +26,27 @@ std::vector<int> get_lsb_array(BB bb)
   return indexes;
 }
 
-// TODO: Finish
-// Move uci_to_Move(std::string uci) {
-//     auto regex = std::regex("([a-h][1-8])([a-h][1-8])(.)?");
-//     auto m = std::regex_match(regex, uci);
+Move uciToMove(std::string uci) {
+  unsigned char character, file, rank;
+  std::istringstream ss(uci);
+  // origin square
+  ss >> character;
+  file = (character - 'a');
+  ss >> character;
+  rank = (character - '1');
+  int originSquare = (7 - file) + 8 * rank;
+  // target square
+  ss >> character;
+  file = (character - 'a');
+  ss >> character;
+  rank = (character - '1');
+  int targetSquare = (7 - file) + 8 * rank;
 
-//     if (m == null) {
-//         print('Invalid uci');
-//         return;
-//     }
-
-//     promotion = m.group(3);
-//     if promotion is not None and promotion not in PROMOTION_OPTIONS_W + PROMOTION_OPTIONS_B:
-//         print('Invalid promotion in uci');
-//         return;
-//     origin_square = ALGEBRAIC_TO_INDEX[m.group(1)];
-//     target_square = ALGEBRAIC_TO_INDEX[m.group(2)];
-//     return Move(origin_square, target_square, prmtn=promotion);
-// }
+  if (!(originSquare || targetSquare))
+  {
+    throw "Invalid uci";
+  }
+  // possible promotion
+  ss >> character;
+  return Move(originSquare, targetSquare, isdigit(character) ? NORMAL : PROMOTION, isdigit(character) ? NO_PIECE : (Piece) character);
+}

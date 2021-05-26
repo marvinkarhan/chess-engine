@@ -1,7 +1,7 @@
 #include "engine/constants.h"
 #include "engine/move.h"
 #include "engine/board.h"
-#include "engine/moveHelper.h"
+#include "engine/movehelper.h"
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -10,8 +10,8 @@ int main(int argc, char *argv[])
 {
   auto start = std::chrono::high_resolution_clock::now();
   initConstants();
-  // Board board("1k6/8/8/8/6q1/8/8/R3K2R w KQ - 0 1");
-  Board board;
+  Board board("8/7P/k7/8/8/8/8/7K w - - 0 1");
+  // Board board;
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // MoveList<PSEUDO_LEGAL_MOVES> pseudoMoves(board, true);
   // std::cout << "size: " + std::to_string(pseudoMoves.size()) << std::endl;
@@ -26,8 +26,9 @@ int main(int argc, char *argv[])
   // {
   //   std::cout << move.to_uci_string() + ", ";
   // }
-  board.makeMove(Move(1, 16));
-  board.printBitboard(board.allPiecesBB());
+  // std::cout << uciToMove("g1h3").to_uci_string() << std::endl;
+  board.makeMove(uciToMove("h7h8Q"));
+  board.printEveryPiece();
   // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;

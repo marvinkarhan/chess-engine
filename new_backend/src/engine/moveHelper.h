@@ -1,6 +1,8 @@
 #include "constants.h"
+#include "move.h"
 #include <algorithm>
 #include <vector>
+#include <string>
 
 enum Direction : int
 {
@@ -277,3 +279,5 @@ inline BB may_move(int origin, int target, BB occupied_bb)
 {
   return !(in_between(origin, target) & occupied_bb);
 }
+
+extern Move uciToMove(std::string uci);
