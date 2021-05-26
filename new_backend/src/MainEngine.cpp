@@ -10,8 +10,8 @@ int main(int argc, char *argv[])
 {
   auto start = std::chrono::high_resolution_clock::now();
   initConstants();
-  Board board("1k6/8/8/8/6q1/8/8/R3K2R w KQ - 0 1");
-  // Board board;
+  // Board board("1k6/8/8/8/6q1/8/8/R3K2R w KQ - 0 1");
+  Board board;
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // MoveList<PSEUDO_LEGAL_MOVES> pseudoMoves(board, true);
   // std::cout << "size: " + std::to_string(pseudoMoves.size()) << std::endl;
@@ -26,14 +26,7 @@ int main(int argc, char *argv[])
   // {
   //   std::cout << move.to_uci_string() + ", ";
   // }
-  StoredBoard stored = board.store();
-  std::cout << "initial" << std::endl;
-  board.printBitboard(board.allPiecesBB());
-  board.parseFenString(START_POS_FEN);
-  std::cout << "intermidiate" << std::endl;
-  board.printBitboard(board.allPiecesBB());
-  board.restore(stored);
-  std::cout << "after" << std::endl;
+  board.makeMove(Move(1, 16));
   board.printBitboard(board.allPiecesBB());
   // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
   auto finish = std::chrono::high_resolution_clock::now();

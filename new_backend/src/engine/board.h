@@ -71,7 +71,7 @@ public:
   StoredBoard store();
   void restore(StoredBoard &board);
   void hash();
-  bool makeMove(Move move);
+  bool makeMove(const Move &move);
 };
 
 template<MoveGenType moveType>

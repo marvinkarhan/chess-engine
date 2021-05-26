@@ -433,16 +433,16 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       }
     }
     // rook moves
-    // while (rookBB)
-    // {
-    //   originSquare = pop_lsb(rookBB);
-    //   bb = rook_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & evasionBB;
-    //   while (bb)
-    //   {
-    //     targetSquare = pop_lsb(bb);
-    //     *moveList++ = Move(originSquare, targetSquare);
-    //   }
-    // }
+    while (rookBB)
+    {
+      originSquare = pop_lsb(rookBB);
+      bb = rook_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & evasionBB;
+      while (bb)
+      {
+        targetSquare = pop_lsb(bb);
+        *moveList++ = Move(originSquare, targetSquare);
+      }
+    }
     // bishop moves
     while (bishopBB)
     {
@@ -601,4 +601,149 @@ void Board::restore(StoredBoard &board)
 }
 
 void Board::hash() {}
-bool Board::makeMove(Move move) {}
+
+bool Board::makeMove(const Move &newMove)
+{
+  StoredBoard storedBoard = store();
+  // track if capture for half_moves
+  bool capture = false;
+  BB originSquareBB = SQUARE_BBS[newMove.originSquare];
+  BB targetSquareBB = SQUARE_BBS[newMove.targetSquare];
+  Piece originPiece = getPieceOnSquare(originSquareBB);
+  Piece targetPiece = getPieceOnSquare(targetSquareBB);
+
+  // update bitboards to represent change
+  pieces[originPiece] &= ~originSquareBB;
+  pieces[targetPiece] |= targetSquareBB;
+  // target piece only exists on capture
+  if (targetPiece)
+  {
+    pieces[targetPiece] &= ~targetSquareBB;
+    capture = true;
+  }
+
+  // en passant
+  if (originPiece == WHITE_PAWN || originPiece == BLACK_PAWN)
+  {
+    // promotion
+    if (newMove.promotion)
+    {
+      // remove pawn
+      pieces[originPiece] &= ~targetSquareBB;
+      // add promoted piece
+      pieces[newMove.promotion] |= targetSquareBB;
+    }
+    // complate ep move
+    if (epSquareBB)
+    {
+      if (targetSquareBB == epSquareBB)
+      {
+        BB capturedPawnBB = move(epSquareBB, activeSide ? DOWN : UP);
+        Piece capturedPawn = getPieceOnSquare(capturedPawnBB);
+        pieces[capturedPawn] &= ~capturedPawnBB;
+        enemiesBB &= ~capturedPawnBB;
+      }
+      epSquareBB = 0;
+      capture = true;
+    }
+    // check for resulting en passant
+    BB movedUpx2 = originSquareBB & RANK_2 && targetSquareBB & RANK_4;
+    BB movedDownx2 = originSquareBB & RANK_7 && targetSquareBB & RANK_5;
+    if (movedUpx2 || movedDownx2)
+    {
+      Piece leftSquarePiece = getPieceOnSquare(move(targetSquareBB, LEFT));
+      Piece rightSquarePiece = getPieceOnSquare(move(targetSquareBB, RIGHT));
+      Piece enemyPawnKey = activeSide ? BLACK_PAWN : WHITE_PAWN;
+      if (leftSquarePiece == enemyPawnKey || rightSquarePiece == enemyPawnKey)
+        epSquareBB = move(targetSquareBB & RANK_4, DOWN) | move(targetSquareBB & RANK_5, UP);
+    }
+  }
+  else
+  {
+    epSquareBB = 0;
+  }
+  // castles
+  // check rook moves
+  if (originPiece == WHITE_ROOK || targetPiece == WHITE_ROOK)
+  {
+    if (originSquareBB == (FILE_H & RANK_1) || targetSquareBB == (FILE_H & RANK_1))
+      castleWhiteKingSide = false;
+    else if (originSquareBB == (FILE_A & RANK_1) || targetSquareBB == (FILE_A & RANK_1))
+      castleWhiteQueenSide = false;
+  }
+  else if (originPiece == BLACK_ROOK || targetPiece == BLACK_ROOK)
+  {
+    if (originSquareBB == (FILE_H & RANK_8) || targetSquareBB == (FILE_H & RANK_8))
+      castleBlackKingSide = false;
+    else if (originSquareBB == (FILE_A & RANK_8) || targetSquareBB == (FILE_A & RANK_8))
+      castleBlackQueenSide = false;
+  }
+  // king moves
+  if (originPiece == WHITE_KING || originPiece == BLACK_KING)
+  {
+    if (activeSide)
+    {
+      castleWhiteKingSide = false;
+      castleWhiteQueenSide = false;
+    }
+    else
+    {
+      castleBlackKingSide = false;
+      castleBlackQueenSide = false;
+    }
+    // check if king move was castle
+    if (!(KING_MOVES_BBS[newMove.originSquare] & targetSquareBB))
+    {
+      // castle king side
+      if (targetSquareBB & move(move(originSquareBB, RIGHT), RIGHT))
+      {
+        // get rook
+        BB rookSquareBB = activeSide ? (FILE_H & RANK_1) : (FILE_H & RANK_8);
+        BB targetSquareBB = move(move(rookSquareBB, LEFT), LEFT);
+        Piece rookPiece = getPieceOnSquare(rookSquareBB);
+        // move rook
+        pieces[rookPiece] &= ~rookSquareBB;
+        pieces[rookPiece] |= targetSquareBB;
+        friendliesBB &= ~rookSquareBB;
+        friendliesBB |= targetSquareBB;
+      }
+      // castle queen side
+      else
+      {
+        // get rook
+        BB rookSquareBB = activeSide ? (FILE_A & RANK_1) : (FILE_A & RANK_8);
+        BB targetSquareBB = move(move(move(rookSquareBB, RIGHT), RIGHT), RIGHT);
+        Piece rookPiece = getPieceOnSquare(rookSquareBB);
+        // move rook
+        pieces[rookPiece] &= ~rookSquareBB;
+        pieces[rookPiece] |= targetSquareBB;
+        friendliesBB &= ~rookSquareBB;
+        friendliesBB |= targetSquareBB;
+      }
+    }
+  }
+  // update board properties
+  friendliesBB &= ~originSquareBB;
+  friendliesBB = targetSquareBB;
+  if (capture)
+  {
+    halfMoves = 0;
+    enemiesBB &= ~targetSquareBB;
+  }
+  else
+    halfMoves++;
+  if (activeSide)
+    fullMoves++;
+  // swap sides
+  activeSide = !activeSide;
+  friendliesBB ^= enemiesBB;
+  enemiesBB ^= friendliesBB;
+  friendliesBB ^= enemiesBB;
+  // unmake move if it was illegal
+  if (attackers(bitScanForward(pieces[activeSide ? BLACK_KING : WHITE_KING]), !activeSide, friendliesBB | enemiesBB))
+  {
+    restore(storedBoard);
+    return false;
+  }
+  return true;
+}
