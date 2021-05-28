@@ -11,6 +11,10 @@
 #include <fstream>
 #include "environment.h"
 #include "time.h"
+#include "evaluation.h"
+
+#include <bitset>
+#include <map>
 
 using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
@@ -117,7 +121,17 @@ int Board::evaluate()
 {
   int sideMultiplier = activeSide ? 1 : -1;
   int score = 0;
-  return 1;
+  printBitboard(allPiecesBB());
+  for(auto [piece,bb] : pieces) {
+    
+    cout <<  ((char) piece) << ":" << to_string(bitset<64>(bb).count()) << endl;
+    printBitboard(bb);
+    score += PieceValues[piece] * std::bitset<64>(bb).count();
+    // while(bb) {
+    //   score += PIECE_SQUARE_TABLES[piece][pop_lsb(bb)] * ((int) piece < 'a' ? 1 : -1);
+    // }
+  }
+  return score * sideMultiplier;
 }
 
 Evaluation Board::negaMax(int depth, int alpha, int beta)
@@ -140,19 +154,18 @@ Evaluation Board::negaMax(int depth, int alpha, int beta)
     {
       Evaluation newEvaluation = negaMax(depth - 1, -beta, -alpha);
       score = -newEvaluation.evaluation;
+
       restore(backup);
       if (score >= beta)
       {
         bestEvaluation.evaluation = beta;
         addMovesToList(bestEvaluation, newEvaluation, depth, move);
-        delete &newEvaluation;
         return bestEvaluation;
       }
       if (score > bestEvaluation.evaluation)
       {
         bestEvaluation.evaluation = score;
         addMovesToList(bestEvaluation, newEvaluation, depth, move);
-        delete &newEvaluation;
       }
     }
   }
@@ -539,7 +552,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
     // check if sth is in the way, dont check if is legal to castle
     if (castleWhiteKingSide && WHITE_KING_SIDE_WAY & emptyBB)
     {
-      std::cout << "new Move: " + Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING).to_uci_string() << std::endl;
+      // std::cout << "new Move: " + Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING).to_uci_string() << std::endl;
       *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
     }
     if (castleWhiteQueenSide && WHITE_QUEEN_SIDE_WAY & emptyBB)
