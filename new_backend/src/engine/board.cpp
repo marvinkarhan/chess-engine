@@ -660,10 +660,11 @@ bool Board::makeMove(const Move &newMove)
   BB targetSquareBB = SQUARE_BBS[newMove.targetSquare];
   Piece originPiece = getPieceOnSquare(originSquareBB);
   Piece targetPiece = getPieceOnSquare(targetSquareBB);
-
+  if (originPiece == NO_PIECE)
+    return false;
   // update bitboards to represent change
   pieces[originPiece] &= ~originSquareBB;
-  pieces[targetPiece] |= targetSquareBB;
+  pieces[originPiece] |= targetSquareBB;
   // target piece only exists on capture
   if (targetPiece)
   {
