@@ -60,7 +60,6 @@ public:
   BB whitePiecesBB();
   BB blackPiecesBB();
   BB allPiecesBB();
-  BB *getActivePieces(bool activeSide);
   template <PieceType pt>
   BB getPieceForSide(bool activeSide);
   Piece getPieceOnSquare(BB bb);

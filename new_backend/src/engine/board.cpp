@@ -16,6 +16,12 @@
 #include <bitset>
 #include <map>
 
+/* TODO: remove this, when replacing old pieces system with new one */
+Piece getPieceByTypeAndColor(bool activeSide, PieceType pt)
+{
+  return (Piece)(pt + (activeSide ? 0 : 32));
+}
+
 using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
@@ -41,7 +47,7 @@ Evaluation Board::evaluateNextMove(int depth, string lastMove)
     eval.moves[0] = nextMove;
     return eval;
   }
-  return negaMax(depth, INT32_MIN, INT32_MAX);
+  return negaMax(depth, INT_MIN, INT_MAX);
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
@@ -121,15 +127,13 @@ int Board::evaluate()
 {
   int sideMultiplier = activeSide ? 1 : -1;
   int score = 0;
-  printBitboard(allPiecesBB());
-  for(auto [piece,bb] : pieces) {
-    
-    cout <<  ((char) piece) << ":" << to_string(bitset<64>(bb).count()) << endl;
-    printBitboard(bb);
+  for (auto [piece, bb] : pieces)
+  {
     score += PieceValues[piece] * std::bitset<64>(bb).count();
-    // while(bb) {
-    //   score += PIECE_SQUARE_TABLES[piece][pop_lsb(bb)] * ((int) piece < 'a' ? 1 : -1);
-    // }
+    while (bb)
+    {
+      score += PIECE_SQUARE_TABLES[piece][pop_lsb(bb)] * ((int)piece < 'a' ? 1 : -1);
+    }
   }
   return score * sideMultiplier;
 }
@@ -147,7 +151,7 @@ Evaluation Board::negaMax(int depth, int alpha, int beta)
     bestEvaluation.moves = {};
     return bestEvaluation;
   }
-  for (Move move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide))
+  for (Move move : MoveList<LEGAL_MOVES>(*this, activeSide))
   {
     backup = store();
     if (makeMove(move))
@@ -231,7 +235,7 @@ void Board::printEveryPiece()
 
 BB Board::whitePiecesBB()
 {
-  BB *whitePieces = getActivePieces(true);
+  BB whitePieces[6]{pieces[getPieceByTypeAndColor(true, PAWN)], pieces[getPieceByTypeAndColor(true, KNIGHT)], pieces[getPieceByTypeAndColor(true, BISHOP)], pieces[getPieceByTypeAndColor(true, ROOK)], pieces[getPieceByTypeAndColor(true, QUEEN)], pieces[getPieceByTypeAndColor(true, KING)]};
   BB bb = BB(0);
   for (int i = 0; i < 6; i++)
   {
@@ -242,7 +246,7 @@ BB Board::whitePiecesBB()
 
 BB Board::blackPiecesBB()
 {
-  BB *blackPieces = getActivePieces(false);
+  BB blackPieces[6]{pieces[getPieceByTypeAndColor(false, PAWN)], pieces[getPieceByTypeAndColor(false, KNIGHT)], pieces[getPieceByTypeAndColor(false, BISHOP)], pieces[getPieceByTypeAndColor(false, ROOK)], pieces[getPieceByTypeAndColor(false, QUEEN)], pieces[getPieceByTypeAndColor(false, KING)]};
   BB bb = BB(0);
   for (int i = 0; i < 6; i++)
   {
@@ -261,25 +265,10 @@ BB Board::allPiecesBB()
   return bb;
 }
 
-/* TODO: fix this bad code */
-BB *Board::getActivePieces(bool activeSide)
-{
-  if (activeSide)
-  {
-    static BB whitePieces[6]{pieces[WHITE_PAWN], pieces[WHITE_ROOK], pieces[WHITE_KNIGHT], pieces[WHITE_BISHOP], pieces[WHITE_QUEEN], pieces[WHITE_KING]};
-    return whitePieces;
-  }
-  else
-  {
-    static BB blackPieces[6]{pieces[BLACK_PAWN], pieces[BLACK_ROOK], pieces[BLACK_KNIGHT], pieces[BLACK_BISHOP], pieces[BLACK_QUEEN], pieces[BLACK_KING]};
-    return blackPieces;
-  }
-}
-
 template <PieceType pt>
 BB Board::getPieceForSide(bool activeSide)
 {
-  return pieces[(Piece)(pt + (activeSide ? 0 : 32))];
+  return pieces[getPieceByTypeAndColor(activeSide, pt)];
 }
 
 Piece Board::getPieceOnSquare(BB bb)
@@ -353,8 +342,7 @@ void Board::parseFenString(FenString fen)
 
 BB Board::potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders /*= false*/, bool excludeSliders /*= false*/)
 {
-  BB *pieces = getActivePieces(!activeSide);
-  BB pawnBB = pieces[0], rookBB = pieces[1], knightBB = pieces[2], bishopBB = pieces[3], queenBB = pieces[4], kingBB = pieces[5];
+  BB pawnBB = pieces[getPieceByTypeAndColor(!activeSide, PAWN)], rookBB = pieces[getPieceByTypeAndColor(!activeSide, ROOK)], knightBB = pieces[getPieceByTypeAndColor(!activeSide, KNIGHT)], bishopBB = pieces[getPieceByTypeAndColor(!activeSide, BISHOP)], queenBB = pieces[getPieceByTypeAndColor(!activeSide, QUEEN)], kingBB = pieces[getPieceByTypeAndColor(!activeSide, KING)];
   BB potentialAttackersBB = BB(0);
   if (!excludeSliders)
   {
@@ -401,8 +389,7 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 }
 Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions /*= false*/)
 {
-  BB *pieces = getActivePieces(activeSide);
-  BB pawnBB = pieces[0], rookBB = pieces[1], knightBB = pieces[2], bishopBB = pieces[3], queenBB = pieces[4], kingBB = pieces[5];
+  BB pawnBB = pieces[getPieceByTypeAndColor(activeSide, PAWN)], rookBB = pieces[getPieceByTypeAndColor(activeSide, ROOK)], knightBB = pieces[getPieceByTypeAndColor(activeSide, KNIGHT)], bishopBB = pieces[getPieceByTypeAndColor(activeSide, BISHOP)], queenBB = pieces[getPieceByTypeAndColor(activeSide, QUEEN)], kingBB = pieces[getPieceByTypeAndColor(activeSide, KING)];
   int kingSquare = bitScanForward(kingBB);
   BB friendliesBB = activeSide ? this->friendliesBB : this->enemiesBB;
   BB notFriendliesBB = ~friendliesBB;
@@ -448,7 +435,6 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
     if (pawnsOnPromotionRank)
     {
       bb = move(pawnsOnPromotionRank, moveDirection) & emptyBB & evasionBB;
-      printBitboard(bb);
       while (bb)
       {
         targetSquare = pop_lsb(bb);
@@ -550,19 +536,16 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   if (activeSide)
   {
     // check if sth is in the way, dont check if is legal to castle
-    if (castleWhiteKingSide && WHITE_KING_SIDE_WAY & emptyBB)
-    {
-      // std::cout << "new Move: " + Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING).to_uci_string() << std::endl;
+    if (castleWhiteKingSide && !(WHITE_KING_SIDE_WAY & occupiedBB))
       *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
-    }
-    if (castleWhiteQueenSide && WHITE_QUEEN_SIDE_WAY & emptyBB)
+    if (castleWhiteQueenSide && !(WHITE_QUEEN_SIDE_WAY & occupiedBB))
       *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE, CASTLING);
   }
   else
   {
-    if (castleBlackKingSide && BLACK_KING_SIDE_WAY & emptyBB)
+    if (castleBlackKingSide && !(BLACK_KING_SIDE_WAY & occupiedBB))
       *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE, CASTLING);
-    if (castleBlackQueenSide && BLACK_QUEEN_SIDE_WAY & emptyBB)
+    if (castleBlackQueenSide && !(BLACK_QUEEN_SIDE_WAY & occupiedBB))
       *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE, CASTLING);
   }
   return moveList;
@@ -787,7 +770,7 @@ bool Board::makeMove(const Move &newMove)
   }
   // update board properties
   friendliesBB &= ~originSquareBB;
-  friendliesBB = targetSquareBB;
+  friendliesBB |= targetSquareBB;
   if (capture)
   {
     halfMoves = 0;
@@ -799,9 +782,7 @@ bool Board::makeMove(const Move &newMove)
     fullMoves++;
   // swap sides
   activeSide = !activeSide;
-  friendliesBB ^= enemiesBB;
-  enemiesBB ^= friendliesBB;
-  friendliesBB ^= enemiesBB;
+  std::swap(friendliesBB, enemiesBB);
   // unmake move if it was illegal
   if (attackers(bitScanForward(pieces[activeSide ? BLACK_KING : WHITE_KING]), !activeSide, friendliesBB | enemiesBB))
   {

@@ -5,6 +5,8 @@ set(project_name chess-server) ## rename your project here
 project(${project_name})
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "-Ofast")
+# set(CMAKE_CXX_FLAGS "-pg")
 
 include_directories(src)
 
@@ -24,7 +26,7 @@ add_library(${project_name}-lib
 
 ## link libs
 
-find_package(nlohmann_json 3.2.0 REQUIRED PATHS src/vendor/)
+find_package(nlohmann_json      3.2.0 REQUIRED PATHS src/vendor/)
 find_package(oatpp              1.2.5 REQUIRED PATHS src/vendor/)
 find_package(oatpp-websocket    1.2.5 REQUIRED  PATHS src/vendor/)
 
