@@ -27,10 +27,8 @@ int main(int argc, char *argv[])
   //   std::cout << move.to_uci_string() + ", ";
   // }
   // std::cout << uciToMove("g1h3").to_uci_string() << std::endl;
-  board.makeMove(uciToMove("e2e4"));
-  board.printBitboard(board.allPiecesBB());
-  // #Evaluation eval = board.negaMax(1, -2000, 20000);
-  // std::cout << eval.evaluation << ", " << eval.moves[0] << " "<< eval.moves[1] << " " << eval.moves[2] << " " << eval.moves[3] << endl;
+  board.makeMove(uciToMove("h2h4"));
+  board.printEveryPiece();
   // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
   // Evaluation eval = board.evaluateNextMove(3, "e2e4");
   // std::cout << eval.evaluation << "," << eval.moves[0] << endl;

@@ -1,11 +1,12 @@
 #pragma once
 #include <string>
+#include <iostream>
 
 using namespace std;
 
 namespace environment
 {
-  const string __PROJECT_NAME__ = "chess-engine";
+  const string __PROJECT_NAME__ = "new_backend";
 
   inline string getProjectDirectory()
   {
@@ -15,5 +16,5 @@ namespace environment
     return split + __PROJECT_NAME__ + "/";
   }
 
-  const string __OPENING_JSON__ = getProjectDirectory() + "new_backend/opening-extractor/output/openings.json";
+  const string __OPENING_JSON__ = getProjectDirectory() + "opening-extractor/output/openings.json";
 }
