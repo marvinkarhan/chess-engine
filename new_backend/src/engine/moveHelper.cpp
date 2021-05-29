@@ -48,5 +48,5 @@ Move uciToMove(std::string uci) {
   }
   // possible promotion
   ss >> character;
-  return Move(originSquare, targetSquare, isdigit(character) ? NORMAL : PROMOTION, isdigit(character) ? NO_PIECE : (Piece) character);
+  return Move(originSquare, targetSquare, isdigit(character) ? NORMAL : PROMOTION, isdigit(character) ? NO_PIECE : Piece(CharIndexToPiece.find(character)));
 }

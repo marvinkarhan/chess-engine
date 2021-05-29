@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include "move.h"
+#include <iostream>
 #include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
@@ -16,7 +17,9 @@ struct Evaluation
 
 struct StoredBoard
 {
-  std::map<Piece, BB> pieces;
+  BB piecesByType[7];
+  BB piecesBySide[2];
+  Piece piecePos[64];
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide;
   BB friendliesBB, enemiesBB, epSquareBB;
   int fullMoves, halfMoves;
@@ -40,13 +43,20 @@ private:
   bool tableContainsKey(string moveKey, json openingTable);
   string getRandomMove(json openingTable);
 public:
-  std::map<Piece, BB> pieces;
-  /** current_opening_table **/
+  // 6 diffrent Piece types + one for all pieces
+  BB piecesByType[7];
+  BB piecesBySide[2];
+  Piece piecePos[64];
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished;
-  u64 friendliesBB, enemiesBB, epSquareBB, hashValue;
+  u64 epSquareBB, hashValue;
   int fullMoves, halfMoves, openingMoves;
   nlohmann::json currentOpeningTable;
-
+  inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES) {
+    return piecesBySide[activeSide] & piecesByType[pt];
+  }
+  inline BB pieces(Piece piece) {
+    return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
+  }
   Evaluation negaMax(int depth, int alpha, int beta);
   int evaluate();
   Evaluation evaluateNextMove(int depth, string lastMove);
@@ -57,14 +67,9 @@ public:
   Evaluation evaluateMoves(int depth, string lastMove);
   FenString toFenString();
   void printEveryPiece();
-  BB whitePiecesBB();
-  BB blackPiecesBB();
   BB allPiecesBB();
-  template <PieceType pt>
-  BB getPieceForSide(bool activeSide);
-  Piece getPieceOnSquare(BB bb);
   void parseFenString(FenString fen);
-  BB potentialAttackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
+  BB potentialSlidingAttackers(int square, bool activeSide);
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
   Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions = false);
@@ -77,6 +82,34 @@ public:
   StoredBoard store();
   void restore(StoredBoard &board);
   void hash();
+  // to simplify updating piece positions
+  inline void createPiece(Piece piece, int targetSquare)
+  {
+    piecePos[targetSquare] = piece;
+    BB targetBB = SQUARE_BBS[targetSquare];
+    piecesByType[ALL_PIECES] |= targetBB;
+    piecesByType[getPieceType(piece)] |= targetBB;
+    piecesBySide[getPieceSide(piece)] |= targetBB;
+  }
+  inline void updatePiece(int originSquare, int targetSquare)
+  {
+    Piece piece = piecePos[originSquare];
+    piecePos[originSquare] = NO_PIECE;
+    piecePos[targetSquare] = piece;
+    BB bb = SQUARE_BBS[originSquare] | SQUARE_BBS[targetSquare];
+    piecesByType[ALL_PIECES] ^= bb;
+    piecesByType[getPieceType(piece)] ^= bb;
+    piecesBySide[getPieceSide(piece)] ^= bb;
+  }
+  inline void deletePiece(int targetSquare)
+  {
+    Piece piece = piecePos[targetSquare];
+    piecePos[targetSquare] = NO_PIECE;
+    BB targetBB = SQUARE_BBS[targetSquare];
+    piecesByType[ALL_PIECES] ^= targetBB;
+    piecesByType[getPieceType(piece)] ^= targetBB;
+    piecesBySide[getPieceSide(piece)] ^= targetBB;
+  }
   bool makeMove(const Move &move);
 };
 

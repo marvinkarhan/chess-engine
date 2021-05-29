@@ -25,5 +25,5 @@ bool Move::operator==(const Move &other)
 
 std::string Move::to_uci_string()
 {
-  return SQUARE_TO_ALGEBRAIC[originSquare] + SQUARE_TO_ALGEBRAIC[targetSquare] + (promotion ? std::string(1, promotion) : "");
+  return SQUARE_TO_ALGEBRAIC[originSquare] + SQUARE_TO_ALGEBRAIC[targetSquare] + (promotion ? std::string(1, CharIndexToPiece[promotion]) : "");
 }

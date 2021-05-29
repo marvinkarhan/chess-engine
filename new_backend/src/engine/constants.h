@@ -17,33 +17,67 @@ enum MoveGenType
   LEGAL_MOVES
 };
 
-/** TODO Fast Piece enums **/
-enum Piece : char
+// 3 lsb for piece type and the 4th for side identification
+enum Piece : int
 {
-  WHITE_PAWN = 'P',
-  WHITE_KNIGHT = 'N',
-  WHITE_BISHOP = 'B',
-  WHITE_ROOK = 'R',
-  WHITE_QUEEN = 'Q',
-  WHITE_KING = 'K',
-  BLACK_PAWN = 'p',
-  BLACK_KNIGHT = 'n',
-  BLACK_BISHOP = 'b',
-  BLACK_ROOK = 'r',
-  BLACK_QUEEN = 'q',
-  BLACK_KING = 'k',
-  NO_PIECE = 0
+  NO_PIECE = 0,
+  BLACK_PAWN,
+  BLACK_KNIGHT,
+  BLACK_BISHOP,
+  BLACK_ROOK,
+  BLACK_QUEEN,
+  BLACK_KING,
+  WHITE_PAWN = 9,
+  WHITE_KNIGHT,
+  WHITE_BISHOP,
+  WHITE_ROOK,
+  WHITE_QUEEN,
+  WHITE_KING,
 };
 
-enum PieceType : char
-{
-  PAWN = 'P',
-  KNIGHT = 'N',
-  BISHOP = 'B',
-  ROOK = 'R',
-  QUEEN = 'Q',
-  KING = 'K',
+const Piece PIECE_ENUMERATED[] = {
+    BLACK_PAWN,
+    BLACK_KNIGHT,
+    BLACK_BISHOP,
+    BLACK_ROOK,
+    BLACK_QUEEN,
+    BLACK_KING,
+    WHITE_PAWN,
+    WHITE_KNIGHT,
+    WHITE_BISHOP,
+    WHITE_ROOK,
+    WHITE_QUEEN,
+    WHITE_KING,
 };
+
+const std::string CharIndexToPiece(" pnbrqk  PNBRQK");
+
+constexpr bool
+getPieceSide(Piece piece)
+{
+  return piece >> 3;
+}
+
+enum PieceType : int
+{
+  ALL_PIECES = 0,
+  PAWN,
+  KNIGHT,
+  BISHOP,
+  ROOK,
+  QUEEN,
+  KING,
+};
+
+constexpr Piece makePiece(bool activeSide, PieceType pt)
+{
+  return Piece((activeSide << 3) + pt);
+}
+
+constexpr PieceType getPieceType(Piece piece)
+{
+  return PieceType(piece & 0b111);
+}
 
 constexpr Piece PROMOTION_OPTIONS_WHITE[4] = {
     Piece::WHITE_KNIGHT,

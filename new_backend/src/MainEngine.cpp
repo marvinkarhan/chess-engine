@@ -6,37 +6,56 @@
 #include <chrono>
 #include <string>
 
+void testNegaMax(Board &board, int depth)
+{
+  Evaluation eval = board.negaMax(depth, INT_MIN, INT_MAX);
+  std::cout << "evaluation: " << std::to_string(eval.evaluation) << std::endl;
+  std::cout << "moves: ";
+  for (int i = 0; i < depth; i++)
+  {
+    std::cout << eval.moves[i] << " ";
+  }
+  std::cout << std::endl;
+}
+
+template<MoveGenType moveType>
+void testMoveGen(Board &board)
+{
+  MoveList<moveType> legalMoves(board, board.activeSide);
+  std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
+  for (Move move: legalMoves)
+  {
+    std::cout << move.to_uci_string() + " ";
+  }
+}
+
 int main(int argc, char *argv[])
 {
-  auto start = std::chrono::high_resolution_clock::now();
   initConstants();
-  // Board board("8/7P/k7/8/8/8/8/7K w - - 0 1");
-  Board board;
+
+  Board board("rnbqkb1r/1ppppppp/p4n2/4P3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3");
+  // Board board;
+  
+  auto start = std::chrono::high_resolution_clock::now();
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
-  // MoveList<PSEUDO_LEGAL_MOVES> pseudoMoves(board, true);
-  // std::cout << "size: " + std::to_string(pseudoMoves.size()) << std::endl;
-  // for (Move move: pseudoMoves)
-  // {
-  //   std::cout << move.to_uci_string() + ", ";
-  // }
-  // std::cout << "\r\nLEGAL_MOVES" << std::endl;
-  // MoveList<LEGAL_MOVES> legalMoves(board, true);
-  // std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
-  // for (Move move: legalMoves)
-  // {
-  //   std::cout << move.to_uci_string() + ", ";
-  // }
-  // std::cout << uciToMove("g1h3").to_uci_string() << std::endl;
-  board.makeMove(uciToMove("h2h4"));
-  board.printEveryPiece();
-  // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
-  // Evaluation eval = board.evaluateNextMove(3, "e2e4");
-  // std::cout << eval.evaluation << "," << eval.moves[0] << endl;
-  // eval = board.evaluateNextMove(3, "d2d4");
-  // std::cout << eval.evaluation << "," << eval.moves[0] << endl;
-  // board.printBitboard(board.blockers(35, true, board.friendliesBB | board.enemiesBB));
-  // board.printBitboard(board.friendliesBB);
-  // std::cout << getPieceForSide<QUEEN>(false) << std::endl;
+  // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
+  // std::cout << "LEGAL_MOVES" << std::endl;
+  // testMoveGen<LEGAL_MOVES>(board);
+
+  // board.makeMove(uciToMove("g1f3"));
+  // board.makeMove(uciToMove("e7e5"));
+  // board.makeMove(uciToMove("d2d3"));
+  // board.makeMove(uciToMove("d8e7"));
+  // board.makeMove(uciToMove("d1d2"));
+  // board.printBitboard(board.piecesByType[ALL_PIECES]);
+  // std::cout << "fen: " << board.toFenString() << std::endl;
+  // board.printEveryPiece();
+  // board.printBitboard(board.allPiecesBB());
+
+  testNegaMax(board, 5);
+
+  // std::cout << std::to_string(board.evaluate()) << std::endl;
+
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
