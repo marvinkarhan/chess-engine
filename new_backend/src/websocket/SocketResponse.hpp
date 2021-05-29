@@ -11,7 +11,7 @@ class SocketResponse : public oatpp::DTO
   DTO_INIT(SocketResponse, DTO /* extends */);
   DTO_FIELD(String, fen);
   DTO_FIELD(List<String>, moves);
-  DTO_FIELD(Int32, evaluation);
+  DTO_FIELD(Float32, evaluation);
   DTO_FIELD(List<String>, aiMoves);
 };
 #include OATPP_CODEGEN_END(DTO) ///< End DTO codegen section

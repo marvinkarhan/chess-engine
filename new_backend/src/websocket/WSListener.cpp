@@ -8,10 +8,13 @@
 #include "oatpp/core/Types.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 #include <iostream>
+#include "../engine/board.h"
+#include "../engine/constants.h"
+#include "../engine/moveHelper.h"
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // WSListener
 
-std::map<long, Board*> SessionMap;
+std::map<long, Board> SessionMap;
 void WSListener::onPing(const WebSocket &socket, const oatpp::String &message)
 {
   OATPP_LOGD(TAG, "onPing");
@@ -27,7 +30,6 @@ void WSListener::onClose(const WebSocket &socket, v_uint16 code, const oatpp::St
 {
   auto shared = socket.getListener();
   long long pointerToSession = (long long)shared.get();
-  delete SessionMap[pointerToSession];
   SessionMap.erase(pointerToSession);
   OATPP_LOGD(TAG, "onClose code=%d", code);
 }
@@ -44,38 +46,64 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     long long pointerToSession = (long long)shared.get();
 
     const char *jsonData = wholeMessage->c_str();
-  	auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+    auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
     oatpp::Object<SocketRequest> request = jsonObjectMapper->readFromString<oatpp::Object<SocketRequest>>(wholeMessage);
     const char *emitMessage = request->emitMessage->c_str();
     cout << "Request: " << request->emitMessage->c_str() << endl;
-    if(strcmp(emitMessage,BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0) {
+    if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
+    {
       cout << "Requested new board!" << endl;
-      Board *board = new Board();
+      Board board;
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
-      socketResponse->fen = board->toFenString().c_str();
-      socketResponse->moves = {"e2e4", "A2", "A3"};
-      socketResponse->evaluation = 0;
+      socketResponse->fen = board.toFenString().c_str();
+      socketResponse->moves = {};
+      for (Move move : MoveList<LEGAL_MOVES>(board, board.activeSide))
+      {
+        const string value = move.to_uci_string();
+        socketResponse->moves->push_front(value.c_str());
+      }
+      socketResponse->evaluation = 0.0;
       socketResponse->aiMoves = {""};
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
-    } else if(strcmp(emitMessage,BOARD_EVENTS_NAMES[BoardEvents::MAKE_MOVE]) == 0) {
+    }
+    else if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::MAKE_MOVE]) == 0)
+    {
       cout << "Requested new Move " << endl;
-      //Map to NewBoardRequest;
+      //Map to NewBoardRequest
       oatpp::Object<MoveRequest> request = jsonObjectMapper->readFromString<oatpp::Object<MoveRequest>>(wholeMessage);
       cout << "Requested move is: " << request->move->c_str() << endl;
-      Board *userBoard = SessionMap[pointerToSession];
-      //Evaluation newAiMove = userBoard->evaluateNextMove(4, request->move->c_str());
+
+      Board *userBoard = &SessionMap[pointerToSession];
+      userBoard->printBitboard(userBoard->allPiecesBB());
+      userBoard->makeMove(uciToMove(request->move->c_str()));
+      int depth = 4;
+      Evaluation eval = userBoard->evaluateNextMove(depth, request->move->c_str());
+      cout << "Move:" << eval.moves.back() << endl;
+      userBoard->makeMove(uciToMove(eval.moves.back()));
+      userBoard->printBitboard(userBoard->allPiecesBB());
+
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();
-      socketResponse->moves = {"e2e4", "A2", "A3"};
-      socketResponse->evaluation = 0;
-      socketResponse->aiMoves = {""};
+      socketResponse->moves = {};
+      for (Move move : MoveList<LEGAL_MOVES>(*userBoard, userBoard->activeSide))
+      {
+        const string value = move.to_uci_string();
+        socketResponse->moves->push_front(value.c_str());
+      }
+      socketResponse->evaluation = eval.evaluation / 100;
+      socketResponse->aiMoves = {};
+      for (vector<string>::reverse_iterator i = eval.moves.rbegin();
+           i != eval.moves.rend(); ++i)
+      {
+        socketResponse->aiMoves->push_back(i->c_str());
+      }
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
+
       socket.sendOneFrameText(json);
-      // userBoard->makeMove();
     }
   }
   else if (size > 0)

@@ -4,6 +4,7 @@
 #include "oatpp/network/Server.hpp"
 
 #include <iostream>
+#include "./engine/constants.h"
 
 void run()
 {
@@ -11,6 +12,8 @@ void run()
   /* Register Components in scope of run() method */
   AppComponent components;
 
+  /* Init chest constants */
+  initConstants();
   /* Get router component */
   OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
 
