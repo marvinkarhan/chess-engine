@@ -11,7 +11,7 @@ using namespace nlohmann;
 struct Evaluation
 {
   int evaluation;
-  string *moves;
+  vector<string> moves;
 };
 
 struct StoredBoard
@@ -22,16 +22,6 @@ struct StoredBoard
   int fullMoves, halfMoves;
 };
 
-inline void addMovesToList(Evaluation &bestEvaluation, Evaluation &newEvaluation, int depth, Move move)
-{
-  //Add moves from the depth -1 array
-  for (int i = 0; i < depth - 1; i++)
-  {
-    bestEvaluation.moves[i + 1] = newEvaluation.moves[i];
-  }
-  //Add the current move to the front
-  bestEvaluation.moves[0] = move.to_uci_string();
-}
 
 class Board
 {

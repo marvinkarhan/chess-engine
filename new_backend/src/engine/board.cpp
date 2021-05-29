@@ -28,7 +28,7 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
   /* TODO: Opening init */
   openingFinished = false;
   fullMoves = 0;
-  openingMoves = 5;
+  openingMoves = 10;
   parseFenString(fen);
   std::ifstream fileStream(environment::__OPENING_JSON__);
   fileStream >> currentOpeningTable;
@@ -40,14 +40,15 @@ Evaluation Board::evaluateNextMove(int depth, string lastMove)
   {
     Evaluation eval;
     eval.evaluation = 0;
-    eval.moves = new string[1];
     json newJson = currentOpeningTable[lastMove];
     string nextMove = getRandomMove(newJson);
     currentOpeningTable = currentOpeningTable[lastMove][nextMove];
-    eval.moves[0] = nextMove;
+
+    eval.moves.push_back(nextMove);
+    cout << "OPENING TABLE" << endl;
     return eval;
   }
-  return negaMax(depth, INT_MIN, INT_MAX);
+  return negaMax(depth, -20000, 20000);
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
@@ -144,11 +145,9 @@ Evaluation Board::negaMax(int depth, int alpha, int beta)
   StoredBoard backup;
   Evaluation bestEvaluation;
   bestEvaluation.evaluation = alpha;
-  bestEvaluation.moves = new string[depth];
   if (depth == 0)
   {
     bestEvaluation.evaluation = evaluate();
-    bestEvaluation.moves = {};
     return bestEvaluation;
   }
   for (Move move : MoveList<LEGAL_MOVES>(*this, activeSide))
@@ -163,13 +162,15 @@ Evaluation Board::negaMax(int depth, int alpha, int beta)
       if (score >= beta)
       {
         bestEvaluation.evaluation = beta;
-        addMovesToList(bestEvaluation, newEvaluation, depth, move);
+        bestEvaluation.moves = newEvaluation.moves;
+        bestEvaluation.moves.push_back(move.to_uci_string());
         return bestEvaluation;
       }
       if (score > bestEvaluation.evaluation)
       {
         bestEvaluation.evaluation = score;
-        addMovesToList(bestEvaluation, newEvaluation, depth, move);
+        bestEvaluation.moves = newEvaluation.moves;
+        bestEvaluation.moves.push_back(move.to_uci_string());
       }
     }
   }

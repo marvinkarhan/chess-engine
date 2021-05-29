@@ -27,13 +27,14 @@ int main(int argc, char *argv[])
   //   std::cout << move.to_uci_string() + ", ";
   // }
   // std::cout << uciToMove("g1h3").to_uci_string() << std::endl;
-  board.makeMove(uciToMove("h2h4"));
-  board.printEveryPiece();
+  //board.makeMove(uciToMove("h2h4"));
+  // board.printEveryPiece();
   // std::cout << board.generatePseudoLegalMoves(true) << std::endl;
-  // Evaluation eval = board.evaluateNextMove(3, "e2e4");
-  // std::cout << eval.evaluation << "," << eval.moves[0] << endl;
-  // eval = board.evaluateNextMove(3, "d2d4");
-  // std::cout << eval.evaluation << "," << eval.moves[0] << endl;
+  Evaluation eval = board.evaluateNextMove(3, "e2e4");
+
+  std::cout << eval.evaluation << "," << eval.moves[0] << endl;
+  eval = board.negaMax(3,-2000,2000);
+  std::cout << eval.evaluation << "," << eval.moves[0] << endl;
   // board.printBitboard(board.blockers(35, true, board.friendliesBB | board.enemiesBB));
   // board.printBitboard(board.friendliesBB);
   // std::cout << getPieceForSide<QUEEN>(false) << std::endl;
