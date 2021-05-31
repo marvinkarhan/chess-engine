@@ -1,5 +1,6 @@
 #include "move.h"
 #include <string>
+#include <iostream>
 
 Move::Move()
 {

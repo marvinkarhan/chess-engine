@@ -6,8 +6,6 @@ enum MoveType
 {
   NORMAL,
   PROMOTION,
-  EN_PASSANT,
-  CASTLING
 };
 
 class Move

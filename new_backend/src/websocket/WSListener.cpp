@@ -77,7 +77,6 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       cout << "Requested move is: " << request->move->c_str() << endl;
 
       Board *userBoard = &SessionMap[pointerToSession];
-      userBoard->printBitboard(userBoard->allPiecesBB());
       userBoard->makeMove(uciToMove(request->move->c_str()));
       int depth = 6;
       PVariation pVariation;

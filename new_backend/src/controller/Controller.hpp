@@ -49,7 +49,6 @@ public:
 
   ENDPOINT("GET", "ws", ws, REQUEST(std::shared_ptr<IncomingRequest>, request))
   {
-    printf("Hallo!");
     return oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), websocketConnectionHandler);
   };
 

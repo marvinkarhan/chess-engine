@@ -1,9 +1,8 @@
 #pragma once
 #include "constants.h"
-#include <string>
-#include <map>
 #include "move.h"
 #include <iostream>
+#include <string>
 #include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
@@ -107,6 +106,8 @@ public:
     piecesBySide[getPieceSide(piece)] ^= targetBB;
   }
   bool makeMove(const Move &move);
+  bool isCastle(const Move &move, const Board &board);
+  bool isEnPassant(const Move &move, const Board &board);
 };
 
 template<MoveGenType moveType>

@@ -138,13 +138,12 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   {
     StoredBoard backup = store();
     bool makeres = makeMove(move);
-    if (makeres == false) 
-    {
-      std::cout << "illegal move chain" << std::endl;
-      for (int i = 0; i < pVariation->len; i++)
-        std::cout << pVariation->moves[i].to_uci_string() << " ";
-      
-    }
+    // if (makeres == false) 
+    // {
+    //   std::cout << "illegal move chain" << std::endl;
+    //   for (int i = 0; i < pVariation->len; i++)
+    //     std::cout << pVariation->moves[i].to_uci_string() << " "; 
+    // }
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
     restore(backup);
 
@@ -220,7 +219,7 @@ void Board::printEveryPiece()
 
 BB Board::allPiecesBB()
 {
-  piecesByType[ALL_PIECES];
+  return piecesByType[ALL_PIECES];
 }
 
 void Board::parseFenString(FenString fen)
@@ -417,7 +416,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(targetSquare, epSquare, EN_PASSANT);
+        *moveList++ = Move(targetSquare, epSquare);
       }
     }
     // rook moves
@@ -477,16 +476,16 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   {
     // check if sth is in the way, dont check if is legal to castle
     if (castleWhiteKingSide && !(WHITE_KING_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
+      *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE);
     if (castleWhiteQueenSide && !(WHITE_QUEEN_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE, CASTLING);
+      *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE);
   }
   else
   {
     if (castleBlackKingSide && !(BLACK_KING_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE, CASTLING);
+      *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE);
     if (castleBlackQueenSide && !(BLACK_QUEEN_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE, CASTLING);
+      *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE);
   }
   return moveList;
 }
@@ -505,7 +504,7 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide)
     // case 1: piece is pinned
     // case 2: piece is king
     // case 3: move is en passant
-    if ((blockersBB && blockersBB & SQUARE_BBS[move.originSquare]) || move.originSquare == kingSquare || move.type == EN_PASSANT)
+    if ((blockersBB && blockersBB & SQUARE_BBS[move.originSquare]) || move.originSquare == kingSquare || isEnPassant(move, *this))
     {
       if (moveIsLegal(move, activeSide, blockersBB, kingAttackersBB, kingSquare, occupiedBB))
         *moveList++ = move;
@@ -523,7 +522,7 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
   BB kingNoSlideAttackersBB = attackers(kingSquare, activeSide, occupied, false, true);
   BB kingSlideAttackersBB = attackers(kingSquare, activeSide, occupied, true);
   // special case: castle
-  if (move.type == CASTLING)
+  if (isCastle(move, *this))
   {
     for (auto &castle : CASTLING_OPTIONS)
     {
@@ -537,7 +536,7 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
     }
   }
   // special case: en passant
-  if (move.type == EN_PASSANT)
+  if (isEnPassant(move, *this))
     // if piece is pinned it has to move in the ray it is pinned
     return (!blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
   // special case: king is moving
@@ -683,7 +682,7 @@ bool Board::makeMove(const Move &newMove)
       castleBlackQueenSide = false;
     }
     // check if king move was castle
-    if (newMove.type == CASTLING)
+    if (isCastle(newMove, *this))
     {
       // castle king side
       if (newMove.targetSquare == newMove.originSquare - 2)
@@ -716,4 +715,14 @@ bool Board::makeMove(const Move &newMove)
     return false;
   }
   return true;
+}
+
+bool Board::isEnPassant(const Move &move, const Board &board)
+{
+  return board.epSquareBB && move.targetSquare == bitScanForward(board.activeSide) && getPieceType(board.piecePos[move.originSquare]) == PAWN;
+}
+
+bool Board::isCastle(const Move &move, const Board &board)
+{
+  return (getPieceType(board.piecePos[move.originSquare]) == KING || getPieceType(board.piecePos[move.targetSquare]) == KING) && (REY_BBS[move.originSquare][move.targetSquare] > 0);
 }

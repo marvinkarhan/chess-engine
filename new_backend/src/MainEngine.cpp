@@ -32,14 +32,15 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  // Board board("rnb1kbnr/1pPpqpp1/4pPP1/p7/8/7p/P1PPP2P/RNBQKBNR w KQq - 0 11");
-  Board board;
+  Board board("k7/8/8/8/3q4/8/6K1/8 b - - 0 1");
+  // Board board;
   auto start = std::chrono::high_resolution_clock::now();
-  // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
-  // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
-  // board.makeMove(uciToMove("e2e3"));
-  // std::cout << "LEGAL_MOVES" << std::endl;
-  // testMoveGen<LEGAL_MOVES>(board);
+  board.makeMove(uciToMove("d4g1"));
+  std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
+  testMoveGen<PSEUDO_LEGAL_MOVES>(board);
+  std::cout << "LEGAL_MOVES" << std::endl;
+  testMoveGen<LEGAL_MOVES>(board);
+  board.printBitboard(REY_BBS[9][1]);
 
   // board.makeMove(uciToMove("d7d5"));
   // bool isLegal = board.makeMove(uciToMove("g8f6"));
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
   // board.printEveryPiece();
   // board.printBitboard(board.allPiecesBB());
 
-  testNegaMax(board, 6);
+  // testNegaMax(board, 6);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

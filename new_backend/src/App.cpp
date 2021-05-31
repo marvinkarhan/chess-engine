@@ -12,7 +12,7 @@ void run()
   /* Register Components in scope of run() method */
   AppComponent components;
 
-  /* Init chest constants */
+  /* Init chess constants */
   initConstants();
   /* Get router component */
   OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
