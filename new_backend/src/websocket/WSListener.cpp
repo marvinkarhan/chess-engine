@@ -79,14 +79,13 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       Board *userBoard = &SessionMap[pointerToSession];
       userBoard->printBitboard(userBoard->allPiecesBB());
       userBoard->makeMove(uciToMove(request->move->c_str()));
-      int depth = 4;
+      int depth = 6;
       PVariation pVariation;
       cout << "depth: " << depth << endl;
       int eval = userBoard->negaMax(depth, -2000000, 2000000, &pVariation);
-
+      cout << "variation: " << pVariation.moves[0].to_uci_string() << endl;
       userBoard->makeMove(pVariation.moves[0]);
-      userBoard->printBitboard(userBoard->allPiecesBB());
-
+      cout << "Made move" << endl;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();
       socketResponse->moves = {};
