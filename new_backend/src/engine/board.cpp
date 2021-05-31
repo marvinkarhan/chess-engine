@@ -42,7 +42,7 @@ Evaluation Board::evaluateNextMove(int depth, string lastMove)
     cout << "OPENING TABLE" << endl;
     return eval;
   }
-  return negaMax(depth, -20000, 20000);
+  // return negaMax(depth, -20000, 20000);
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
@@ -77,7 +77,7 @@ void Board::resetBoard()
     piecesBySide[i] = BB(0);
   for (int i = 0; i < 64; i++)
     piecePos[i] = NO_PIECE;
-  
+
   castleWhiteKingSide = false;
   castleWhiteQueenSide = false;
   castleBlackKingSide = false;
@@ -125,42 +125,40 @@ int Board::evaluate()
   return score * sideMultiplier;
 }
 
-Evaluation Board::negaMax(int depth, int alpha, int beta)
+int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
 {
-  int score;
-  StoredBoard backup;
-  Evaluation bestEvaluation;
-  bestEvaluation.evaluation = alpha;
   if (depth == 0)
   {
-    bestEvaluation.evaluation = evaluate();
-    return bestEvaluation;
+    pVariation->len = 0;
+    return evaluate();
   }
+  PVariation variation;
+  int score;
   for (Move move : MoveList<LEGAL_MOVES>(*this, activeSide))
   {
-    backup = store();
-    if (makeMove(move))
+    StoredBoard backup = store();
+    bool makeres = makeMove(move);
+    if (makeres == false) 
     {
-      Evaluation newEvaluation = negaMax(depth - 1, -beta, -alpha);
-      score = -newEvaluation.evaluation;
+      std::cout << "illegal move chain" << std::endl;
+      for (int i = 0; i < pVariation->len; i++)
+        std::cout << pVariation->moves[i].to_uci_string() << " ";
+      
+    }
+    score = -negaMax(depth - 1, -beta, -alpha, &variation);
+    restore(backup);
 
-      restore(backup);
-      if (score >= beta)
-      {
-        bestEvaluation.evaluation = beta;
-        bestEvaluation.moves = newEvaluation.moves;
-        bestEvaluation.moves.push_back(move.to_uci_string());
-        return bestEvaluation;
-      }
-      if (score > bestEvaluation.evaluation)
-      {
-        bestEvaluation.evaluation = score;
-        bestEvaluation.moves = newEvaluation.moves;
-        bestEvaluation.moves.push_back(move.to_uci_string());
-      }
+    if (score >= beta)
+      return beta;
+    if (score > alpha)
+    {
+      alpha = score;
+      pVariation->moves[0] = move;
+      memcpy(pVariation->moves + 1, variation.moves, variation.len * sizeof(Move));
+      pVariation->len = variation.len + 1;
     }
   }
-  return bestEvaluation;
+  return alpha;
 }
 
 FenString Board::toFenString()
@@ -214,7 +212,7 @@ void Board::printEveryPiece()
   for (auto piece : PIECE_ENUMERATED)
   {
     BB bb = pieces(piece);
-    std::cout << std::to_string(piece) + ":" << std::endl;
+    std::cout << std::string(1, CharIndexToPiece[piece]) + ":" << std::endl;
     printBitboard(pieces(piece));
     std::cout << std::endl;
   }
@@ -224,7 +222,6 @@ BB Board::allPiecesBB()
 {
   piecesByType[ALL_PIECES];
 }
-
 
 void Board::parseFenString(FenString fen)
 {
@@ -384,14 +381,14 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
         for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
           *moveList++ = Move(targetSquare - 8 * directionFactor, targetSquare, PROMOTION, promotion);
       }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), LEFT) & emptyBB & evasionBB;
+      bb = move(move(pawnsOnPromotionRank, moveDirection), LEFT) & enemiesBB & evasionBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
         for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
           *moveList++ = Move(targetSquare - 9 * directionFactor, targetSquare, PROMOTION, promotion);
       }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), RIGHT) & emptyBB & evasionBB;
+      bb = move(move(pawnsOnPromotionRank, moveDirection), RIGHT) & enemiesBB & evasionBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
@@ -400,13 +397,13 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       }
     }
     // pawn captures
-    bb = move(move(pawnsNotOnPromotionRank, moveDirection), LEFT) & enemiesBB & evasionBB;
+    bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB & evasionBB;
     while (bb)
     {
       targetSquare = pop_lsb(bb);
       *moveList++ = Move(targetSquare - 9 * directionFactor, targetSquare);
     }
-    bb = move(move(pawnsNotOnPromotionRank, moveDirection), RIGHT) & enemiesBB & evasionBB;
+    bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB & evasionBB;
     while (bb)
     {
       targetSquare = pop_lsb(bb);
@@ -611,7 +608,7 @@ bool Board::makeMove(const Move &newMove)
   // target piece only exists on capture
   if (targetPiece)
   {
-    deletePiece(targetPiece);
+    deletePiece(newMove.targetSquare);
     capture = true;
   }
 

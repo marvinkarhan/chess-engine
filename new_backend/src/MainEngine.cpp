@@ -8,13 +8,12 @@
 
 void testNegaMax(Board &board, int depth)
 {
-  Evaluation eval = board.negaMax(depth, INT_MIN, INT_MAX);
-  std::cout << "evaluation: " << std::to_string(eval.evaluation) << std::endl;
+  PVariation pVariation;
+  int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
+  std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
-  for (int i = 0; i < depth; i++)
-  {
-    std::cout << eval.moves[i] << " ";
-  }
+  for (int i = 0; i < pVariation.len; i++)
+    std::cout << pVariation.moves[i].to_uci_string() << " ";
   std::cout << std::endl;
 }
 
@@ -25,7 +24,7 @@ void testMoveGen(Board &board)
   std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
   for (Move move: legalMoves)
   {
-    std::cout << move.to_uci_string() + " ";
+    std::cout << CharIndexToPiece[board.piecePos[move.originSquare]] << ": " << move.to_uci_string() + " ";
   }
 }
 
@@ -33,14 +32,18 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board("rnbqkb1r/1ppppppp/p4n2/4P3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3");
-  // Board board;
-  
+  // Board board("rnb1kbnr/1pPpqpp1/4pPP1/p7/8/7p/P1PPP2P/RNBQKBNR w KQq - 0 11");
+  Board board;
   auto start = std::chrono::high_resolution_clock::now();
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
+  // board.makeMove(uciToMove("e2e3"));
   // std::cout << "LEGAL_MOVES" << std::endl;
   // testMoveGen<LEGAL_MOVES>(board);
+
+  // board.makeMove(uciToMove("d7d5"));
+  // bool isLegal = board.makeMove(uciToMove("g8f6"));
+  // std::cout << "move is legal: " << isLegal << std::endl;
 
   // board.makeMove(uciToMove("g1f3"));
   // board.makeMove(uciToMove("e7e5"));
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
   // board.printEveryPiece();
   // board.printBitboard(board.allPiecesBB());
 
-  testNegaMax(board, 5);
+  testNegaMax(board, 6);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

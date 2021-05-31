@@ -15,6 +15,12 @@ struct Evaluation
   vector<string> moves;
 };
 
+struct PVariation
+{
+  int len = 0;
+  Move moves[MAX_MOVES];
+};
+
 struct StoredBoard
 {
   BB piecesByType[7];
@@ -47,7 +53,7 @@ public:
   inline BB pieces(Piece piece) {
     return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
   }
-  Evaluation negaMax(int depth, int alpha, int beta);
+  int negaMax(int depth, int alpha, int beta, PVariation *pVariation);
   int evaluate();
   Evaluation evaluateNextMove(int depth, string lastMove);
   Board(FenString fen = START_POS_FEN);

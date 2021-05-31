@@ -10,6 +10,7 @@ typedef std::string FenString;
 const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const int MAX_MOVES = 256;
+const int MAX_DEPTH = 20;
 
 enum MoveGenType
 {
