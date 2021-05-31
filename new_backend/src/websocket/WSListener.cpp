@@ -80,9 +80,11 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       userBoard->printBitboard(userBoard->allPiecesBB());
       userBoard->makeMove(uciToMove(request->move->c_str()));
       int depth = 4;
-      Evaluation eval = userBoard->evaluateNextMove(depth, request->move->c_str());
-      cout << "Move:" << eval.moves.back() << endl;
-      userBoard->makeMove(uciToMove(eval.moves.back()));
+      PVariation pVariation;
+      cout << "depth: " << depth << endl;
+      int eval = userBoard->negaMax(depth, -2000000, 2000000, &pVariation);
+
+      userBoard->makeMove(pVariation.moves[0]);
       userBoard->printBitboard(userBoard->allPiecesBB());
 
       auto socketResponse = SocketResponse::createShared();
@@ -93,12 +95,10 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
         const string value = move.to_uci_string();
         socketResponse->moves->push_front(value.c_str());
       }
-      socketResponse->evaluation = eval.evaluation / 100;
+      socketResponse->evaluation = eval;
       socketResponse->aiMoves = {};
-      for (vector<string>::reverse_iterator i = eval.moves.rbegin();
-           i != eval.moves.rend(); ++i)
-      {
-        socketResponse->aiMoves->push_back(i->c_str());
+      for (int i = 0; i < pVariation.len; i++) {
+        socketResponse->aiMoves->push_back(pVariation.moves[i].to_uci_string().c_str());
       }
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
