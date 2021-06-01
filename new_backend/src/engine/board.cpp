@@ -375,14 +375,14 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
         for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
           *moveList++ = Move(targetSquare - 8 * directionFactor, targetSquare, PROMOTION, promotion);
       }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), LEFT) & enemiesBB & evasionBB;
+      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB & evasionBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
         for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
           *moveList++ = Move(targetSquare - 9 * directionFactor, targetSquare, PROMOTION, promotion);
       }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), RIGHT) & enemiesBB & evasionBB;
+      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB & evasionBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
