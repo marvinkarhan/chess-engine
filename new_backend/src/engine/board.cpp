@@ -138,12 +138,6 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   {
     StoredBoard backup = store();
     bool makeres = makeMove(move);
-    // if (makeres == false) 
-    // {
-    //   std::cout << "illegal move chain" << std::endl;
-    //   for (int i = 0; i < pVariation->len; i++)
-    //     std::cout << pVariation->moves[i].to_uci_string() << " "; 
-    // }
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
     restore(backup);
 
@@ -357,8 +351,9 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
     // normal moves
     // pawns that can move one/two
     BB pawnsNotOnPromotionRank = pawnBB & ~promotionRank;
-    bb = move(pawnsNotOnPromotionRank, moveDirection) & emptyBB & evasionBB;
+    bb = move(pawnsNotOnPromotionRank, moveDirection) & emptyBB;
     bb2 = move(R3orR6 & bb, moveDirection) & emptyBB & evasionBB;
+    bb &= evasionBB;
     while (bb)
     {
       targetSquare = pop_lsb(bb);
@@ -498,7 +493,7 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide)
   BB blockersBB = blockers(kingSquare, activeSide, occupiedBB);
   BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
   bool onlyEvasions = (bool)kingAttackersBB;
-  for (const Move &move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide, onlyEvasions))
+  for (auto move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide, onlyEvasions))
   {
     // only check if move is legal is it is one of:
     // case 1: piece is pinned
@@ -550,7 +545,39 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
 bool Board::stalemate() {}
 bool Board::checkmate() {}
 auto Board::getMovesTree(int depth) {}
-u64 Board::perft(int depth) {}
+u64 Board::perft(int depth)
+{
+  u64 nodes = 0;
+  if (depth == 0) 
+    return 1ULL;
+  for (auto move : MoveList<LEGAL_MOVES>(*this, activeSide))
+  {
+    StoredBoard storedBoard = store();
+    makeMove(move);
+    nodes += perft(depth - 1);
+    restore(storedBoard);
+  }
+  return nodes;
+}
+
+std::string Board::divide(int depth)
+{
+  std::string resultsString = "";
+  u64 nodes = 0;
+  MoveList moveList = MoveList<LEGAL_MOVES>(*this, activeSide);
+  for (auto move : moveList)
+  {
+    StoredBoard storedBoard = store();
+    makeMove(move);
+    int currNodes = perft(depth - 1);
+    resultsString += move.to_uci_string() + " " + std::to_string(currNodes) + "\r\n";
+    nodes += currNodes;
+    restore(storedBoard);
+  }
+  resultsString += "Nodes: " + std::to_string(nodes) + "\r\n";
+  resultsString += "Moves: " + std::to_string(moveList.size()) + "\r\n";
+  return resultsString;
+}
 
 StoredBoard Board::store()
 {
