@@ -5,6 +5,7 @@
 #include <iostream>
 #include <chrono>
 #include <string>
+#include <cassert>
 
 void testNegaMax(Board &board, int depth)
 {
@@ -28,19 +29,32 @@ void testMoveGen(Board &board)
   }
 }
 
+void perft(int depth, u64 result, std::string fen = START_POS_FEN)
+{
+  Board board(fen);
+  u64 pertResult = board.perft(depth);
+  std::cout << "Perft " << depth << " on " << fen << std::endl;
+  std::cout << pertResult << ((pertResult == result) ? " == " : " !== ") << result;
+}
+
+void divide(int depth, std::string fen = START_POS_FEN)
+{
+  Board board(fen);
+  std::cout << "Divide " << depth << " on " << fen << std::endl;
+  std::cout << board.divide(depth);
+}
+
 int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board("k7/8/8/8/3q4/8/6K1/8 b - - 0 1");
+  Board board("rnb1kbnr/pp1ppppp/2p5/q7/8/P2P4/1PP1PPPP/RNBQKBNR w KQkq - 1 3");
   // Board board;
   auto start = std::chrono::high_resolution_clock::now();
-  board.makeMove(uciToMove("d4g1"));
-  std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
-  testMoveGen<PSEUDO_LEGAL_MOVES>(board);
-  std::cout << "LEGAL_MOVES" << std::endl;
-  testMoveGen<LEGAL_MOVES>(board);
-  board.printBitboard(REY_BBS[9][1]);
+  // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
+  // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
+  // std::cout << "\r\nLEGAL_MOVES" << std::endl;
+  // testMoveGen<LEGAL_MOVES>(board);
 
   // board.makeMove(uciToMove("d7d5"));
   // bool isLegal = board.makeMove(uciToMove("g8f6"));
@@ -55,6 +69,15 @@ int main(int argc, char *argv[])
   // std::cout << "fen: " << board.toFenString() << std::endl;
   // board.printEveryPiece();
   // board.printBitboard(board.allPiecesBB());
+
+  perft(5, 4865609ULL);
+
+  // divide(5);
+  // divide(4, "rnbqkbnr/pppppppp/8/8/8/3P4/PPP1PPPP/RNBQKBNR b KQkq - 0 1");
+  // divide(3, "rnbqkbnr/pp1ppppp/2p5/8/8/3P4/PPP1PPPP/RNBQKBNR w KQkq - 0 2");
+  // divide(2, "rnbqkbnr/pp1ppppp/2p5/8/8/P2P4/1PP1PPPP/RNBQKBNR b KQkq - 0 2");
+  // divide(1, "rnb1kbnr/pp1ppppp/2p5/q7/8/P2P4/1PP1PPPP/RNBQKBNR w KQkq - 1 3");
+  
 
   // testNegaMax(board, 6);
 

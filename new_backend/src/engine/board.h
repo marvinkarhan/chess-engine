@@ -74,6 +74,7 @@ public:
   bool checkmate();
   auto getMovesTree(int depth);
   u64 perft(int depth);
+  std::string divide(int depth);
   StoredBoard store();
   void restore(StoredBoard &board);
   void hash();
