@@ -132,7 +132,7 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   {
     if (checkmate())
     {
-      return -300000 * (activeSide ? 1 : -1) - (pVariation->len+1) * 200;
+      return -300000 * (activeSide ? 1 : -1) - (pVariation->len * 200);
     }
     return evaluate();
   }
