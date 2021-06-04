@@ -132,7 +132,7 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   {
     if (checkmate())
     { 
-      return CHECKMATE_VALUE * (activeSide ? 1 : -1);
+      return CHECKMATE_VALUE * depth * (activeSide ? 1 : -1);
     }
     return evaluate();
   }
@@ -142,9 +142,6 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   {
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
-    if(toUciString(move) == "d3c2" && depth == 6) {
-      cout << "FOUND CHECKMATE MOVE: d3c2 with score: " << score  << " on depth:" << depth << endl;
-    }
     unmakeMove(move);
 
     if (score >= beta)
