@@ -23,9 +23,15 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
   openingFinished = false;
   fullMoves = 0;
   openingMoves = 10;
+  state = nullptr;
   parseFenString(fen);
   std::ifstream fileStream(environment::__OPENING_JSON__);
   fileStream >> currentOpeningTable;
+}
+
+Board::~Board()
+{
+  delete(state);
 }
 
 Evaluation Board::evaluateNextMove(int depth, string lastMove)
@@ -136,10 +142,9 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   int score;
   for (Move move : MoveList<LEGAL_MOVES>(*this, activeSide))
   {
-    StoredBoard backup = store();
-    bool makeres = makeMove(move);
+    makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
-    restore(backup);
+    unmakeMove(move);
 
     if (score >= beta)
       return beta;
@@ -268,6 +273,7 @@ void Board::parseFenString(FenString fen)
   ss >> character;
   ss >> character;
   fullMoves = character - '0';
+  store();
   /* TODO Hash */
   // hashValue = hash();
 }
@@ -411,7 +417,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(targetSquare, epSquare);
+        *moveList++ = Move(targetSquare, epSquare, EN_PASSANT);
       }
     }
     // rook moves
@@ -471,16 +477,16 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   {
     // check if sth is in the way, dont check if is legal to castle
     if (castleWhiteKingSide && !(WHITE_KING_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE);
+      *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
     if (castleWhiteQueenSide && !(WHITE_QUEEN_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE);
+      *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE, CASTLING);
   }
   else
   {
     if (castleBlackKingSide && !(BLACK_KING_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE);
+      *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE, CASTLING);
     if (castleBlackQueenSide && !(BLACK_QUEEN_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE);
+      *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE, CASTLING);
   }
   return moveList;
 }
@@ -499,7 +505,7 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide)
     // case 1: piece is pinned
     // case 2: piece is king
     // case 3: move is en passant
-    if ((blockersBB && blockersBB & SQUARE_BBS[move.originSquare]) || move.originSquare == kingSquare || isEnPassant(move, *this))
+    if ((blockersBB && (blockersBB & SQUARE_BBS[move.originSquare])) || move.originSquare == kingSquare || move.type == EN_PASSANT)
     {
       if (moveIsLegal(move, activeSide, blockersBB, kingAttackersBB, kingSquare, occupiedBB))
         *moveList++ = move;
@@ -517,7 +523,7 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
   BB kingNoSlideAttackersBB = attackers(kingSquare, activeSide, occupied, false, true);
   BB kingSlideAttackersBB = attackers(kingSquare, activeSide, occupied, true);
   // special case: castle
-  if (isCastle(move, *this))
+  if (move.type == CASTLING)
   {
     for (auto &castle : CASTLING_OPTIONS)
     {
@@ -531,9 +537,9 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
     }
   }
   // special case: en passant
-  if (isEnPassant(move, *this))
+  if (move.type == EN_PASSANT)
     // if piece is pinned it has to move in the ray it is pinned
-    return (!blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
+    return (~blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
   // special case: king is moving
   if (move.originSquare == kingSquare)
     // is king attacked after moving
@@ -548,14 +554,13 @@ auto Board::getMovesTree(int depth) {}
 u64 Board::perft(int depth)
 {
   u64 nodes = 0;
-  if (depth == 0) 
+  if (depth == 0)
     return 1ULL;
   for (auto move : MoveList<LEGAL_MOVES>(*this, activeSide))
   {
-    StoredBoard storedBoard = store();
     makeMove(move);
     nodes += perft(depth - 1);
-    restore(storedBoard);
+    unmakeMove(move);
   }
   return nodes;
 }
@@ -567,61 +572,50 @@ std::string Board::divide(int depth)
   MoveList moveList = MoveList<LEGAL_MOVES>(*this, activeSide);
   for (auto move : moveList)
   {
-    StoredBoard storedBoard = store();
     makeMove(move);
     int currNodes = perft(depth - 1);
     resultsString += move.to_uci_string() + " " + std::to_string(currNodes) + "\r\n";
     nodes += currNodes;
-    restore(storedBoard);
+    unmakeMove(move);
   }
   resultsString += "Nodes: " + std::to_string(nodes) + "\r\n";
   resultsString += "Moves: " + std::to_string(moveList.size()) + "\r\n";
   return resultsString;
 }
 
-StoredBoard Board::store()
+void Board::store(Piece captuedPiece /*= NO_PIECE*/)
 {
-  StoredBoard stored;
-  for (int i = 0; i < 7; i++)
-    stored.piecesByType[i] = piecesByType[i];
-  for (int i = 0; i < 2; i++)
-    stored.piecesBySide[i] = piecesBySide[i];
-  for (int i = 0; i < 64; i++)
-    stored.piecePos[i] = piecePos[i];
-  stored.castleWhiteKingSide = castleWhiteKingSide;
-  stored.castleWhiteQueenSide = castleWhiteQueenSide;
-  stored.castleBlackKingSide = castleBlackKingSide;
-  stored.castleBlackQueenSide = castleBlackQueenSide;
-  stored.activeSide = activeSide;
-  stored.epSquareBB = epSquareBB;
-  stored.fullMoves = fullMoves;
-  stored.halfMoves = halfMoves;
-  return stored;
+  StoredBoard *stored = new StoredBoard();
+  stored->castleWhiteKingSide = castleWhiteKingSide;
+  stored->castleWhiteQueenSide = castleWhiteQueenSide;
+  stored->castleBlackKingSide = castleBlackKingSide;
+  stored->castleBlackQueenSide = castleBlackQueenSide;
+  stored->epSquareBB = epSquareBB;
+  stored->fullMoves = fullMoves;
+  stored->halfMoves = halfMoves;
+  stored->capturedPiece = captuedPiece;
+  stored->oldBoard = std::move(state);
+  state = std::move(stored);
 }
 
-void Board::restore(StoredBoard &board)
+void Board::restore()
 {
-  for (int i = 0; i < 7; i++)
-    piecesByType[i] = board.piecesByType[i];
-  for (int i = 0; i < 2; i++)
-    piecesBySide[i] = board.piecesBySide[i];
-  for (int i = 0; i < 64; i++)
-    piecePos[i] = board.piecePos[i];
-  castleWhiteKingSide = board.castleWhiteKingSide;
-  castleWhiteQueenSide = board.castleWhiteQueenSide;
-  castleBlackKingSide = board.castleBlackKingSide;
-  castleBlackQueenSide = board.castleBlackQueenSide;
-  activeSide = board.activeSide;
-  epSquareBB = board.epSquareBB;
-  fullMoves = board.fullMoves;
-  halfMoves = board.halfMoves;
+  castleWhiteKingSide = state->castleWhiteKingSide;
+  castleWhiteQueenSide = state->castleWhiteQueenSide;
+  castleBlackKingSide = state->castleBlackKingSide;
+  castleBlackQueenSide = state->castleBlackQueenSide;
+  epSquareBB = state->epSquareBB;
+  fullMoves = state->fullMoves;
+  halfMoves = state->halfMoves;
+  StoredBoard *oldBoard = std::move(state->oldBoard);
+  delete state;
+  state = std::move(oldBoard);
 }
 
 void Board::hash() {}
 
 bool Board::makeMove(const Move &newMove)
 {
-  StoredBoard storedBoard = store();
   // track if capture for half_moves
   bool capture = false;
   BB originSquareBB = SQUARE_BBS[newMove.originSquare];
@@ -629,14 +623,19 @@ bool Board::makeMove(const Move &newMove)
   Piece originPiece = piecePos[newMove.originSquare];
   PieceType originPieceType = getPieceType(originPiece);
   Piece targetPiece = piecePos[newMove.targetSquare];
-  if (originPiece == NO_PIECE)
-    return false;
+  // if (originPiece == NO_PIECE)
+  // {
+  //   std::cout << castleWhiteKingSide << std::endl;
+  //   std::cout << "move was illegal (no piece on origin square): " << newMove.to_uci_string() << std::endl;
+  //   return false;
+  // }
   // target piece only exists on capture
   if (targetPiece)
   {
     deletePiece(newMove.targetSquare);
     capture = true;
   }
+  store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
 
   // update bitboards to represent change
   updatePiece(newMove.originSquare, newMove.targetSquare);
@@ -645,7 +644,7 @@ bool Board::makeMove(const Move &newMove)
   if (originPieceType == PAWN)
   {
     // promotion
-    if (newMove.promotion)
+    if (newMove.type == PROMOTION)
     {
       // remove pawn
       deletePiece(newMove.targetSquare);
@@ -653,27 +652,16 @@ bool Board::makeMove(const Move &newMove)
       createPiece(newMove.promotion, newMove.targetSquare);
     }
     // en passant move
-    if (epSquareBB)
+    if (newMove.type == EN_PASSANT)
     {
-      if (targetSquareBB == epSquareBB)
-      {
-        BB capturedPawnBB = move(epSquareBB, activeSide ? DOWN : UP);
-        deletePiece(bitScanForward(capturedPawnBB));
-      }
-      epSquareBB = 0;
+      BB capturedPawnBB = move(epSquareBB, activeSide ? DOWN : UP);
+      int capturedSquare = bitScanForward(capturedPawnBB);
+      state->capturedPiece = Piece(piecePos[capturedSquare]);
+      deletePiece(capturedSquare);
       capture = true;
     }
     // check for resulting en passant
-    BB movedUpx2 = originSquareBB & RANK_2 && targetSquareBB & RANK_4;
-    BB movedDownx2 = originSquareBB & RANK_7 && targetSquareBB & RANK_5;
-    if (movedUpx2 || movedDownx2)
-    {
-      Piece leftSquarePiece = piecePos[bitScanForward(move(targetSquareBB, LEFT))];
-      Piece rightSquarePiece = piecePos[bitScanForward(move(targetSquareBB, RIGHT))];
-      Piece enemyPawnKey = activeSide ? BLACK_PAWN : WHITE_PAWN;
-      if (leftSquarePiece == enemyPawnKey || rightSquarePiece == enemyPawnKey)
-        epSquareBB = move(targetSquareBB & RANK_4, DOWN) | move(targetSquareBB & RANK_5, UP);
-    }
+    epSquareBB = getPotentialEPSquareBB(newMove.originSquare, newMove.targetSquare, *this);
   }
   else
   {
@@ -709,7 +697,7 @@ bool Board::makeMove(const Move &newMove)
       castleBlackQueenSide = false;
     }
     // check if king move was castle
-    if (isCastle(newMove, *this))
+    if (newMove.type == CASTLING)
     {
       // castle king side
       if (newMove.targetSquare == newMove.originSquare - 2)
@@ -738,18 +726,61 @@ bool Board::makeMove(const Move &newMove)
   // unmake move if it was illegal
   if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))
   {
-    restore(storedBoard);
+    printBitboard(attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]));
+    printStateHistory();
+    unmakeMove(newMove);
     return false;
   }
   return true;
 }
 
-bool Board::isEnPassant(const Move &move, const Board &board)
+void Board::unmakeMove(const Move &oldMove)
 {
-  return board.epSquareBB && move.targetSquare == bitScanForward(board.activeSide) && getPieceType(board.piecePos[move.originSquare]) == PAWN;
-}
+  // std::cout << "unmake move: " << oldMove.to_uci_string() << std::endl;
+  activeSide = !activeSide;
+  BB originSquareBB = SQUARE_BBS[oldMove.originSquare];
+  BB targetSquareBB = SQUARE_BBS[oldMove.targetSquare];
+  Piece originPiece = piecePos[oldMove.targetSquare];
 
-bool Board::isCastle(const Move &move, const Board &board)
-{
-  return (getPieceType(board.piecePos[move.originSquare]) == KING || getPieceType(board.piecePos[move.targetSquare]) == KING) && (REY_BBS[move.originSquare][move.targetSquare] > 0);
+  if (oldMove.type == PROMOTION)
+  {
+    // remove created piece
+    deletePiece(oldMove.targetSquare);
+    // recreate pawn
+    createPiece(Piece((activeSide << 3) + PAWN), oldMove.originSquare);
+  }
+  else
+    // revert piece pos
+    updatePiece(oldMove.targetSquare, oldMove.originSquare);
+  
+  if (oldMove.type == CASTLING)
+  {
+    // castle king side
+    if (oldMove.targetSquare == oldMove.originSquare - 2)
+    {
+      // get rook & move rook
+      int rookSquare = activeSide ? 0 : 56;
+      updatePiece(rookSquare + 2, rookSquare);
+    }
+    // castle queen side
+    else
+    {
+      // get rook & move rook
+      int rookSquare = activeSide ? 7 : 63;
+      updatePiece(rookSquare - 3, rookSquare);
+    }
+  }
+  else
+  {
+    // piece was captured (stored in StoredBoard)
+    if (state->capturedPiece)
+    {
+      int capturedSquare = oldMove.targetSquare;
+      if (oldMove.type == EN_PASSANT)
+        capturedSquare = oldMove.targetSquare + (activeSide ? -8 : 8);
+      // recreate captured piece
+      createPiece(state->capturedPiece, capturedSquare);
+    }
+  }
+  restore();
 }

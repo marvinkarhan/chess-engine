@@ -6,6 +6,8 @@ enum MoveType
 {
   NORMAL,
   PROMOTION,
+  EN_PASSANT,
+  CASTLING,
 };
 
 class Move
@@ -18,5 +20,5 @@ public:
   Move();
   Move(int originSquare, int targetSquare, MoveType type = NORMAL, Piece promotion = NO_PIECE);
   bool operator==(const Move &other);
-  std::string to_uci_string();
+  std::string to_uci_string() const;
 };

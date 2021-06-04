@@ -5,7 +5,8 @@
 enum BoardEvents
 {
   NEW_BOARD,
-  MAKE_MOVE
+  MAKE_MOVE,
+  UNMAKE_MOVE,
 };
-const char* BOARD_EVENTS_NAMES[2] = {"new_board", "make_move"};
+const char* BOARD_EVENTS_NAMES[3] = {"new_board", "make_move", "unmake_move"};
 #endif

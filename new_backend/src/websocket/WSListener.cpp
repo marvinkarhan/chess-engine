@@ -53,7 +53,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
     {
       cout << "Requested new board!" << endl;
-      Board board;
+      Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = board.toFenString().c_str();
@@ -77,7 +77,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       cout << "Requested move is: " << request->move->c_str() << endl;
 
       Board *userBoard = &SessionMap[pointerToSession];
-      userBoard->makeMove(uciToMove(request->move->c_str()));
+      userBoard->makeMove(uciToMove(request->move->c_str(), *userBoard));
       int depth = 6;
       PVariation pVariation;
       cout << "depth: " << depth << endl;
@@ -100,7 +100,33 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       }
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
+      socket.sendOneFrameText(json);
+    } else if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::UNMAKE_MOVE]) == 0)
+    {
+      cout << "Requested unmake Move " << endl;
 
+      Board *userBoard = &SessionMap[pointerToSession];
+      // currently not working because its a speed decrease
+      // can only be done effective by saving the moves when making them
+      // if (userBoard->state->move)
+      // {
+      //   cout << "no move to unmake" << endl;
+      //   return;
+      // }
+      // userBoard->unmakeMove(userBoard->state->move);
+      cout << "unmade move" << endl;
+      auto socketResponse = SocketResponse::createShared();
+      socketResponse->fen = userBoard->toFenString().c_str();
+      socketResponse->moves = {};
+      for (Move move : MoveList<LEGAL_MOVES>(*userBoard, userBoard->activeSide))
+      {
+        const string value = move.to_uci_string();
+        socketResponse->moves->push_front(value.c_str());
+      }
+      socketResponse->evaluation = 0.0;
+      socketResponse->aiMoves = {""};
+      auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+      oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
     }
   }

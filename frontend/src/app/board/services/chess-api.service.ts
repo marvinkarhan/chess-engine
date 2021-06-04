@@ -40,4 +40,11 @@ export class ChessApiService {
     this.newSocket?.send(JSON.stringify(request));
   }
 
+  requestUnmakeMove(): void {
+    let request = {
+      emitMessage: ChessApiEmits.UNMAKE_MOVE,
+    };
+    this.newSocket?.send(JSON.stringify(request));
+  }
+
 }

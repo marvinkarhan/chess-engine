@@ -7,6 +7,9 @@
 #include <string>
 #include <cassert>
 
+const std::string KIWI_PETE_POS_FEN = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 8031647685};
+
 void testNegaMax(Board &board, int depth)
 {
   PVariation pVariation;
@@ -27,6 +30,7 @@ void testMoveGen(Board &board)
   {
     std::cout << CharIndexToPiece[board.piecePos[move.originSquare]] << ": " << move.to_uci_string() + " ";
   }
+  std::cout << std::endl;
 }
 
 void perft(int depth, u64 result, std::string fen = START_POS_FEN)
@@ -34,7 +38,10 @@ void perft(int depth, u64 result, std::string fen = START_POS_FEN)
   Board board(fen);
   u64 pertResult = board.perft(depth);
   std::cout << "Perft " << depth << " on " << fen << std::endl;
-  std::cout << pertResult << ((pertResult == result) ? " == " : " !== ") << result;
+  if (pertResult == result)
+    std::cout << "Is equal" << std::endl;
+  else
+    std::cout << pertResult << " !== " << result << std::endl;
 }
 
 void divide(int depth, std::string fen = START_POS_FEN)
@@ -48,38 +55,46 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board("rnb1kbnr/pp1ppppp/2p5/q7/8/P2P4/1PP1PPPP/RNBQKBNR w KQkq - 1 3");
-  // Board board;
+  // Board board("k7/8/8/8/8/8/8/4K2R w K - 0 1");
+  // Board board(KIWI_PETE_POS_FEN);
+  Board board;
   auto start = std::chrono::high_resolution_clock::now();
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
-  // std::cout << "\r\nLEGAL_MOVES" << std::endl;
+  // std::cout << "LEGAL_MOVES" << std::endl;
   // testMoveGen<LEGAL_MOVES>(board);
-
-  // board.makeMove(uciToMove("d7d5"));
-  // bool isLegal = board.makeMove(uciToMove("g8f6"));
-  // std::cout << "move is legal: " << isLegal << std::endl;
-
-  // board.makeMove(uciToMove("g1f3"));
-  // board.makeMove(uciToMove("e7e5"));
-  // board.makeMove(uciToMove("d2d3"));
-  // board.makeMove(uciToMove("d8e7"));
-  // board.makeMove(uciToMove("d1d2"));
+  
+  // board.makeMove(uciToMove("e7e5", board));
+  // board.makeMove(uciToMove("d2d3", board));
+  // board.makeMove(uciToMove("d8e7", board));
+  // board.makeMove(uciToMove("d1d2", board));
   // board.printBitboard(board.piecesByType[ALL_PIECES]);
   // std::cout << "fen: " << board.toFenString() << std::endl;
   // board.printEveryPiece();
   // board.printBitboard(board.allPiecesBB());
 
-  perft(5, 4865609ULL);
+  
+  // Move move1 = uciToMove("e1d1", board);
+  // board.makeMove(move1);
+  // Move move2 = uciToMove("a8a7", board);
+  // board.makeMove(move2);
+  // board.unmakeMove(move2);
+  // board.makeMove(move2);
+  // testMoveGen<LEGAL_MOVES>(board);
+
+  // perft(3, 8902);
+  // perft(4, 197281);
+  // perft(5, 4865609);
+  // perft(5, KIWI_PETE_RESULTS[4], KIWI_PETE_POS_FEN);
 
   // divide(5);
-  // divide(4, "rnbqkbnr/pppppppp/8/8/8/3P4/PPP1PPPP/RNBQKBNR b KQkq - 0 1");
-  // divide(3, "rnbqkbnr/pp1ppppp/2p5/8/8/3P4/PPP1PPPP/RNBQKBNR w KQkq - 0 2");
-  // divide(2, "rnbqkbnr/pp1ppppp/2p5/8/8/P2P4/1PP1PPPP/RNBQKBNR b KQkq - 0 2");
-  // divide(1, "rnb1kbnr/pp1ppppp/2p5/q7/8/P2P4/1PP1PPPP/RNBQKBNR w KQkq - 1 3");
+  // divide(5, KIWI_PETE_POS_FEN);
+  // divide(4, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/1R2K2R b Kkq - 1 1");
+  // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
+  // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
   
 
-  // testNegaMax(board, 6);
+  testNegaMax(board, 7);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

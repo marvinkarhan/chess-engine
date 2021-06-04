@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, HostListener, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { Side } from './enums/Side';
@@ -14,16 +14,23 @@ const START_POS_FEN: string =
   templateUrl: './board.component.html',
   styleUrls: ['./board.component.scss'],
 })
-export class BoardComponent implements OnInit {
+export class BoardComponent {
   @Input() boardWidth = 800;
 
   pieces: Board = [];
   potentialMoves: number[] = [];
 
+  @HostListener('document:keyup', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if (event.key === "ArrowLeft") {
+      this.boardService.unmakeMove();
+    }
+  }
+
   constructor(public boardService: BoardService) {
     this.boardService.requestNewBoard();
   }
-  
+
   showMoves(moves: number[]) {
     this.potentialMoves = moves;
   }
@@ -37,7 +44,6 @@ export class BoardComponent implements OnInit {
   toInt(float: number) {
     return float | 0;
   }
-  ngOnInit(): void {}
-  
-  
+
+
 }

@@ -2,12 +2,7 @@
 #include <string>
 #include <iostream>
 
-Move::Move()
-{
-  originSquare = 0;
-  targetSquare = 0;
-  type = NORMAL;
-}
+Move::Move() {}
 
 Move::Move(int originSquare, int targetSquare, MoveType type /*=NORMAL*/, Piece promotion /*=NO_PIECE*/)
 {
@@ -24,7 +19,7 @@ bool Move::operator==(const Move &other)
           promotion == other.promotion);
 }
 
-std::string Move::to_uci_string()
+std::string Move::to_uci_string() const
 {
   return SQUARE_TO_ALGEBRAIC[originSquare] + SQUARE_TO_ALGEBRAIC[targetSquare] + (promotion ? std::string(1, CharIndexToPiece[promotion]) : "");
 }

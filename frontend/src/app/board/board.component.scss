@@ -28,12 +28,21 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 3%;
-  justify-content: space-around;
   padding-left: 4px;
   font-size: 1.2rem;
   font-weight: 600;
-  color: rgba(0,0,0,0.4);
+
+  :nth-child(odd) {
+    color: #b58863;
+  }
+
+  :nth-child(even) {
+    color: #f0d9b5;
+  }
+
+  .rank {
+    flex: 1;
+  }
 }
 
 .files {
@@ -47,6 +56,14 @@
   color: rgba(0,0,0,0.4);
   width: 100%;
   box-sizing: border-box;
+
+  :nth-child(odd) {
+    color: #f0d9b5;
+  }
+
+  :nth-child(even) {
+    color: #b58863;
+  }
 }
 
 @keyframes rippling-shadow {

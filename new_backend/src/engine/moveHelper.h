@@ -1,5 +1,6 @@
 #include "constants.h"
 #include "move.h"
+#include "board.h"
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -280,4 +281,8 @@ inline BB may_move(int origin, int target, BB occupied_bb)
   return !(in_between(origin, target) & occupied_bb);
 }
 
-extern Move uciToMove(std::string uci);
+extern Move uciToMove(std::string uci, const Board &board);
+
+MoveType getMoveType(int originSquare, int targetSquare, bool isDigit, const Board &board);
+
+extern BB getPotentialEPSquareBB(int originSquare, int targetSquare, const Board &board);

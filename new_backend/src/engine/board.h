@@ -20,16 +20,16 @@ struct PVariation
   Move moves[MAX_MOVES];
 };
 
+// stores partial information about a board usefull for unmake move
 struct StoredBoard
 {
-  BB piecesByType[7];
-  BB piecesBySide[2];
-  Piece piecePos[64];
-  bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide;
-  BB friendliesBB, enemiesBB, epSquareBB;
+  bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide;
+  BB epSquareBB;
   int fullMoves, halfMoves;
-};
+  Piece capturedPiece;
 
+  StoredBoard *oldBoard; // board state before store
+};
 
 class Board
 {
@@ -37,6 +37,7 @@ class Board
 private:
   bool tableContainsKey(string moveKey, json openingTable);
   string getRandomMove(json openingTable);
+
 public:
   // 6 diffrent Piece types + one for all pieces
   BB piecesByType[7];
@@ -46,16 +47,20 @@ public:
   u64 epSquareBB, hashValue;
   int fullMoves, halfMoves, openingMoves;
   nlohmann::json currentOpeningTable;
-  inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES) {
+  StoredBoard *state;
+  inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
+  {
     return piecesBySide[activeSide] & piecesByType[pt];
   }
-  inline BB pieces(Piece piece) {
+  inline BB pieces(Piece piece)
+  {
     return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
   }
   int negaMax(int depth, int alpha, int beta, PVariation *pVariation);
   int evaluate();
   Evaluation evaluateNextMove(int depth, string lastMove);
   Board(FenString fen = START_POS_FEN);
+  ~Board();
   u64 getHash();
   void resetBoard();
   void printBitboard(BB bb);
@@ -75,8 +80,8 @@ public:
   auto getMovesTree(int depth);
   u64 perft(int depth);
   std::string divide(int depth);
-  StoredBoard store();
-  void restore(StoredBoard &board);
+  void store(Piece captuedPiece = NO_PIECE);
+  void restore();
   void hash();
   // to simplify updating piece positions
   inline void createPiece(Piece piece, int targetSquare)
@@ -106,16 +111,28 @@ public:
     piecesByType[getPieceType(piece)] ^= targetBB;
     piecesBySide[getPieceSide(piece)] ^= targetBB;
   }
-  bool makeMove(const Move &move);
-  bool isCastle(const Move &move, const Board &board);
-  bool isEnPassant(const Move &move, const Board &board);
+  bool makeMove(const Move &newMove);
+  void unmakeMove(const Move &oldMove);
+  /* for debugging */
+  void printStateHistory()
+  {
+    StoredBoard *currState = state;
+    int total = 0;
+    while(currState)
+    {
+      currState = currState->oldBoard;
+      total++;
+    }
+    std::cout << "Current states stored in history: " << std::to_string(total) << std::endl;
+  }
 };
 
-template<MoveGenType moveType>
+template <MoveGenType moveType>
 struct MoveList
 {
   Move moves[MAX_MOVES], *last;
-  MoveList(Board& board, bool activeSide, bool onlyEvasions = false) {
+  MoveList(Board &board, bool activeSide, bool onlyEvasions = false)
+  {
     if (moveType == PSEUDO_LEGAL_MOVES)
       last = board.generatePseudoLegalMoves(moves, activeSide, onlyEvasions);
     else if (moveType == LEGAL_MOVES)

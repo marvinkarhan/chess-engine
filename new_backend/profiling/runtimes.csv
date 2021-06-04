@@ -1,4 +1,5 @@
-Datum,Bezeichner,nega_max(5),nega_max(6),nega_max(7)
-pre c++,cython no cache,,,
-pre c++,cython cache,3s,28s,
-31.05,First C++,,0.6s,5.1s
+Datum,Bezeichner,nega_max(5),nega_max(6),nega_max(7),Notes
+pre c++,cython no cache,,,,
+pre c++,cython cache,3s,28s,,
+31.05,First C++,,0.6s,5.1s,
+04.06,Unmake Move,,0.7s,5.8s,prob fixed sth else xd
