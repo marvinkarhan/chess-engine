@@ -27,7 +27,7 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
 
 Board::~Board()
 {
-  delete(state);
+  delete (state);
 }
 
 Evaluation Board::evaluateNextMove(int depth, string lastMove)
@@ -122,14 +122,23 @@ int Board::evaluate()
 
 int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
 {
+  auto moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   if (depth == 0)
   {
     pVariation->len = 0;
     return evaluate();
   }
+  if (moveIterator.size() == 0)
+  {
+    if (checkmate())
+    {
+      return -30000 * (activeSide ? 1 : -1) * (pVariation->len+1);
+    }
+    return evaluate();
+  }
   PVariation variation;
   int score;
-  for (Move move : MoveList<LEGAL_MOVES>(*this, activeSide))
+  for (Move move : moveIterator)
   {
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
@@ -538,7 +547,16 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
 }
 
 bool Board::stalemate() {}
-bool Board::checkmate() {}
+bool Board::checkmate()
+{
+  BB kingBB = pieces(activeSide, KING);
+  int kingSquare = bitScanForward(kingBB);
+  BB occupiedBB = piecesByType[ALL_PIECES];
+  BB blockersBB = blockers(kingSquare, activeSide, occupiedBB);
+  BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
+  auto moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
+  return moveIterator.size() == 0 && kingAttackersBB > BB(0);
+}
 auto Board::getMovesTree(int depth) {}
 u64 Board::perft(int depth)
 {
@@ -741,7 +759,7 @@ void Board::unmakeMove(const Move &oldMove)
   else
     // revert piece pos
     updatePiece(targetSquare(oldMove), originSquare(oldMove));
-  
+
   if (moveType(oldMove) == CASTLING)
   {
     // castle king side
