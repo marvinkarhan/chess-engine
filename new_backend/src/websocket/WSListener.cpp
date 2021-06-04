@@ -94,7 +94,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
         const string value = toUciString(move);
         socketResponse->moves->push_front(value.c_str());
       }
-      socketResponse->evaluation = eval;
+      socketResponse->evaluation = (float) eval / 100;
       socketResponse->aiMoves = {};
       for (int i = 0; i < pVariation.len; i++) {
         socketResponse->aiMoves->push_back(toUciString(pVariation.moves[i]).c_str());
