@@ -122,12 +122,12 @@ int Board::evaluate()
 
 int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
 {
-  auto moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   if (depth == 0)
   {
     pVariation->len = 0;
     return evaluate();
   }
+  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   if (moveIterator.size() == 0)
   {
     if (checkmate())
