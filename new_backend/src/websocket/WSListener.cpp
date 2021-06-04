@@ -54,7 +54,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     {
       cout << "Requested new board!" << endl;
       // Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
-      // Board board("4k3/8/8/8/8/6q1/r7/4K3 w - - 0 1");
+      // Board board("r3r2k/ppp4b/8/3pP3/7Q/2Pq4/PP3PPP/2K4R w Kq - 0 1");
       Board board;
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();

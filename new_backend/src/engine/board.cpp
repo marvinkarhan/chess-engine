@@ -44,7 +44,7 @@ int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
     pVariation->moves[0] = move;
     return 0;
   }
-  return negaMax(depth, -20000, 20000, pVariation);
+  return negaMax(depth, MIN_ALPHA, MIN_BETA, pVariation);
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
@@ -131,8 +131,8 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   if (moveIterator.size() == 0)
   {
     if (checkmate())
-    {
-      return -300000 * (activeSide ? 1 : -1) - (pVariation->len * 200);
+    { 
+      return CHECKMATE_VALUE * (activeSide ? 1 : -1);
     }
     return evaluate();
   }
@@ -142,6 +142,9 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   {
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
+    if(toUciString(move) == "d3c2" && depth == 6) {
+      cout << "FOUND CHECKMATE MOVE: d3c2 with score: " << score  << " on depth:" << depth << endl;
+    }
     unmakeMove(move);
 
     if (score >= beta)
