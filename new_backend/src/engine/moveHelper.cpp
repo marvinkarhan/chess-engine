@@ -52,7 +52,7 @@ Move uciToMove(std::string uci, const Board &board)
   }
   // possible promotion
   ss >> character;
-  return Move(originSquare, targetSquare, getMoveType(originSquare, targetSquare, isdigit(character), board), isdigit(character) ? NO_PIECE : Piece(CharIndexToPiece.find(character)));
+  return createMove(originSquare, targetSquare, getPieceType(isdigit(character) ? NO_PIECE : Piece(CharIndexToPiece.find(character))), getMoveType(originSquare, targetSquare, isdigit(character), board));
 }
 
 MoveType getMoveType(int originSquare, int targetSquare, bool isDigit, const Board &board)

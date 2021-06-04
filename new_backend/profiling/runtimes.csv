@@ -3,3 +3,5 @@ pre c++,cython no cache,,,,
 pre c++,cython cache,3s,28s,,
 31.05,First C++,,0.6s,5.1s,
 04.06,Unmake Move,,0.7s,5.8s,prob fixed sth else xd
+04.06,Piece values in move calc,,0.5s,3.6s,
+04.06,move as int,,0.25s,2.1s,

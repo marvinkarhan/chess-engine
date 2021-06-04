@@ -53,14 +53,15 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
     {
       cout << "Requested new board!" << endl;
-      Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+      // Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+      Board board;
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = board.toFenString().c_str();
       socketResponse->moves = {};
       for (Move move : MoveList<LEGAL_MOVES>(board, board.activeSide))
       {
-        const string value = move.to_uci_string();
+        const string value = toUciString(move);
         socketResponse->moves->push_front(value.c_str());
       }
       socketResponse->evaluation = 0.0;
@@ -82,7 +83,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       PVariation pVariation;
       cout << "depth: " << depth << endl;
       int eval = userBoard->negaMax(depth, -2000000, 2000000, &pVariation);
-      cout << "variation: " << pVariation.moves[0].to_uci_string() << endl;
+      cout << "variation: " << toUciString(pVariation.moves[0]) << endl;
       userBoard->makeMove(pVariation.moves[0]);
       cout << "Made move" << endl;
       auto socketResponse = SocketResponse::createShared();
@@ -90,13 +91,13 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       socketResponse->moves = {};
       for (Move move : MoveList<LEGAL_MOVES>(*userBoard, userBoard->activeSide))
       {
-        const string value = move.to_uci_string();
+        const string value = toUciString(move);
         socketResponse->moves->push_front(value.c_str());
       }
       socketResponse->evaluation = eval;
       socketResponse->aiMoves = {};
       for (int i = 0; i < pVariation.len; i++) {
-        socketResponse->aiMoves->push_back(pVariation.moves[i].to_uci_string().c_str());
+        socketResponse->aiMoves->push_back(toUciString(pVariation.moves[i]).c_str());
       }
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
@@ -120,7 +121,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       socketResponse->moves = {};
       for (Move move : MoveList<LEGAL_MOVES>(*userBoard, userBoard->activeSide))
       {
-        const string value = move.to_uci_string();
+        const string value = toUciString(move);
         socketResponse->moves->push_front(value.c_str());
       }
       socketResponse->evaluation = 0.0;

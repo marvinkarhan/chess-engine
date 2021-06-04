@@ -80,6 +80,12 @@ constexpr PieceType getPieceType(Piece piece)
   return PieceType(piece & 0b111);
 }
 
+constexpr PieceType PROMOTION_OPTIONS[4] = {
+    KNIGHT,
+    BISHOP,
+    QUEEN,
+    ROOK};
+
 constexpr Piece PROMOTION_OPTIONS_WHITE[4] = {
     Piece::WHITE_KNIGHT,
     Piece::WHITE_BISHOP,

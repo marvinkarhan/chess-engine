@@ -352,12 +352,12 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
     while (bb)
     {
       targetSquare = pop_lsb(bb);
-      *moveList++ = Move(targetSquare - 8 * directionFactor, targetSquare);
+      *moveList++ = createMove(targetSquare - 8 * directionFactor, targetSquare);
     }
     while (bb2)
     {
       targetSquare = pop_lsb(bb2);
-      *moveList++ = Move(targetSquare - (8 << 1) * directionFactor, targetSquare);
+      *moveList++ = createMove(targetSquare - (8 << 1) * directionFactor, targetSquare);
     }
     // promotions by move and by capture
     BB pawnsOnPromotionRank = pawnBB & promotionRank;
@@ -367,22 +367,22 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
-          *moveList++ = Move(targetSquare - 8 * directionFactor, targetSquare, PROMOTION, promotion);
+        for (PieceType promotion : PROMOTION_OPTIONS)
+          *moveList++ = createMove<PROMOTION>(targetSquare - 8 * directionFactor, targetSquare, promotion);
       }
       bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB & evasionBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
-          *moveList++ = Move(targetSquare - 9 * directionFactor, targetSquare, PROMOTION, promotion);
+        for (PieceType promotion : PROMOTION_OPTIONS)
+          *moveList++ = createMove<PROMOTION>(targetSquare - 9 * directionFactor, targetSquare, promotion);
       }
       bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB & evasionBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        for (Piece promotion : activeSide ? PROMOTION_OPTIONS_WHITE : PROMOTION_OPTIONS_BLACK)
-          *moveList++ = Move(targetSquare - 7 * directionFactor, targetSquare, PROMOTION, promotion);
+        for (PieceType promotion : PROMOTION_OPTIONS)
+          *moveList++ = createMove<PROMOTION>(targetSquare - 7 * directionFactor, targetSquare, promotion);
       }
     }
     // pawn captures
@@ -390,13 +390,13 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
     while (bb)
     {
       targetSquare = pop_lsb(bb);
-      *moveList++ = Move(targetSquare - 9 * directionFactor, targetSquare);
+      *moveList++ = createMove(targetSquare - 9 * directionFactor, targetSquare);
     }
     bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB & evasionBB;
     while (bb)
     {
       targetSquare = pop_lsb(bb);
-      *moveList++ = Move(targetSquare - 7 * directionFactor, targetSquare);
+      *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
     }
     // en passant
     if (epSquareBB && !onlyEvasions)
@@ -406,7 +406,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(targetSquare, epSquare, EN_PASSANT);
+        *moveList++ = createMove<EN_PASSANT>(targetSquare, epSquare);
       }
     }
     // rook moves
@@ -417,7 +417,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(originSquare, targetSquare);
+        *moveList++ = createMove(originSquare, targetSquare);
       }
     }
     // bishop moves
@@ -428,7 +428,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(originSquare, targetSquare);
+        *moveList++ = createMove(originSquare, targetSquare);
       }
     }
     // bishop moves
@@ -439,7 +439,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(originSquare, targetSquare);
+        *moveList++ = createMove(originSquare, targetSquare);
       }
     }
     // knight moves
@@ -450,7 +450,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = Move(originSquare, targetSquare);
+        *moveList++ = createMove(originSquare, targetSquare);
       }
     }
   }
@@ -459,23 +459,23 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
   while (bb)
   {
     targetSquare = pop_lsb(bb);
-    *moveList++ = Move(kingSquare, targetSquare);
+    *moveList++ = createMove(kingSquare, targetSquare);
   }
   // castle
   if (activeSide)
   {
     // check if sth is in the way, dont check if is legal to castle
     if (castleWhiteKingSide && !(WHITE_KING_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, WHITE_KING_SIDE_SQUARE, CASTLING);
+      *moveList++ = createMove<CASTLING>(kingSquare, WHITE_KING_SIDE_SQUARE);
     if (castleWhiteQueenSide && !(WHITE_QUEEN_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, WHITE_QUEEN_SIDE_SQUARE, CASTLING);
+      *moveList++ = createMove<CASTLING>(kingSquare, WHITE_QUEEN_SIDE_SQUARE);
   }
   else
   {
     if (castleBlackKingSide && !(BLACK_KING_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, BLACK_KING_SIDE_SQUARE, CASTLING);
+      *moveList++ = createMove<CASTLING>(kingSquare, BLACK_KING_SIDE_SQUARE);
     if (castleBlackQueenSide && !(BLACK_QUEEN_SIDE_WAY & occupiedBB))
-      *moveList++ = Move(kingSquare, BLACK_QUEEN_SIDE_SQUARE, CASTLING);
+      *moveList++ = createMove<CASTLING>(kingSquare, BLACK_QUEEN_SIDE_SQUARE);
   }
   return moveList;
 }
@@ -494,7 +494,7 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide)
     // case 1: piece is pinned
     // case 2: piece is king
     // case 3: move is en passant
-    if ((blockersBB && (blockersBB & SQUARE_BBS[move.originSquare])) || move.originSquare == kingSquare || move.type == EN_PASSANT)
+    if ((blockersBB && (blockersBB & SQUARE_BBS[originSquare(move)])) || originSquare(move) == kingSquare || moveType(move) == EN_PASSANT)
     {
       if (moveIsLegal(move, activeSide, blockersBB, kingAttackersBB, kingSquare, occupiedBB))
         *moveList++ = move;
@@ -512,13 +512,13 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
   BB kingNoSlideAttackersBB = attackers(kingSquare, activeSide, occupied, false, true);
   BB kingSlideAttackersBB = attackers(kingSquare, activeSide, occupied, true);
   // special case: castle
-  if (move.type == CASTLING)
+  if (moveType(move) == CASTLING)
   {
     for (auto &castle : CASTLING_OPTIONS)
     {
       int cSquare = castle[0];
       BB cWay = castle[1];
-      if (move.targetSquare == cSquare)
+      if (targetSquare(move) == cSquare)
         while (cWay)
           // check is attacked on any square he has to move over in order to castle
           if (attackers(pop_lsb(cWay), activeSide, occupied))
@@ -526,15 +526,15 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingA
     }
   }
   // special case: en passant
-  if (move.type == EN_PASSANT)
+  if (moveType(move) == EN_PASSANT)
     // if piece is pinned it has to move in the ray it is pinned
-    return (~blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
+    return (~blockers & SQUARE_BBS[originSquare(move)]) || LINE_BBS[originSquare(move)][kingSquare] & SQUARE_BBS[targetSquare(move)];
   // special case: king is moving
-  if (move.originSquare == kingSquare)
+  if (originSquare(move) == kingSquare)
     // is king attacked after moving
-    return !attackers(move.targetSquare, activeSide, occupied ^ SQUARE_BBS[move.originSquare]);
+    return !attackers(targetSquare(move), activeSide, occupied ^ SQUARE_BBS[originSquare(move)]);
   // rest is eiter not a blocker or is moving along the ray of him and the king
-  return (!blockers & SQUARE_BBS[move.originSquare]) || LINE_BBS[move.originSquare][kingSquare] & SQUARE_BBS[move.targetSquare];
+  return (!blockers & SQUARE_BBS[originSquare(move)]) || LINE_BBS[originSquare(move)][kingSquare] & SQUARE_BBS[targetSquare(move)];
 }
 
 bool Board::stalemate() {}
@@ -563,7 +563,7 @@ std::string Board::divide(int depth)
   {
     makeMove(move);
     int currNodes = perft(depth - 1);
-    resultsString += move.to_uci_string() + " " + std::to_string(currNodes) + "\r\n";
+    resultsString += toUciString(move) + " " + std::to_string(currNodes) + "\r\n";
     nodes += currNodes;
     unmakeMove(move);
   }
@@ -607,41 +607,41 @@ bool Board::makeMove(const Move &newMove)
 {
   // track if capture for half_moves
   bool capture = false;
-  BB originSquareBB = SQUARE_BBS[newMove.originSquare];
-  BB targetSquareBB = SQUARE_BBS[newMove.targetSquare];
-  Piece originPiece = piecePos[newMove.originSquare];
+  BB originSquareBB = SQUARE_BBS[originSquare(newMove)];
+  BB targetSquareBB = SQUARE_BBS[targetSquare(newMove)];
+  Piece originPiece = piecePos[originSquare(newMove)];
   PieceType originPieceType = getPieceType(originPiece);
-  Piece targetPiece = piecePos[newMove.targetSquare];
+  Piece targetPiece = piecePos[targetSquare(newMove)];
   // if (originPiece == NO_PIECE)
   // {
   //   std::cout << castleWhiteKingSide << std::endl;
-  //   std::cout << "move was illegal (no piece on origin square): " << newMove.to_uci_string() << std::endl;
+  //   std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
   //   return false;
   // }
   // target piece only exists on capture
   if (targetPiece)
   {
-    deletePiece(newMove.targetSquare);
+    deletePiece(targetSquare(newMove));
     capture = true;
   }
   store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
 
   // update bitboards to represent change
-  updatePiece(newMove.originSquare, newMove.targetSquare);
+  updatePiece(originSquare(newMove), targetSquare(newMove));
 
   // pawn move
   if (originPieceType == PAWN)
   {
     // promotion
-    if (newMove.type == PROMOTION)
+    if (moveType(newMove) == PROMOTION)
     {
       // remove pawn
-      deletePiece(newMove.targetSquare);
+      deletePiece(targetSquare(newMove));
       // add promoted piece
-      createPiece(newMove.promotion, newMove.targetSquare);
+      createPiece(makePiece(activeSide, promotion(newMove)), targetSquare(newMove));
     }
     // en passant move
-    if (newMove.type == EN_PASSANT)
+    if (moveType(newMove) == EN_PASSANT)
     {
       BB capturedPawnBB = move(epSquareBB, activeSide ? DOWN : UP);
       int capturedSquare = bitScanForward(capturedPawnBB);
@@ -650,7 +650,7 @@ bool Board::makeMove(const Move &newMove)
       capture = true;
     }
     // check for resulting en passant
-    epSquareBB = getPotentialEPSquareBB(newMove.originSquare, newMove.targetSquare, *this);
+    epSquareBB = getPotentialEPSquareBB(originSquare(newMove), targetSquare(newMove), *this);
   }
   else
   {
@@ -686,10 +686,10 @@ bool Board::makeMove(const Move &newMove)
       castleBlackQueenSide = false;
     }
     // check if king move was castle
-    if (newMove.type == CASTLING)
+    if (moveType(newMove) == CASTLING)
     {
       // castle king side
-      if (newMove.targetSquare == newMove.originSquare - 2)
+      if (targetSquare(newMove) == originSquare(newMove) - 2)
       {
         // get rook & move rook
         int rookSquare = activeSide ? 0 : 56;
@@ -725,27 +725,27 @@ bool Board::makeMove(const Move &newMove)
 
 void Board::unmakeMove(const Move &oldMove)
 {
-  // std::cout << "unmake move: " << oldMove.to_uci_string() << std::endl;
+  // std::cout << "unmake move: " << toUciString(oldMove) << std::endl;
   activeSide = !activeSide;
-  BB originSquareBB = SQUARE_BBS[oldMove.originSquare];
-  BB targetSquareBB = SQUARE_BBS[oldMove.targetSquare];
-  Piece originPiece = piecePos[oldMove.targetSquare];
+  BB originSquareBB = SQUARE_BBS[originSquare(oldMove)];
+  BB targetSquareBB = SQUARE_BBS[targetSquare(oldMove)];
+  Piece originPiece = piecePos[targetSquare(oldMove)];
 
-  if (oldMove.type == PROMOTION)
+  if (moveType(oldMove) == PROMOTION)
   {
     // remove created piece
-    deletePiece(oldMove.targetSquare);
+    deletePiece(targetSquare(oldMove));
     // recreate pawn
-    createPiece(Piece((activeSide << 3) + PAWN), oldMove.originSquare);
+    createPiece(makePiece(activeSide, PAWN), originSquare(oldMove));
   }
   else
     // revert piece pos
-    updatePiece(oldMove.targetSquare, oldMove.originSquare);
+    updatePiece(targetSquare(oldMove), originSquare(oldMove));
   
-  if (oldMove.type == CASTLING)
+  if (moveType(oldMove) == CASTLING)
   {
     // castle king side
-    if (oldMove.targetSquare == oldMove.originSquare - 2)
+    if (targetSquare(oldMove) == originSquare(oldMove) - 2)
     {
       // get rook & move rook
       int rookSquare = activeSide ? 0 : 56;
@@ -764,9 +764,9 @@ void Board::unmakeMove(const Move &oldMove)
     // piece was captured (stored in StoredBoard)
     if (state->capturedPiece)
     {
-      int capturedSquare = oldMove.targetSquare;
-      if (oldMove.type == EN_PASSANT)
-        capturedSquare = oldMove.targetSquare + (activeSide ? -8 : 8);
+      int capturedSquare = targetSquare(oldMove);
+      if (moveType(oldMove) == EN_PASSANT)
+        capturedSquare = targetSquare(oldMove) + (activeSide ? -8 : 8);
       // recreate captured piece
       createPiece(state->capturedPiece, capturedSquare);
     }

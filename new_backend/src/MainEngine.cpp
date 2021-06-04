@@ -17,7 +17,7 @@ void testNegaMax(Board &board, int depth)
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
   for (int i = 0; i < pVariation.len; i++)
-    std::cout << pVariation.moves[i].to_uci_string() << " ";
+    std::cout << toUciString(pVariation.moves[i]) << " ";
   std::cout << std::endl;
 }
 
@@ -28,7 +28,7 @@ void testMoveGen(Board &board)
   std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
   for (Move move: legalMoves)
   {
-    std::cout << CharIndexToPiece[board.piecePos[move.originSquare]] << ": " << move.to_uci_string() + " ";
+    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) + " ";
   }
   std::cout << std::endl;
 }
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   // perft(3, 8902);
   // perft(4, 197281);
   // perft(5, 4865609);
-  // perft(5, KIWI_PETE_RESULTS[4], KIWI_PETE_POS_FEN);
+  // perft(6, KIWI_PETE_RESULTS[5], KIWI_PETE_POS_FEN);
 
   // divide(5);
   // divide(5, KIWI_PETE_POS_FEN);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
 
-  testNegaMax(board, 6);
+  testNegaMax(board, 7);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 
