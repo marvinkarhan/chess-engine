@@ -30,21 +30,21 @@ Board::~Board()
   delete (state);
 }
 
-Evaluation Board::evaluateNextMove(int depth, string lastMove)
+int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
 {
   if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
   {
-    Evaluation eval;
-    eval.evaluation = 0;
     json newJson = currentOpeningTable[lastMove];
     string nextMove = getRandomMove(newJson);
+    int move = uciToMove(nextMove, *this);
     currentOpeningTable = currentOpeningTable[lastMove][nextMove];
 
-    eval.moves.push_back(nextMove);
     cout << "OPENING TABLE" << endl;
-    return eval;
+    pVariation->len = 1;
+    pVariation->moves[0] = move;
+    return 0;
   }
-  // return negaMax(depth, -20000, 20000);
+  return negaMax(depth, -20000, 20000, pVariation);
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
