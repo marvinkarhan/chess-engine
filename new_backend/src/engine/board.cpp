@@ -1,6 +1,3 @@
-#include "constants.h"
-#include "board.h"
-
 #include "board.h"
 #include "moveHelper.h"
 #include <string>
@@ -11,7 +8,6 @@
 #include <fstream>
 #include "environment.h"
 #include "time.h"
-#include "evaluation.h"
 
 #include <bitset>
 #include <map>
@@ -119,15 +115,8 @@ int Board::evaluate()
 {
   int sideMultiplier = activeSide ? 1 : -1;
   int score = 0;
-  for (auto piece : PIECE_ENUMERATED)
-  {
-    BB bb = pieces(piece);
-    score += PieceValues[piece] * std::bitset<64>(bb).count();
-    while (bb)
-    {
-      score += PIECE_SQUARE_TABLES[piece][63 - pop_lsb(bb)] * (getPieceSide(piece) ? 1 : -1);
-    }
-  }
+  score += pieceValues;
+  score += pieceSquareValues;
   return score * sideMultiplier;
 }
 

@@ -92,9 +92,9 @@ int main(int argc, char *argv[])
   // divide(4, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/1R2K2R b Kkq - 1 1");
   // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
-  
 
-  testNegaMax(board, 7);
+
+  testNegaMax(board, 6);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

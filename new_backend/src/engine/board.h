@@ -47,6 +47,9 @@ public:
   u64 epSquareBB, hashValue;
   int fullMoves, halfMoves, openingMoves;
   nlohmann::json currentOpeningTable;
+  /* Saves values of pieces on the board */
+  int pieceValues = 0;
+  int pieceSquareValues = 0;
   StoredBoard *state;
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
@@ -91,6 +94,8 @@ public:
     piecesByType[ALL_PIECES] |= targetBB;
     piecesByType[getPieceType(piece)] |= targetBB;
     piecesBySide[getPieceSide(piece)] |= targetBB;
+    pieceValues += PieceValues[piece];
+    pieceSquareValues += PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1);
   }
   inline void updatePiece(int originSquare, int targetSquare)
   {
@@ -101,6 +106,7 @@ public:
     piecesByType[ALL_PIECES] ^= bb;
     piecesByType[getPieceType(piece)] ^= bb;
     piecesBySide[getPieceSide(piece)] ^= bb;
+    pieceSquareValues += (PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1)) - (PIECE_SQUARE_TABLES[piece][63 - originSquare] * (getPieceSide(piece) ? 1 : -1));
   }
   inline void deletePiece(int targetSquare)
   {
@@ -110,6 +116,8 @@ public:
     piecesByType[ALL_PIECES] ^= targetBB;
     piecesByType[getPieceType(piece)] ^= targetBB;
     piecesBySide[getPieceSide(piece)] ^= targetBB;
+    pieceValues -= PieceValues[piece];
+    pieceSquareValues -= PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1);
   }
   bool makeMove(const Move &newMove);
   void unmakeMove(const Move &oldMove);
