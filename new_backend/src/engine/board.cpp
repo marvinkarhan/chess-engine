@@ -111,6 +111,33 @@ void Board::printBitboard(BB bb)
   std::cout << result;
 }
 
+int Board::quiesce(int alpha, int beta, PVariation *pVariation)
+{
+  int standPat = evaluate();
+  int score;
+  PVariation variation;
+  if (standPat >= beta)
+    return beta;
+  if (alpha < standPat)
+    alpha = standPat;
+
+  for (auto move : MoveList<ATTACK_MOVES>(*this, activeSide))
+  {
+    makeMove(move);
+    score = -quiesce(-beta, -alpha, &variation);
+    unmakeMove(move);
+    if (score >= beta)
+      return beta;
+    if (score > alpha)
+    {
+      alpha = score;
+      pVariation->moves[0] = move;
+      memcpy(pVariation->moves + 1, variation.moves, variation.len * sizeof(Move));
+      pVariation->len = variation.len + 1;
+    }
+  }
+  return alpha;
+}
 int Board::evaluate()
 {
   int sideMultiplier = activeSide ? 1 : -1;
@@ -125,7 +152,7 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   if (depth == 0)
   {
     pVariation->len = 0;
-    return evaluate();
+    return quiesce(alpha, beta, pVariation);
   }
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   if (moveIterator.size() == 0)
