@@ -60,6 +60,7 @@ public:
     return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
   }
   int negaMax(int depth, int alpha, int beta, PVariation *pVariation);
+  int iterativeDeepening(int timeInSeconds, PVariation *pVariation);
   int quiesce(int alpha, int beta, PVariation *pVariation, int depth = 0);
   int evaluate();
   int evaluateNextMove(int depth, string lastMove, PVariation *pVariation);

@@ -6,6 +6,7 @@
 #include <sstream>
 #include "../vendor/include/nlohmann/json.hpp"
 #include <fstream>
+#include <chrono>
 #include "environment.h"
 #include "time.h"
 
@@ -44,7 +45,20 @@ int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
     pVariation->moves[0] = move;
     return 0;
   }
-  return negaMax(depth, MIN_ALPHA, MIN_BETA, pVariation);
+  return iterativeDeepening(5, pVariation);
+}
+
+int Board::iterativeDeepening(int timeInSeconds, PVariation *pVariation)
+{
+  auto start = std::chrono::high_resolution_clock::now();
+  int currDepth = 5;
+  int score = 0;
+  while(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count() < timeInSeconds)
+  {
+    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA, pVariation);
+    currDepth++;
+  }
+  return score;
 }
 
 bool Board::tableContainsKey(string moveKey, json openingTable)
@@ -126,7 +140,7 @@ int Board::quiesce(int alpha, int beta, PVariation *pVariation, int depth /*= 0*
   if (stalemate())
   {
     if (attackers(bitScanForward(pieces(activeSide, KING)), activeSide, piecesByType[ALL_PIECES]))
-      return CHECKMATE_VALUE - (depth * -1);
+      return CHECKMATE_VALUE - depth;
     return 0;
   }
 
