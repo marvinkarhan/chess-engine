@@ -435,7 +435,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, bool only
       *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
     }
     // en passant
-    if (epSquareBB && !onlyEvasions)
+    if (epSquareBB && (!onlyEvasions || (onlyEvasions && (evasionBB & move(epSquareBB, activeSide ? DOWN : UP)))))
     {
       int epSquare = bitScanForward(epSquareBB);
       bb = pawnsNotOnPromotionRank & PAWN_ATTACKS_BBS[epSquare][!activeSide];
