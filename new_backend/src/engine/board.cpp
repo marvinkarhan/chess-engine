@@ -131,8 +131,8 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   if (moveIterator.size() == 0)
   {
     if (checkmate())
-    { 
-      return CHECKMATE_VALUE * depth * (activeSide ? 1 : -1);
+    {
+      return CHECKMATE_VALUE * depth;
     }
     return evaluate();
   }
@@ -143,7 +143,7 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
     unmakeMove(move);
-
+    
     if (score >= beta)
       return beta;
     if (score > alpha)
