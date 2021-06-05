@@ -13,4 +13,8 @@ export class EvaluationBarComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  log() {
+    //Math.log(this.evalValue! +1))
+    return ((10 +  this.evalValue!) / 20) * 100
+  }
 }
