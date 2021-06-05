@@ -22,9 +22,9 @@ void testNegaMax(Board &board, int depth)
 }
 
 template<MoveGenType moveType>
-void testMoveGen(Board &board)
+void testMoveGen(Board &board, MoveGenCategory category = ALL)
 {
-  MoveList<moveType> legalMoves(board, board.activeSide);
+  MoveList<moveType> legalMoves(board, board.activeSide, category);
   std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
   for (Move move: legalMoves)
   {
@@ -55,14 +55,14 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  // Board board("k7/8/8/8/8/8/8/4K2R w K - 0 1");
+  // Board board("2N2knr/1p1Q3p/r5q1/4p1p1/P1P1p3/1P4PP/5P2/R2R2K1 w Qk - 0 1");
   // Board board(KIWI_PETE_POS_FEN);
   Board board;
   auto start = std::chrono::high_resolution_clock::now();
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
   // std::cout << "LEGAL_MOVES" << std::endl;
-  // testMoveGen<LEGAL_MOVES>(board);
+  // testMoveGen<LEGAL_MOVES>(board, ATTACKS);
   
   // board.makeMove(uciToMove("e7e5", board));
   // board.makeMove(uciToMove("d2d3", board));
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   // perft(3, 8902);
   // perft(4, 197281);
   // perft(5, 4865609);
-  // perft(6, KIWI_PETE_RESULTS[5], KIWI_PETE_POS_FEN);
+  perft(5, KIWI_PETE_RESULTS[4], KIWI_PETE_POS_FEN);
 
   // divide(5);
   // divide(5, KIWI_PETE_POS_FEN);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
 
-  testNegaMax(board, 7);
+  // testNegaMax(board, 7);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

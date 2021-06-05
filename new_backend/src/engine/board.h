@@ -60,7 +60,7 @@ public:
     return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
   }
   int negaMax(int depth, int alpha, int beta, PVariation *pVariation);
-  int quiesce(int alpha, int beta, PVariation *pVariation);
+  int quiesce(int alpha, int beta, PVariation *pVariation, int depth = 0);
   int evaluate();
   int evaluateNextMove(int depth, string lastMove, PVariation *pVariation);
   Board(FenString fen = START_POS_FEN);
@@ -76,12 +76,13 @@ public:
   BB potentialSlidingAttackers(int square, bool activeSide);
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
-  Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions = false);
-  Move *generateLegalMoves(Move *moveList, bool activeSide);
-  Move *generateAttackMoves(Move *moveList, bool activeSide);
+  Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category);
+  Move *generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category);
   bool moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingAttackersBB, int kingSquare, BB occupied);
   bool stalemate();
+  bool stalemate(int moveListSize);
   bool checkmate();
+  bool checkmate(int moveListSize);
   auto getMovesTree(int depth);
   u64 perft(int depth);
   std::string divide(int depth);
@@ -141,14 +142,12 @@ template <MoveGenType moveType>
 struct MoveList
 {
   Move moves[MAX_MOVES], *last;
-  MoveList(Board &board, bool activeSide, bool onlyEvasions = false)
+  MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL)
   {
     if (moveType == PSEUDO_LEGAL_MOVES)
-      last = board.generatePseudoLegalMoves(moves, activeSide, onlyEvasions);
+      last = board.generatePseudoLegalMoves(moves, activeSide, category);
     else if (moveType == LEGAL_MOVES)
-      last = board.generateLegalMoves(moves, activeSide);
-    else if (moveType == ATTACK_MOVES)
-      last = board.generateAttackMoves(moves,activeSide);
+      last = board.generateLegalMoves(moves, activeSide, category);
   }
   // implement iterator pattern
   const Move *begin() const { return moves; }
