@@ -18,7 +18,8 @@ const int MAX_DEPTH = 20;
 enum MoveGenType
 {
   PSEUDO_LEGAL_MOVES,
-  LEGAL_MOVES
+  LEGAL_MOVES,
+  ATTACK_MOVES
 };
 
 // 3 lsb for piece type and the 4th for side identification

@@ -143,7 +143,7 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha, &variation);
     unmakeMove(move);
-    
+
     if (score >= beta)
       return beta;
     if (score > alpha)
@@ -510,6 +510,17 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide)
     }
     else
     {
+      *moveList++ = move;
+    }
+  }
+  return moveList;
+}
+
+Move *Board::generateAttackMoves(Move *moveList, bool activeSide)
+{
+  for (auto move : MoveList<LEGAL_MOVES>(*this, activeSide)) {
+    int target = targetSquare(move);
+    if(piecePos[target]) {
       *moveList++ = move;
     }
   }

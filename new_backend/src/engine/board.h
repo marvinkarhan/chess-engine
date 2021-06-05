@@ -77,6 +77,7 @@ public:
   BB blockers(int square, bool activeSide, BB occupied);
   Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, bool onlyEvasions = false);
   Move *generateLegalMoves(Move *moveList, bool activeSide);
+  Move *generateAttackMoves(Move *moveList, bool activeSide);
   bool moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingAttackersBB, int kingSquare, BB occupied);
   bool stalemate();
   bool checkmate();
@@ -145,6 +146,8 @@ struct MoveList
       last = board.generatePseudoLegalMoves(moves, activeSide, onlyEvasions);
     else if (moveType == LEGAL_MOVES)
       last = board.generateLegalMoves(moves, activeSide);
+    else if (moveType == ATTACK_MOVES)
+      last = board.generateAttackMoves(moves,activeSide);
   }
   // implement iterator pattern
   const Move *begin() const { return moves; }
