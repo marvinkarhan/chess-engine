@@ -33,6 +33,29 @@ Board::~Board()
 
 int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
 {
+  if (mateMoves.len)
+  {
+    // Check if the lastMove by the opponent was in the predicted check mate variation
+    string predictedOpponentMove = toUciString(mateMoves.moves[1]);
+
+    if (predictedOpponentMove == lastMove)
+    {
+      // Shift the variation 2 to the left.
+      for (int i = 2; i < mateMoves.len; i++)
+      {
+        mateMoves.moves[i - 2] = mateMoves.moves[i];
+      }
+      // Remove the last 2 moves in prediction
+      mateMoves.len -= 2;
+      // Get the next mate move
+      pVariation->len = mateMoves.len;
+      memcpy(pVariation->moves, mateMoves.moves, mateMoves.len * sizeof(Move));
+      return -CHECKMATE_VALUE; // BEST VALUE
+    } else {
+      // Reset variaion
+      PVariation mateMoves;
+    }
+  }
   if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
   {
     json newJson = currentOpeningTable[lastMove];
@@ -45,7 +68,14 @@ int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
     pVariation->moves[0] = move;
     return 0;
   }
-  return iterativeDeepening(5, pVariation);
+  int score = iterativeDeepening(5, pVariation);
+  if (score >= CHECKMATE_VALUE + MAX_DEPTH)
+  {
+    //This is probably a checkmate variation, store it and use it for killing the opponent!
+    mateMoves.len = pVariation->len;
+    memcpy(mateMoves.moves, pVariation->moves, pVariation->len * sizeof(Move));
+  }
+  return score;
 }
 
 int Board::iterativeDeepening(int timeInSeconds, PVariation *pVariation)
@@ -53,7 +83,7 @@ int Board::iterativeDeepening(int timeInSeconds, PVariation *pVariation)
   auto start = std::chrono::high_resolution_clock::now();
   int currDepth = 5;
   int score = 0;
-  while(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count() < timeInSeconds)
+  while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count() < timeInSeconds)
   {
     score = negaMax(currDepth, MIN_ALPHA, MIN_BETA, pVariation);
     currDepth++;
@@ -184,7 +214,7 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   if (stalemate(moveIteratorSize))
   {
     if (checkmate(moveIteratorSize))
-      return CHECKMATE_VALUE + depth;
+      return CHECKMATE_VALUE - depth;
     return 0;
   }
   PVariation variation;

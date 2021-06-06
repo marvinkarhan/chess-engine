@@ -50,6 +50,7 @@ public:
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;
+  PVariation mateMoves;
   StoredBoard *state;
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
