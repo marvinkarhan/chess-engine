@@ -54,10 +54,10 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
     {
       cout << "Requested new board!" << endl;
-      // Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+      Board board("8/6k1/8/8/4K3/1q6/8/7q w - - 0 1");
       // Board board("r3k2r/pbpp1ppp/1p6/2bBPP2/8/1QPp1P1q/PP1P3P/RNBR3K w kq - 0 1");
       // Board board("r3r2k/ppp4b/8/3pP3/7Q/2Pq4/PP3PPP/2K4R w Kq - 0 1");
-      Board board("2N2knr/1p1Q3p/r5q1/4p1p1/P1P1p3/1P4PP/5P2/R2R2K1 w Qk - 0 1");
+      // Board board("2N2knr/1p1Q3p/r5q1/4p1p1/P1P1p3/1P4PP/5P2/R2R2K1 w Qk - 0 1");
       // Board board;
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
@@ -83,7 +83,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
 
       Board *userBoard = &SessionMap[pointerToSession];
       userBoard->makeMove(uciToMove(request->move->c_str(), *userBoard));
-      int depth = 6;
+      int depth = 5;
       PVariation pVariation;
       cout << "depth: " << depth << endl;
       auto start = std::chrono::high_resolution_clock::now();
