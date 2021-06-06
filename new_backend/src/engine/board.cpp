@@ -69,7 +69,7 @@ int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
     return 0;
   }
   int score = iterativeDeepening(5, pVariation);
-  if (score >= CHECKMATE_VALUE + MAX_DEPTH)
+  if (score >= -CHECKMATE_VALUE - MAX_DEPTH)
   {
     //This is probably a checkmate variation, store it and use it for killing the opponent!
     mateMoves.len = pVariation->len;
