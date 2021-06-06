@@ -58,7 +58,7 @@ void benchmarkNegaMax() {
     auto newNegaMax = std::chrono::high_resolution_clock::now();
     int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
     auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - start;
+    std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - newNegaMax;
     Move nextMove = pVariation.moves[0];
     board.makeMove(nextMove);
     if(elapsedNegaMax.count() > peak) {
