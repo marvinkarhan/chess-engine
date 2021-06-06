@@ -43,7 +43,36 @@ void perft(int depth, u64 result, std::string fen = START_POS_FEN)
   else
     std::cout << pertResult << " !== " << result << std::endl;
 }
+void benchmarkNegaMax() {
 
+  Board board;
+  int maxMoves = 50;
+  int depth = 4;
+  cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
+  auto start = std::chrono::high_resolution_clock::now();
+  double peak;
+  FenString peakFen;
+  for (int i = 0; i < maxMoves; i++)
+  {
+    PVariation pVariation;
+    auto newNegaMax = std::chrono::high_resolution_clock::now();
+    int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
+    auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - start;
+    Move nextMove = pVariation.moves[0];
+    board.makeMove(nextMove);
+    if(elapsedNegaMax.count() > peak) {
+      peak = elapsedNegaMax.count();
+      peakFen = board.toFenString(); 
+    }
+    cout << "Move Nr.: " << right << std::setfill('0') << std::setw(5) << i << " move: " << toUciString(nextMove) << " fen: " << left  << setfill('-')  << std::setw(80) << board.toFenString() << " " << left << setfill('0') << setw(10) << elapsedNegaMax.count() << " seconds" << endl;
+  }
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  std::cout << "\r\n--- BENCHMARK RUNTIME: " << elapsed.count() << " seconds ---" << std::endl;
+  std::cout << "\r\n--- AVG RUNTIME PER CALL: " << elapsed.count() / maxMoves << " seconds ---" << std::endl;
+  std::cout << "\r\n--- LONGEST NEGA MAX CALL: " << peak << " seconds, fen: " << peakFen << std::endl; 
+}
 void testZobrist()
 {
   // Test if ZOBRIST CONTAINS duplicates, if so you must change the seed value!
@@ -60,8 +89,8 @@ void testZobrist()
   }
   cout << "Generate some zobrist keys from start!" << endl;
   Board board;
-  int maxMoves = 50;
-  int depth = 2;
+  int maxMoves = 70;
+  int depth = 4;
   cout << "Make some moves with negaMax on depth: " << depth << endl;
   vector<FenString> fens;
   // Test values for checking if the testing works!!
@@ -180,7 +209,8 @@ int main(int argc, char *argv[])
 
   // testNegaMax(board, 7);
 
-  testZobrist();
+  // testZobrist();
+  benchmarkNegaMax();
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 
