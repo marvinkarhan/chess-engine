@@ -48,7 +48,7 @@ Move uciToMove(std::string uci, const Board &board)
   if (!(originSquare || targetSquare) || (board.piecePos[originSquare] == NO_PIECE))
   {
     std::cout << "Invalid uci move"  << std::endl;
-    throw;
+    return 0;
   }
   // possible promotion
   ss >> character;

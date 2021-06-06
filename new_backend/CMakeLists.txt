@@ -67,7 +67,17 @@ add_executable(${project_name}-engine-exe
 target_link_libraries(${project_name}-engine-exe ${project_name}-lib)
 add_dependencies(${project_name}-engine-exe ${project_name}-lib)
 
-set_target_properties(${project_name}-lib ${project_name}-exe ${project_name}-test ${project_name}-engine-exe PROPERTIES
+
+## UCI exe
+add_executable(${project_name}-uci-exe
+        src/MainUCI.cpp
+)
+
+target_link_libraries(${project_name}-uci-exe ${project_name}-lib)
+add_dependencies(${project_name}-uci-exe ${project_name}-lib)
+
+
+set_target_properties(${project_name}-lib ${project_name}-exe ${project_name}-test ${project_name}-engine-exe ${project_name}-uci-exe PROPERTIES
 # set_target_properties(${project_name}-lib ${project_name}-engine-exe PROPERTIES
         CXX_STANDARD 20
         CXX_EXTENSIONS OFF
