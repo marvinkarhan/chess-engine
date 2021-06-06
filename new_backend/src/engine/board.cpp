@@ -51,7 +51,9 @@ int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
       pVariation->len = mateMoves.len;
       memcpy(pVariation->moves, mateMoves.moves, mateMoves.len * sizeof(Move));
       return -CHECKMATE_VALUE; // BEST VALUE
-    } else {
+    }
+    else
+    {
       // Reset variaion
       PVariation mateMoves;
     }
@@ -723,7 +725,62 @@ void Board::restore()
   state = std::move(oldBoard);
 }
 
-void Board::hash() {}
+void Board::hash()
+{
+  // #
+  // #     The hash indizes are defined as following:
+  // #     The max size of the array is 781
+  // #     It's always (PNBRQK) for all 64 fields,
+  // #     The Field ar defined like this A1, A2, B1, ..., F8
+  // #     It Starts with black followed by white, meaning the first 6 * 64 are defined like this
+  // #     [BP * A1, ..., BK * F8] for the first 6 * 64 - 1 indizes = 384 - 1 = 383 [0,383]
+  // #     followed by white:
+  // #     [WP * A1, ..., WK * F8] for the first 383 + 6 * 64 = 383 + 384 = 767 [384,767]
+  // #     After that we process if black is to move this is the key: 767 + 1 = 768
+  // #     Then the 4 castling rights in this order (WK, WQ, BK, BQ) = [769,772]
+  // #     The last 8 are the en passant squares fields in this order (A, B, C, D, E, F, G, H) = [773,780]
+  // #
+  hashValue = 0;
+  int pieceOffset = 0;
+  int position = 0;
+  for (Piece piece : PIECE_ENUMERATED)
+  {
+    BB bb = pieces(piece);
+    while (bb)
+    {
+      position = 63 - pop_lsb(bb);
+      hashValue ^= ZOBRIST_TABLE[pieceOffset + position];
+    }
+    // Every piece is a shift of 64 indizes in the array
+    pieceOffset += 64;
+  }
+  if (activeSide)
+    hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
+  if (castleWhiteKingSide)
+    hashValue ^= ZOBRIST_TABLE[CASTLE_WHITE_KING_SIDE];
+  if (castleWhiteQueenSide)
+    hashValue ^= ZOBRIST_TABLE[CASTLE_WHITE_QUEEN_SIDE];
+  if (castleBlackKingSide)
+    hashValue ^= ZOBRIST_TABLE[CASTLE_BLACK_KING_SIDE];
+  if (castleBlackQueenSide)
+    hashValue ^= ZOBRIST_TABLE[CASTLE_BLACK_QUEEN_SIDE];
+  if (epSquareBB & FILE_A)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_A];
+  else if (epSquareBB & FILE_B)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_B];
+  else if (epSquareBB & FILE_C)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_C];
+  else if (epSquareBB & FILE_D)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_D];
+  else if (epSquareBB & FILE_E)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_E];
+  else if (epSquareBB & FILE_F)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_F];
+  else if (epSquareBB & FILE_G)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_G];
+  else if (epSquareBB & FILE_H)
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H];
+}
 
 bool Board::makeMove(const Move &newMove)
 {

@@ -9,7 +9,7 @@ typedef std::string FenString;
 
 const int MIN_ALPHA = -2000000;
 const int MIN_BETA = 2000000;
-const int CHECKMATE_VALUE =  -20000;
+const int CHECKMATE_VALUE = -20000;
 const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const int MAX_MOVES = 256;
@@ -314,18 +314,35 @@ extern BB PAWN_ATTACKS_BBS[64][2];
 extern BB REY_BBS[64][64];
 extern BB LINE_BBS[64][64];
 
+//ZOBRIST STUFF
+extern u64 ZOBRIST_TABLE[781];
+const int ZOBRIST_ARRAY_LENGTH = 781;
+const u64 ZOBRIST_SEED = 13;
+const int ZOBRIST_ACTIVE_SIDE = 768;
+
+enum ZobristKeys : int
+{
+  ACTIVE_SIDE = 768,
+  CASTLE_WHITE_KING_SIDE = 769,
+  CASTLE_WHITE_QUEEN_SIDE = 770,
+  CASTLE_BLACK_KING_SIDE = 771,
+  CASTLE_BLACK_QUEEN_SIDE = 772,
+  EP_SQUARE_A = 773,
+  EP_SQUARE_B = 774,
+  EP_SQUARE_C = 775,
+  EP_SQUARE_D = 776,
+  EP_SQUARE_E = 777,
+  EP_SQUARE_F = 778,
+  EP_SQUARE_G = 779,
+  EP_SQUARE_H = 780,
+
+};
+
 extern void initConstants();
 
 /** Based on https: //en.wikipedia.org/wiki/Linear_congruential_generator */
 constexpr u64 lcg(u64 seed)
 {
-  return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
+  return seed * 6364136223846793005ULL + 1442695040888963407ULL;
+  // return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
 }
-// constexpr int ZOBRIST_TABLE[781];
-
-// EVALUATE_TABLE = {}
-
-// import json
-
-// with open('opening-extractor/output/openings.json') as json_file:
-//     OPENING_TABLE = json.load(json_file)

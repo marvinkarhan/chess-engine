@@ -80,6 +80,7 @@ BB KING_MOVES_BBS[64];
 BB PAWN_ATTACKS_BBS[64][2];
 BB REY_BBS[64][64];
 BB LINE_BBS[64][64];
+u64 ZOBRIST_TABLE[781];
 
 void initArrRectangular()
 {
@@ -187,6 +188,12 @@ void initConstants()
     for (int j = 0; j <= 1; j++)
       PAWN_ATTACKS_BBS[i][j] = pawn_attacks(SQUARE_BBS[i], j, 0);
   }
+  u64 seed = ZOBRIST_SEED;
+  for (int i = 0; i < ZOBRIST_ARRAY_LENGTH; i++) {
+    seed = lcg(seed);
+    ZOBRIST_TABLE[i] = seed;
+  }
+
 
   initArrRectangular();
 
