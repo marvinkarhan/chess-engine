@@ -4,6 +4,6 @@
 #include "moveHelper.h"
 
 
-void uciGo(Board &board, PVariation &pVariation);
+void uciGo(Board &board);
 void uciPosition(Board &board, std::istringstream &ss);
 void uciLoop();

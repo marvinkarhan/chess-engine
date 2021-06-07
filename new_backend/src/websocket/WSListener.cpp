@@ -12,6 +12,7 @@
 #include "../engine/constants.h"
 #include "../engine/moveHelper.h"
 #include <chrono>
+#include <vector>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // WSListener
 
@@ -84,15 +85,15 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       Board *userBoard = &SessionMap[pointerToSession];
       userBoard->makeMove(uciToMove(request->move->c_str(), *userBoard));
       int depth = 5;
-      PVariation pVariation;
       cout << "depth: " << depth << endl;
       auto start = std::chrono::high_resolution_clock::now();
-      int eval = userBoard->evaluateNextMove(depth, request->move->c_str(), &pVariation);
+      int eval = userBoard->evaluateNextMove(depth, request->move->c_str());
       auto finish = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = finish - start;
       std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
-      cout << "variation: " << toUciString(pVariation.moves[0]) << endl;
-      userBoard->makeMove(pVariation.moves[0]);
+      std::vector<Move> moves = userBoard->getPV();
+      cout << "variation: " << toUciString(moves[0]) << endl;
+      userBoard->makeMove(moves[0]);
       cout << "Made move" << endl;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();
@@ -104,9 +105,9 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       }
       socketResponse->evaluation = (float)eval / 100;
       socketResponse->aiMoves = {};
-      for (int i = 0; i < pVariation.len; i++)
+      for (Move move : moves)
       {
-        socketResponse->aiMoves->push_back(toUciString(pVariation.moves[i]).c_str());
+        socketResponse->aiMoves->push_back(toUciString(move).c_str());
       }
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);

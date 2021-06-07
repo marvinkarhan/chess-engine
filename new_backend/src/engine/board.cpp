@@ -38,33 +38,8 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
   hashTable = new HashEntry[hashTableSize];
 }
 
-int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
+int Board::evaluateNextMove(int depth, string lastMove)
 {
-  if (mateMoves.len)
-  {
-    // Check if the lastMove by the opponent was in the predicted check mate variation
-    string predictedOpponentMove = toUciString(mateMoves.moves[1]);
-
-    if (predictedOpponentMove == lastMove)
-    {
-      // Shift the variation 2 to the left.
-      for (int i = 2; i < mateMoves.len; i++)
-      {
-        mateMoves.moves[i - 2] = mateMoves.moves[i];
-      }
-      // Remove the last 2 moves in prediction
-      mateMoves.len -= 2;
-      // Get the next mate move
-      pVariation->len = mateMoves.len;
-      memcpy(pVariation->moves, mateMoves.moves, mateMoves.len * sizeof(Move));
-      return -CHECKMATE_VALUE; // BEST VALUE
-    }
-    else
-    {
-      // Reset variaion
-      PVariation mateMoves;
-    }
-  }
   if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
   {
     json newJson = currentOpeningTable[lastMove];
@@ -73,28 +48,27 @@ int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
     currentOpeningTable = currentOpeningTable[lastMove][nextMove];
 
     cout << "OPENING TABLE" << endl;
-    pVariation->len = 1;
-    pVariation->moves[0] = move;
     return 0;
   }
-  int score = iterativeDeepening(5, pVariation);
-  if (score >= -CHECKMATE_VALUE - MAX_DEPTH)
-  {
-    //This is probably a checkmate variation, store it and use it for killing the opponent!
-    mateMoves.len = pVariation->len;
-    memcpy(mateMoves.moves, pVariation->moves, pVariation->len * sizeof(Move));
-  }
+  int score = iterativeDeepening(5);
   return score;
 }
 
-int Board::iterativeDeepening(int timeInSeconds, PVariation *pVariation)
+int Board::iterativeDeepening(int timeInSeconds)
 {
   auto start = std::chrono::high_resolution_clock::now();
-  int currDepth = 5;
+  int currDepth = 1;
   int score = 0;
   while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count() < timeInSeconds)
   {
-    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA, pVariation);
+    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
+    std::cout << "info depth " << currDepth << " score cp " << score << " nodes " << nodeCount << " pv";
+    for (Move move : getPV())
+    {
+      std::cout << " " << toUciString(move);
+    }
+    std::cout << std::endl;
+    nodeCount = 0;
     currDepth++;
   }
   return score;
@@ -164,11 +138,10 @@ void Board::printBitboard(BB bb)
   std::cout << result;
 }
 
-int Board::quiesce(int alpha, int beta, PVariation *pVariation, int depth /*= 0*/)
+int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 {
   int standPat = evaluate();
   int score;
-  PVariation variation;
   if (standPat >= beta)
     return beta;
   if (alpha < standPat)
@@ -186,16 +159,13 @@ int Board::quiesce(int alpha, int beta, PVariation *pVariation, int depth /*= 0*
   for (auto move : moveIterator)
   {
     makeMove(move);
-    score = -quiesce(-beta, -alpha, &variation, depth - 1);
+    score = -quiesce(-beta, -alpha, depth - 1);
     unmakeMove(move);
     if (score >= beta)
       return beta;
     if (score > alpha)
     {
       alpha = score;
-      pVariation->moves[0] = move;
-      memcpy(pVariation->moves + 1, variation.moves, variation.len * sizeof(Move));
-      pVariation->len = variation.len + 1;
     }
   }
   return alpha;
@@ -210,7 +180,7 @@ int Board::evaluate()
   return score * sideMultiplier;
 }
 
-int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
+int Board::negaMax(int depth, int alpha, int beta)
 {
   HashEntryFlag hashFlag = UPPER_BOUND;
   int score;
@@ -223,9 +193,8 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
   }
   if (depth == 0)
   {
-    pVariation->len = 0;
-    // return evaluate();
-    return quiesce(alpha, beta, pVariation);
+    return evaluate();
+    // return quiesce(alpha, beta, pVariation);
   }
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ALL, bestMove);
   int moveIteratorSize = moveIterator.size();
@@ -235,28 +204,26 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
       return CHECKMATE_VALUE - depth;
     return 0;
   }
-  PVariation variation;
   for (Move move : moveIterator)
   {
+    nodeCount++;
     makeMove(move);
-    score = -negaMax(depth - 1, -beta, -alpha, &variation);
+    score = -negaMax(depth - 1, -beta, -alpha);
     unmakeMove(move);
 
     if (score >= beta)
     {
-      storeHash(depth, beta, variation.moves[0], LOWER_BOUND);
+      storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
     }
     if (score > alpha)
     {
       hashFlag = EXACT;
       alpha = score;
-      pVariation->moves[0] = move;
-      memcpy(pVariation->moves + 1, variation.moves, variation.len * sizeof(Move));
-      pVariation->len = variation.len + 1;
+      bestMove = move;
     }
   }
-  storeHash(depth, alpha, variation.moves[0], hashFlag);
+  storeHash(depth, alpha, bestMove, hashFlag);
   return alpha;
 }
 
@@ -379,8 +346,6 @@ void Board::parseFenString(FenString fen)
   ss >> character;
   fullMoves = character - '0';
   store();
-  /* TODO Hash */
-  // hashValue = hash();
 }
 
 BB Board::potentialSlidingAttackers(int square, bool activeSide)
@@ -429,6 +394,26 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
       blockersBB |= potentialPinnedBB;
   }
   return blockersBB;
+}
+
+std::vector<Move> Board::getPV()
+{
+  HashEntry *entry;
+  std::vector<Move> moves;
+  do
+  {
+    entry = &hashTable[hashValue % hashTableSize];
+    if (entry->key == hashValue)
+    {
+      moves.push_back(entry->bestMove);
+      makeMove(entry->bestMove);
+    }
+  } while (entry->bestMove);
+
+  for (auto move = moves.rbegin(); move != moves.rend(); ++move)
+    unmakeMove(*move);
+  
+  return moves;
 }
 
 Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category)
@@ -623,7 +608,7 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory
     // case 3: move is en passant
     if ((blockersBB && (blockersBB & SQUARE_BBS[originSquare(move)])) || originSquare(move) == kingSquare || moveType(move) == EN_PASSANT)
     {
-      if (moveIsLegal(move, activeSide, blockersBB, kingAttackersBB, kingSquare, occupiedBB))
+      if (moveIsLegal(move, activeSide, blockersBB, kingSquare, occupiedBB))
         *moveList++ = move;
     }
     else
@@ -634,7 +619,7 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory
   return moveList;
 }
 
-bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingAttackersBB, int kingSquare, BB occupied)
+bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, int kingSquare, BB occupied)
 {
   // special case: castle
   if (moveType(move) == CASTLING)

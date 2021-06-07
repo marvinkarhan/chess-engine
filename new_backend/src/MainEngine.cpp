@@ -12,12 +12,11 @@ const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 803164768
 
 void testNegaMax(Board &board, int depth)
 {
-  PVariation pVariation;
-  int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
+  int eval = board.negaMax(depth, -2000000, 2000000);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
-  for (int i = 0; i < pVariation.len; i++)
-    std::cout << toUciString(pVariation.moves[i]) << " ";
+  for (Move move : board.getPV())
+    std::cout << toUciString(move) << " ";
   std::cout << std::endl;
 }
 
@@ -43,7 +42,8 @@ void perft(int depth, u64 result, std::string fen = START_POS_FEN)
   else
     std::cout << pertResult << " !== " << result << std::endl;
 }
-void benchmarkNegaMax() {
+void benchmarkNegaMax()
+{
 
   Board board;
   int maxMoves = 50;
@@ -54,24 +54,24 @@ void benchmarkNegaMax() {
   FenString peakFen;
   for (int i = 0; i < maxMoves; i++)
   {
-    PVariation pVariation;
     auto newNegaMax = std::chrono::high_resolution_clock::now();
-    int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
+    int eval = board.negaMax(depth, -2000000, 2000000);
     auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - newNegaMax;
-    Move nextMove = pVariation.moves[0];
+    Move nextMove = board.getPV()[0];
     board.makeMove(nextMove);
-    if(elapsedNegaMax.count() > peak) {
+    if (elapsedNegaMax.count() > peak)
+    {
       peak = elapsedNegaMax.count();
-      peakFen = board.toFenString(); 
+      peakFen = board.toFenString();
     }
-    cout << "Move Nr.: " << right << std::setfill('0') << std::setw(5) << i << " move: " << toUciString(nextMove) << " fen: " << left  << setfill('-')  << std::setw(80) << board.toFenString() << " " << left << setfill('0') << setw(10) << elapsedNegaMax.count() << " seconds" << endl;
+    cout << "Move Nr.: " << right << std::setfill('0') << std::setw(5) << i << " move: " << toUciString(nextMove) << " fen: " << left << setfill('-') << std::setw(80) << board.toFenString() << " " << left << setfill('0') << setw(10) << elapsedNegaMax.count() << " seconds" << endl;
   }
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   std::cout << "\r\n--- BENCHMARK RUNTIME: " << elapsed.count() << " seconds ---" << std::endl;
   std::cout << "\r\n--- AVG RUNTIME PER CALL: " << elapsed.count() / maxMoves << " seconds ---" << std::endl;
-  std::cout << "\r\n--- LONGEST NEGA MAX CALL: " << peak << " seconds, fen: " << peakFen << std::endl; 
+  std::cout << "\r\n--- LONGEST NEGA MAX CALL: " << peak << " seconds, fen: " << peakFen << std::endl;
 }
 void testZobrist()
 {
@@ -105,9 +105,8 @@ void testZobrist()
   // hashes.push_back(1);
   for (int i = 0; i < maxMoves; i++)
   {
-    PVariation pVariation;
-    int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
-    Move nextMove = pVariation.moves[0];
+    int eval = board.negaMax(depth, -2000000, 2000000);
+    Move nextMove = board.getPV()[0];
     board.makeMove(nextMove);
     cout << "Move Nr.: " << std::setfill('0') << std::setw(5) << i << ", move: " << toUciString(nextMove) << ", fen: " << setfill('-') << std::setw(100) << board.toFenString() << ", hash: " << board.hashValue << endl;
     hashes.push_back(board.hashValue);
@@ -210,6 +209,12 @@ int main(int argc, char *argv[])
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
   testNegaMax(board, 7);
+  std::cout << "PV Node: ";
+  for (Move move : board.getPV())
+  {
+    std::cout << toUciString(move) + " ";
+  }
+  std::cout << std::endl;
   std::cout << "Hash table size: " << board.hashTableSize << std::endl;
   std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 

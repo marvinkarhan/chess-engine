@@ -1,25 +1,21 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "uci.h"
+#include "move.h"
 
 std::string lastMove;
 
-void uciGo(Board &board, PVariation &pVariation)
+void uciGo(Board &board)
 {
   
   int depth = 6;
-  int eval = board.evaluateNextMove(depth, lastMove, &pVariation);
-  // print out info
-  std::cout << "info depth " << depth << " score cp " << 0 << " pv ";
-  for (int i = 0; i < pVariation.len; i++)
-  {
-    std::cout << toUciString(pVariation.moves[i]) << " ";
-  }
-  std::cout << std::endl;
+  int eval = board.evaluateNextMove(depth, lastMove);
   // signal we made out final decision (should be done by iterative deepening on some time or depth constraint)
-  std::cout << "bestmove " << toUciString(pVariation.moves[0]) << std::endl;
+  // std::vector<Move> moves = board.getPV();
+  // std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
 }
 
 void uciPosition(Board &board, std::istringstream &ss)
@@ -60,7 +56,6 @@ void uciLoop()
   std::cout << "uciLoop starting" << std::endl;
   Board board;
   std::string command, token;
-  PVariation pVariation;
 
   do
   {
@@ -88,10 +83,11 @@ void uciLoop()
     else if (token == "position")
       uciPosition(board, ss);
     else if (token == "go")
-      uciGo(board, pVariation);
+      uciGo(board);
     else if (token == "stop")
     {
-      std::cout << "bestmove " << toUciString(pVariation.moves[0]) << std::endl; // can be ignored currently because we are always doing a fixed depth search
+      std::vector<Move> moves = board.getPV();
+      std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
     }
       // following is part of the UCI format but not jet implemented by NoPy++
     // else if (token == "setoption")

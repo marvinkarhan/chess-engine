@@ -14,12 +14,6 @@ struct Evaluation
   vector<string> moves;
 };
 
-struct PVariation
-{
-  int len = 0;
-  Move moves[MAX_MOVES];
-};
-
 // stores partial information about a board usefull for unmake move
 struct StoredBoard
 {
@@ -54,18 +48,16 @@ public:
   BB piecesByType[7];
   BB piecesBySide[2];
   Piece piecePos[64];
-  bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished;
-  u64 epSquareBB, hashValue, hashTableHits = 0;
+  bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
+  u64 epSquareBB, hashValue, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
   nlohmann::json currentOpeningTable;
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;
-  PVariation mateMoves;
   StoredBoard *state;
   int hashTableSize;
   HashEntry *hashTable;
-  void initHashTableSize(int sizeInMB = 32);
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
     return piecesBySide[activeSide] & piecesByType[pt];
@@ -74,13 +66,14 @@ public:
   {
     return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
   }
-  int negaMax(int depth, int alpha, int beta, PVariation *pVariation);
-  int iterativeDeepening(int timeInSeconds, PVariation *pVariation);
-  int quiesce(int alpha, int beta, PVariation *pVariation, int depth = 0);
+  int negaMax(int depth, int alpha, int beta);
+  int iterativeDeepening(int timeInSeconds);
+  int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
-  int evaluateNextMove(int depth, string lastMove, PVariation *pVariation);
+  int evaluateNextMove(int depth, string lastMove);
   Board(FenString fen = START_POS_FEN);
   ~Board();
+  void initHashTableSize(int sizeInMB = 32);
   u64 getHash();
   void resetBoard();
   void printBitboard(BB bb);
@@ -92,9 +85,10 @@ public:
   BB potentialSlidingAttackers(int square, bool activeSide);
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
+  std::vector<Move> getPV();
   Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category);
   Move *generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category);
-  bool moveIsLegal(const Move &move, bool activeSide, BB blockers, BB kingAttackersBB, int kingSquare, BB occupied);
+  bool moveIsLegal(const Move &move, bool activeSide, BB blockers, int kingSquare, BB occupied);
   bool stalemate();
   bool stalemate(int moveListSize);
   bool checkmate();
