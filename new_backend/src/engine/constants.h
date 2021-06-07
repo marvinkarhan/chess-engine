@@ -10,6 +10,7 @@ typedef std::string FenString;
 const int MIN_ALPHA = -2000000;
 const int MIN_BETA = 2000000;
 const int CHECKMATE_VALUE = -20000;
+const int SCORE_UNKNOWN = MIN_ALPHA - 1;
 const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const int MAX_MOVES = 256;
@@ -363,9 +364,12 @@ constexpr u64 lcg(u64 seed)
   // return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
 }
 
-enum TTItemType
+enum HashEntryFlag
 {
+  // exact value = no cut-off
   EXACT,
+  // alpha cut-off
   UPPER_BOUND,
+  // beta cut-off
   LOWER_BOUND
 };

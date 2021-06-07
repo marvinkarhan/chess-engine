@@ -18,6 +18,8 @@ enum MoveType
 */
 typedef int Move;
 
+const int NONE_MOVE = 0;
+
 constexpr Move createMove(int originSquare, int targetSquare)
 {
   return Move(originSquare + (targetSquare << 6));

@@ -16,7 +16,7 @@
 using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
-  /* TODO: Opening init */
+  initHashTableSize();
   openingFinished = false;
   fullMoves = 0;
   openingMoves = 10;
@@ -28,7 +28,14 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
 
 Board::~Board()
 {
+  delete[] hashTable;
   delete (state);
+}
+
+void Board::initHashTableSize(int sizeInMB /*=32*/)
+{
+  hashTableSize = (sizeInMB * 1000000) / sizeof(HashEntry);
+  hashTable = new HashEntry[hashTableSize];
 }
 
 int Board::evaluateNextMove(int depth, string lastMove, PVariation *pVariation)
@@ -205,13 +212,22 @@ int Board::evaluate()
 
 int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
 {
+  HashEntryFlag hashFlag = UPPER_BOUND;
+  int score;
+  Move bestMove = NONE_MOVE;
+
+  if ((score = probeHash(depth, alpha, beta, &bestMove)) != SCORE_UNKNOWN)
+  {
+    hashTableHits++;
+    return score;
+  }
   if (depth == 0)
   {
     pVariation->len = 0;
     // return evaluate();
     return quiesce(alpha, beta, pVariation);
   }
-  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
+  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ALL, bestMove);
   int moveIteratorSize = moveIterator.size();
   if (stalemate(moveIteratorSize))
   {
@@ -220,7 +236,6 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
     return 0;
   }
   PVariation variation;
-  int score;
   for (Move move : moveIterator)
   {
     makeMove(move);
@@ -228,15 +243,20 @@ int Board::negaMax(int depth, int alpha, int beta, PVariation *pVariation)
     unmakeMove(move);
 
     if (score >= beta)
+    {
+      storeHash(depth, beta, variation.moves[0], LOWER_BOUND);
       return beta;
+    }
     if (score > alpha)
     {
+      hashFlag = EXACT;
       alpha = score;
       pVariation->moves[0] = move;
       memcpy(pVariation->moves + 1, variation.moves, variation.len * sizeof(Move));
       pVariation->len = variation.len + 1;
     }
   }
+  storeHash(depth, alpha, variation.moves[0], hashFlag);
   return alpha;
 }
 
@@ -731,6 +751,36 @@ void Board::restore()
   state = std::move(oldBoard);
 }
 
+int Board::probeHash(int depth, int alpha, int beta, Move *bestMove)
+{
+  HashEntry *entry = &hashTable[hashValue % hashTableSize];
+
+  if (entry->key == hashValue)
+  {
+    bestMove = &entry->bestMove;
+    if (entry->depth >= depth)
+    {
+      if (entry->flag == EXACT)
+        return entry->score;
+      if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
+        return alpha;
+      if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
+        return beta;
+    }
+  }
+  return SCORE_UNKNOWN;
+}
+
+void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
+{
+  HashEntry *entry = &hashTable[hashValue % hashTableSize];
+  entry->key = hashValue;
+  entry->depth = depth;
+  entry->flag = hashFlag;
+  entry->score = score;
+  entry->bestMove = move;
+}
+
 void Board::zobristToggleCastle()
 {
   if (castleWhiteKingSide)
@@ -865,6 +915,7 @@ bool Board::makeMove(const Move &newMove)
   // unmake move if it was illegal
   if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))
   {
+    std::cout << "move was illegal (king attacked): " << toUciString(newMove) << std::endl;
     printBitboard(attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]));
     printStateHistory();
     unmakeMove(newMove);

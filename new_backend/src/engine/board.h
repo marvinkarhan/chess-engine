@@ -33,10 +33,13 @@ struct StoredBoard
 };
 
 // information stored in the TT Hash Table
-struct TTItem
+struct HashEntry
 {
   u64 key;
   int depth;
+  HashEntryFlag flag;
+  int score;
+  Move bestMove;
 };
 
 class Board
@@ -52,7 +55,7 @@ public:
   BB piecesBySide[2];
   Piece piecePos[64];
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished;
-  u64 epSquareBB, hashValue;
+  u64 epSquareBB, hashValue, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
   nlohmann::json currentOpeningTable;
   /* Saves values of pieces on the board */
@@ -60,6 +63,9 @@ public:
   int pieceSquareValues = 0;
   PVariation mateMoves;
   StoredBoard *state;
+  int hashTableSize;
+  HashEntry *hashTable;
+  void initHashTableSize(int sizeInMB = 32);
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
     return piecesBySide[activeSide] & piecesByType[pt];
@@ -98,6 +104,8 @@ public:
   std::string divide(int depth);
   void store(Piece captuedPiece = NO_PIECE);
   void restore();
+  int probeHash(int depth, int alpha, int beta, Move *bestMove);
+  void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
   void zobristToggleCastle();
   // to simplify updating piece positions
   inline void createPiece(Piece piece, int targetSquare)
@@ -142,7 +150,7 @@ public:
   {
     StoredBoard *currState = state;
     int total = 0;
-    while(currState)
+    while (currState)
     {
       currState = currState->oldBoard;
       total++;
@@ -155,12 +163,17 @@ template <MoveGenType moveType>
 struct MoveList
 {
   Move moves[MAX_MOVES], *last;
-  MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL)
+  MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL, Move bestMove = NONE_MOVE)
   {
+    last = moves;
+    if (bestMove != NONE_MOVE)
+    {
+      *last++ = bestMove;
+    }
     if (moveType == PSEUDO_LEGAL_MOVES)
-      last = board.generatePseudoLegalMoves(moves, activeSide, category);
+      last = board.generatePseudoLegalMoves(last, activeSide, category);
     else if (moveType == LEGAL_MOVES)
-      last = board.generateLegalMoves(moves, activeSide, category);
+      last = board.generateLegalMoves(last, activeSide, category);
   }
   // implement iterator pattern
   const Move *begin() const { return moves; }
