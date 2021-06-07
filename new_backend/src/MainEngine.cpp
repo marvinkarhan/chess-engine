@@ -90,7 +90,7 @@ void testZobrist()
   cout << "Generate some zobrist keys from start!" << endl;
   Board board;
   int maxMoves = 70;
-  int depth = 4;
+  int depth = 2;
   cout << "Make some moves with negaMax on depth: " << depth << endl;
   vector<FenString> fens;
   // Test values for checking if the testing works!!
@@ -109,7 +109,6 @@ void testZobrist()
     int eval = board.negaMax(depth, -2000000, 2000000, &pVariation);
     Move nextMove = pVariation.moves[0];
     board.makeMove(nextMove);
-    board.hash();
     cout << "Move Nr.: " << std::setfill('0') << std::setw(5) << i << ", move: " << toUciString(nextMove) << ", fen: " << setfill('-') << std::setw(100) << board.toFenString() << ", hash: " << board.hashValue << endl;
     hashes.push_back(board.hashValue);
     fens.push_back(board.toFenString());
@@ -154,9 +153,8 @@ void testZobrist()
   }
   if (equal && different)
   {
-    cout << "HASHING WORKS CORRECT!!" << endl;
+    cout << "HASHING WORKS CORRECTLY!!" << endl;
   }
-  cout << "DONE!" << endl;
 }
 
 void divide(int depth, std::string fen = START_POS_FEN)
@@ -170,7 +168,7 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  // Board board("2N2knr/1p1Q3p/r5q1/4p1p1/P1P1p3/1P4PP/5P2/R2R2K1 w Qk - 0 1");
+  // Board board("rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1");
   // Board board(KIWI_PETE_POS_FEN);
   Board board;
   auto start = std::chrono::high_resolution_clock::now();
@@ -188,13 +186,17 @@ int main(int argc, char *argv[])
   // board.printEveryPiece();
   // board.printBitboard(board.allPiecesBB());
 
-  // Move move1 = uciToMove("e1d1", board);
+  // std::cout << "Board hash:" << board.hashValue << std::endl;
+  // Move move1 = uciToMove("g1f3", board);
   // board.makeMove(move1);
-  // Move move2 = uciToMove("a8a7", board);
+  // std::cout << "Board hash:" << board.hashValue << std::endl;
+  // Move move2 = uciToMove("g8f6", board);
   // board.makeMove(move2);
+  // std::cout << "Board hash:" << board.hashValue << std::endl;
   // board.unmakeMove(move2);
-  // board.makeMove(move2);
-  // testMoveGen<LEGAL_MOVES>(board);
+  // std::cout << "Board hash:" << board.hashValue << std::endl;
+  // board.unmakeMove(move1);
+  // std::cout << "Board hash:" << board.hashValue << std::endl;
 
   // perft(3, 8902);
   // perft(4, 197281);
@@ -209,8 +211,8 @@ int main(int argc, char *argv[])
 
   // testNegaMax(board, 7);
 
-  // testZobrist();
-  benchmarkNegaMax();
+  testZobrist();
+  // benchmarkNegaMax();
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

@@ -318,25 +318,41 @@ extern BB LINE_BBS[64][64];
 extern u64 ZOBRIST_TABLE[781];
 const int ZOBRIST_ARRAY_LENGTH = 781;
 const u64 ZOBRIST_SEED = 13;
-const int ZOBRIST_ACTIVE_SIDE = 768;
 
 enum ZobristKeys : int
 {
   ACTIVE_SIDE = 768,
-  CASTLE_WHITE_KING_SIDE = 769,
-  CASTLE_WHITE_QUEEN_SIDE = 770,
-  CASTLE_BLACK_KING_SIDE = 771,
-  CASTLE_BLACK_QUEEN_SIDE = 772,
-  EP_SQUARE_A = 773,
-  EP_SQUARE_B = 774,
-  EP_SQUARE_C = 775,
-  EP_SQUARE_D = 776,
-  EP_SQUARE_E = 777,
-  EP_SQUARE_F = 778,
-  EP_SQUARE_G = 779,
-  EP_SQUARE_H = 780,
-
+  CASTLE_WHITE_KING_SIDE,
+  CASTLE_WHITE_QUEEN_SIDE,
+  CASTLE_BLACK_KING_SIDE,
+  CASTLE_BLACK_QUEEN_SIDE,
+  EP_SQUARE_H,
+  EP_SQUARE_G,
+  EP_SQUARE_F,
+  EP_SQUARE_E,
+  EP_SQUARE_D,
+  EP_SQUARE_C,
+  EP_SQUARE_B,
+  EP_SQUARE_A,
 };
+
+constexpr int ZobristPieceOffset[15] = {
+    0,
+    0,
+    64,
+    124,
+    192,
+    256,
+    320,
+    0,
+    0,
+    384,
+    448,
+    512,
+    576,
+    640,
+    704};
+
 
 extern void initConstants();
 
@@ -346,3 +362,10 @@ constexpr u64 lcg(u64 seed)
   return seed * 6364136223846793005ULL + 1442695040888963407ULL;
   // return (2787869 * seed + 17767698) % 0xfdab38264; //Some Random values for pseudo random generation
 }
+
+enum TTItemType
+{
+  EXACT,
+  UPPER_BOUND,
+  LOWER_BOUND
+};

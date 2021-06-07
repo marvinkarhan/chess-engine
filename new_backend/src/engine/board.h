@@ -27,8 +27,16 @@ struct StoredBoard
   BB epSquareBB;
   int fullMoves, halfMoves;
   Piece capturedPiece;
+  u64 hashValue;
 
   StoredBoard *oldBoard; // board state before store
+};
+
+// information stored in the TT Hash Table
+struct TTItem
+{
+  u64 key;
+  int depth;
 };
 
 class Board
@@ -90,7 +98,7 @@ public:
   std::string divide(int depth);
   void store(Piece captuedPiece = NO_PIECE);
   void restore();
-  void hash();
+  void zobristToggleCastle();
   // to simplify updating piece positions
   inline void createPiece(Piece piece, int targetSquare)
   {
@@ -101,6 +109,7 @@ public:
     piecesBySide[getPieceSide(piece)] |= targetBB;
     pieceValues += PieceValues[piece];
     pieceSquareValues += PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1);
+    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[piece] + targetSquare];
   }
   inline void updatePiece(int originSquare, int targetSquare)
   {
@@ -112,6 +121,7 @@ public:
     piecesByType[getPieceType(piece)] ^= bb;
     piecesBySide[getPieceSide(piece)] ^= bb;
     pieceSquareValues += (PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1)) - (PIECE_SQUARE_TABLES[piece][63 - originSquare] * (getPieceSide(piece) ? 1 : -1));
+    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[piece] + originSquare] | ZOBRIST_TABLE[ZobristPieceOffset[piece] + targetSquare];
   }
   inline void deletePiece(int targetSquare)
   {
@@ -123,6 +133,7 @@ public:
     piecesBySide[getPieceSide(piece)] ^= targetBB;
     pieceValues -= PieceValues[piece];
     pieceSquareValues -= PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1);
+    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[piece] + targetSquare];
   }
   bool makeMove(const Move &newMove);
   void unmakeMove(const Move &oldMove);
