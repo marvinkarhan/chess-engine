@@ -61,6 +61,8 @@ public:
   StoredBoard *state;
   int hashTableSize;
   HashEntry *hashTable;
+  int calls;
+  int overwrites;
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
     return piecesBySide[activeSide] & piecesByType[pt];
@@ -105,6 +107,22 @@ public:
   void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
   void zobristToggleCastle();
   // to simplify updating piece positions
+
+  constexpr HashEntry *probeHash()
+  {
+    return &hashTable[hashValue % hashTableSize];
+  }
+  
+
+  int countHashTableSize() {
+    int count = 0;
+    for(int i = 0; i < hashTableSize; i++) {
+      if(hashTable[i].key) {
+        count++;
+      }
+    }
+    return count;
+  }
   inline void createPiece(Piece piece, int targetSquare)
   {
     piecePos[targetSquare] = piece;

@@ -12,13 +12,14 @@ const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 803164768
 
 void testNegaMax(Board &board, int depth)
 {
-  // int eval = board.negaMax(depth, -2000000, 2000000);
-  int eval = board.iterativeDeepening(5);
+  int eval = board.negaMax(depth, -2000000, 2000000);
+  // int eval = board.iterativeDeepening(5);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
-  std::cout << "moves: ";
-  for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
-    std::cout << toUciString(move) << " ";
-  std::cout << std::endl;
+  // std::cout << "moves: ";
+  // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
+  //   std::cout << toUciString(move) << " ";
+  // std::cout << std::endl;
+  board.makeMove(board.hashTable[board.hashValue % board.hashTableSize].bestMove);
 }
 
 template <MoveGenType moveType>
@@ -48,7 +49,7 @@ void benchmarkNegaMax()
 
   Board board;
   int maxMoves = 50;
-  int depth = 4;
+  int depth = 6;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
@@ -59,7 +60,7 @@ void benchmarkNegaMax()
     int eval = board.negaMax(depth, -2000000, 2000000);
     auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - newNegaMax;
-    Move nextMove = board.getPV()[0];
+    Move nextMove = board.hashTable[board.hashValue % board.hashTableSize].bestMove;
     board.makeMove(nextMove);
     if (elapsedNegaMax.count() > peak)
     {
@@ -198,6 +199,31 @@ int main(int argc, char *argv[])
   // board.unmakeMove(move1);
   // std::cout << "Board hash:" << board.hashValue << std::endl;
 
+  // testNegaMax(board, 7);
+  // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
+  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
+  // std::cout << "Hash table fill: " << board.countHashTableSize() << std::endl;
+  // std::cout << "Hash table fill: " << (float)board.countHashTableSize() / board.hashTableSize * 100 << "%" << std::endl;
+  // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
+  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
+
+  // testNegaMax(board, 7);
+  // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
+  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
+  // std::cout << "Hash table fill: " << board.countHashTableSize() << std::endl;
+  // std::cout << "Hash table fill: " << (float)board.countHashTableSize() / board.hashTableSize * 100 << "%" << std::endl;
+  // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
+  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
+
+  // testNegaMax(board, 7);
+  // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
+  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
+  // std::cout << "Hash table fill: " << board.countHashTableSize() << std::endl;
+  // std::cout << "Hash table fill: " << (float)board.countHashTableSize() / board.hashTableSize * 100 << "%" << std::endl;
+  // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
+  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
+  // std::cout << "calls overall: " << board.calls << std::endl;
+  // testZobrist();
   // perft(3, 8902);
   // perft(4, 197281);
   // perft(5, 4865609);
@@ -209,18 +235,18 @@ int main(int argc, char *argv[])
   // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
-  testNegaMax(board, 7);
-  std::cout << "PV Node: ";
-  for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
-  {
-    std::cout << toUciString(move) + " ";
-  }
-  std::cout << std::endl;
-  std::cout << "Hash table size: " << board.hashTableSize << std::endl;
-  std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
+  // testNegaMax(board, 7);
+  // // std::cout << "PV Node: ";
+  // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
+  // {
+  //   std::cout << toUciString(move) + " ";
+  // }
+  // std::cout << std::endl;
+  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
+  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 
   // testZobrist();
-  // benchmarkNegaMax();
+  benchmarkNegaMax();
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 
