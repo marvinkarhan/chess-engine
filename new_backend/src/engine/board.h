@@ -1,6 +1,7 @@
 #pragma once
 #include "constants.h"
 #include "move.h"
+#include "time.h"
 #include <iostream>
 #include <string>
 #include "../vendor/include/nlohmann/json.hpp"
@@ -51,6 +52,8 @@ public:
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
   u64 epSquareBB, hashValue, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
+  std::vector<Move> latestPV;
+  time_t endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
   /* Saves values of pieces on the board */
   int pieceValues = 0;
@@ -70,7 +73,7 @@ public:
   int iterativeDeepening(int timeInSeconds);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
-  int evaluateNextMove(int depth, string lastMove);
+  int evaluateNextMove(string lastMove);
   Board(FenString fen = START_POS_FEN);
   ~Board();
   void initHashTableSize(int sizeInMB = 32);

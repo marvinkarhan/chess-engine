@@ -38,7 +38,7 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
   hashTable = new HashEntry[hashTableSize];
 }
 
-int Board::evaluateNextMove(int depth, string lastMove)
+int Board::evaluateNextMove(string lastMove)
 {
   if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
   {
@@ -56,21 +56,29 @@ int Board::evaluateNextMove(int depth, string lastMove)
 
 int Board::iterativeDeepening(int timeInSeconds)
 {
-  auto start = std::chrono::high_resolution_clock::now();
+  endTime = time(NULL) + timeInSeconds;
+  std::cout << "EndTime: " << endTime << std::endl;
   int currDepth = 1;
   int score = 0;
-  while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count() < timeInSeconds)
+  stopSearch = false;
+  while (time(NULL) < endTime)
   {
     score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
-    std::cout << "info depth " << currDepth << " score cp " << score << " nodes " << nodeCount << " pv";
-    for (Move move : getPV())
+    if (time(NULL) < endTime)
     {
-      std::cout << " " << toUciString(move);
+      std::cout << "info depth " << currDepth << " score cp " << score << " nodes " << nodeCount << " pv";
+      std::vector<Move> pv = getPV();
+      for (Move move : pv)
+      {
+        std::cout << " " << toUciString(move);
+      }
+      std::cout << std::endl;
+      latestPV = pv;
+      currDepth++;
     }
-    std::cout << std::endl;
     nodeCount = 0;
-    currDepth++;
   }
+  stopSearch = true;
   return score;
 }
 
@@ -140,6 +148,10 @@ void Board::printBitboard(BB bb)
 
 int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 {
+  if((nodeCount & 2047) == 0) {
+		stopSearch = time(NULL) > endTime;
+	}
+
   int standPat = evaluate();
   int score;
   if (standPat >= beta)
@@ -161,6 +173,10 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
     makeMove(move);
     score = -quiesce(-beta, -alpha, depth - 1);
     unmakeMove(move);
+
+    if (stopSearch)
+      return 0;
+
     if (score >= beta)
       return beta;
     if (score > alpha)
@@ -186,16 +202,24 @@ int Board::negaMax(int depth, int alpha, int beta)
   int score;
   Move bestMove = NONE_MOVE;
 
+  if (depth == 0)
+  {
+    return evaluate();
+    // return quiesce(alpha, beta);
+  }
+
+  if((nodeCount & 2047) == 0) {
+		stopSearch = time(NULL) > endTime;
+	}
+  
+  nodeCount++;
+
   if ((score = probeHash(depth, alpha, beta, &bestMove)) != SCORE_UNKNOWN)
   {
     hashTableHits++;
     return score;
   }
-  if (depth == 0)
-  {
-    return evaluate();
-    // return quiesce(alpha, beta, pVariation);
-  }
+
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ALL, bestMove);
   int moveIteratorSize = moveIterator.size();
   if (stalemate(moveIteratorSize))
@@ -206,10 +230,12 @@ int Board::negaMax(int depth, int alpha, int beta)
   }
   for (Move move : moveIterator)
   {
-    nodeCount++;
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha);
     unmakeMove(move);
+
+    if (stopSearch)
+      return 0;
 
     if (score >= beta)
     {

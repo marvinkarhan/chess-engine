@@ -12,10 +12,11 @@ const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 803164768
 
 void testNegaMax(Board &board, int depth)
 {
-  int eval = board.negaMax(depth, -2000000, 2000000);
+  // int eval = board.negaMax(depth, -2000000, 2000000);
+  int eval = board.iterativeDeepening(5);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
-  for (Move move : board.getPV())
+  for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
     std::cout << toUciString(move) << " ";
   std::cout << std::endl;
 }
@@ -210,7 +211,7 @@ int main(int argc, char *argv[])
 
   testNegaMax(board, 7);
   std::cout << "PV Node: ";
-  for (Move move : board.getPV())
+  for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
   {
     std::cout << toUciString(move) + " ";
   }

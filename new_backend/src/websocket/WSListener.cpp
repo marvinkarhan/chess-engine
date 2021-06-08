@@ -87,7 +87,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       int depth = 5;
       cout << "depth: " << depth << endl;
       auto start = std::chrono::high_resolution_clock::now();
-      int eval = userBoard->evaluateNextMove(depth, request->move->c_str());
+      int eval = userBoard->evaluateNextMove(request->move->c_str());
       auto finish = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = finish - start;
       std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;

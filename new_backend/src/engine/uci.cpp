@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 
+#include "time.h"
 #include "uci.h"
 #include "move.h"
 
@@ -10,12 +11,11 @@ std::string lastMove;
 
 void uciGo(Board &board)
 {
-  
-  int depth = 6;
-  int eval = board.evaluateNextMove(depth, lastMove);
+  int eval = board.evaluateNextMove(lastMove);
+  // int eval = board.iterativeDeepening(5);
   // signal we made out final decision (should be done by iterative deepening on some time or depth constraint)
-  // std::vector<Move> moves = board.getPV();
-  // std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
+  std::vector<Move> moves = board.latestPV;
+  std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
 }
 
 void uciPosition(Board &board, std::istringstream &ss)
@@ -86,6 +86,7 @@ void uciLoop()
       uciGo(board);
     else if (token == "stop")
     {
+      board.endTime = time(NULL);
       std::vector<Move> moves = board.getPV();
       std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
     }
