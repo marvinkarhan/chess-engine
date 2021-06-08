@@ -16,7 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // WSListener
 
-std::map<long, Board> SessionMap;
+std::map<long, Board*> SessionMap;
 void WSListener::onPing(const WebSocket &socket, const oatpp::String &message)
 {
   OATPP_LOGD(TAG, "onPing");
@@ -32,6 +32,7 @@ void WSListener::onClose(const WebSocket &socket, v_uint16 code, const oatpp::St
 {
   auto shared = socket.getListener();
   long long pointerToSession = (long long)shared.get();
+  delete SessionMap[pointerToSession];
   SessionMap.erase(pointerToSession);
   OATPP_LOGD(TAG, "onClose code=%d", code);
 }
@@ -55,16 +56,16 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
     {
       cout << "Requested new board!" << endl;
-      Board board("8/6k1/8/8/4K3/1q6/8/7q w - - 0 1");
+      // Board *board = new Board("8/6k1/8/8/4K3/1q6/8/7q w - - 0 1");
       // Board board("r3k2r/pbpp1ppp/1p6/2bBPP2/8/1QPp1P1q/PP1P3P/RNBR3K w kq - 0 1");
       // Board board("r3r2k/ppp4b/8/3pP3/7Q/2Pq4/PP3PPP/2K4R w Kq - 0 1");
       // Board board("2N2knr/1p1Q3p/r5q1/4p1p1/P1P1p3/1P4PP/5P2/R2R2K1 w Qk - 0 1");
-      // Board board;
+      Board *board = new Board();
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
-      socketResponse->fen = board.toFenString().c_str();
+      socketResponse->fen = board->toFenString().c_str();
       socketResponse->moves = {};
-      for (Move move : MoveList<LEGAL_MOVES>(board, board.activeSide))
+      for (Move move : MoveList<LEGAL_MOVES>(*board, board->activeSide))
       {
         const string value = toUciString(move);
         socketResponse->moves->push_front(value.c_str());
@@ -82,7 +83,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       oatpp::Object<MoveRequest> request = jsonObjectMapper->readFromString<oatpp::Object<MoveRequest>>(wholeMessage);
       cout << "Requested move is: " << request->move->c_str() << endl;
 
-      Board *userBoard = &SessionMap[pointerToSession];
+      Board *userBoard = SessionMap[pointerToSession];
       userBoard->makeMove(uciToMove(request->move->c_str(), *userBoard));
       int depth = 5;
       cout << "depth: " << depth << endl;
@@ -91,9 +92,9 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       auto finish = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = finish - start;
       std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
-      std::vector<Move> moves = userBoard->getPV();
-      cout << "variation: " << toUciString(moves[0]) << endl;
-      userBoard->makeMove(moves[0]);
+      //std::vector<Move> moves = userBoard->getPV();
+      cout << "variation: " << toUciString(userBoard->hashTable[userBoard->hashValue % userBoard->hashTableSize].bestMove) << endl;
+      userBoard->makeMove(userBoard->hashTable[userBoard->hashValue % userBoard->hashTableSize].bestMove);
       cout << "Made move" << endl;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();
@@ -105,10 +106,10 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       }
       socketResponse->evaluation = (float)eval / 100;
       socketResponse->aiMoves = {};
-      for (Move move : moves)
-      {
-        socketResponse->aiMoves->push_back(toUciString(move).c_str());
-      }
+      // for (Move move : moves)
+      // {
+      //   socketResponse->aiMoves->push_back(toUciString(move).c_str());
+      // }
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
@@ -117,7 +118,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     {
       cout << "Requested unmake Move " << endl;
 
-      Board *userBoard = &SessionMap[pointerToSession];
+      Board *userBoard = SessionMap[pointerToSession];
       // currently not working because its a speed decrease
       // can only be done effective by saving the moves when making them
       // if (userBoard->state->move)
