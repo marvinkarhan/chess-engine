@@ -28,7 +28,6 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
 
 Board::~Board()
 {
-  cout << "Destruction" << endl;
   delete[] hashTable;
   delete (state);
 }
@@ -50,15 +49,13 @@ int Board::evaluateNextMove(string lastMove)
   //   cout << "OPENING TABLE" << endl;
   //   return 0;
   // }
-  // int score = iterativeDeepening(5);
-  int score = negaMax(6, MIN_ALPHA, MIN_BETA);
+  int score = iterativeDeepening(5);
   return score;
 }
 
 int Board::iterativeDeepening(int timeInSeconds)
 {
   endTime = time(NULL) + timeInSeconds;
-  std::cout << "EndTime: " << endTime << std::endl;
   int currDepth = 1;
   int score = 0;
   stopSearch = false;
@@ -203,7 +200,6 @@ int Board::negaMax(int depth, int alpha, int beta)
   int score;
   Move bestMove = NONE_MOVE;
   HashEntry *entry = probeHash();
-
   if (entry->key == hashValue)
   {
     bestMove = entry->bestMove;
@@ -221,13 +217,13 @@ int Board::negaMax(int depth, int alpha, int beta)
 
   if (depth == 0)
   {
-    return evaluate();
-    // return quiesce(alpha, beta);
+    // return evaluate();
+    return quiesce(alpha, beta);
   }
 
-  // if((nodeCount & 2047) == 0) {
-	// 	stopSearch = time(NULL) > endTime;
-	// }
+  if((nodeCount & 2047) == 0) {
+		stopSearch = time(NULL) > endTime;
+	}
   
   nodeCount++;
 
@@ -241,23 +237,14 @@ int Board::negaMax(int depth, int alpha, int beta)
   }
   for (Move move : moveIterator)
   {
-    // if (bestMove == move)
-    // {
-    //   cout << "USE TT MOVE:" << toUciString(bestMove) << endl;
-    //   cout << "BOARD: " << allPiecesBB() << endl;
-    //   cout << "fen:" << toFenString() << endl;
-    //   printBitboard(allPiecesBB());
-    //   cout << "HASH: " << hashValue << endl;
-    //   cout << "------" << endl;
-    // }
-    u64 oldHashValue = hashValue;
+    if (move == 0)
+      cout << "null move" << endl;
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha);
     unmakeMove(move);
-    hashValue = oldHashValue;
 
-    // if (stopSearch)
-    //   return 0;
+    if (stopSearch)
+      return 0;
 
     if (score >= beta)
     {
@@ -271,14 +258,6 @@ int Board::negaMax(int depth, int alpha, int beta)
       bestMove = move;
     }
   }
-  // if(storeMove) {
-  //     cout << "STORE TT MOVE:" << toUciString(storeMove) << endl;
-  //     cout << "BOARD: " << allPiecesBB() << endl;
-  //     cout << "fen:" << toFenString() << endl;
-  //     printBitboard(allPiecesBB());
-  //     cout << "HASH: " << hashValue << endl;
-  //     cout << "------" << endl;
-  // }
   storeHash(depth, alpha, bestMove, hashFlag);
   return alpha;
 }
@@ -454,17 +433,15 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 
 std::vector<Move> Board::getPV()
 {
-  HashEntry *entry;
+  HashEntry *entry = &hashTable[hashValue % hashTableSize];
   std::vector<Move> moves;
-  do
-  {
-    entry = &hashTable[hashValue % hashTableSize];
-    if (entry->key == hashValue)
+  while (entry->key == hashValue) {
+    if (entry->bestMove != NONE_MOVE)
     {
       moves.push_back(entry->bestMove);
       makeMove(entry->bestMove);
     }
-  } while (entry->bestMove);
+  }
 
   for (auto move = moves.rbegin(); move != moves.rend(); ++move)
     unmakeMove(*move);
@@ -823,6 +800,12 @@ void Board::zobristToggleCastle()
 
 bool Board::makeMove(const Move &newMove)
 {
+  
+  if (newMove == NONE_MOVE)
+  {
+    std::cout << "can't null move" << std::endl;
+    return false;
+  }
   // track if capture for half_moves
   bool capture = false;
   BB originSquareBB = SQUARE_BBS[originSquare(newMove)];
@@ -836,14 +819,16 @@ bool Board::makeMove(const Move &newMove)
     std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
     return false;
   }
+  
+  store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
+
   // target piece only exists on capture
   if (targetPiece)
   {
     deletePiece(targetSquare(newMove));
     capture = true;
   }
-  store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
-
+  
   // update bitboards to represent change
   updatePiece(originSquare(newMove), targetSquare(newMove));
 

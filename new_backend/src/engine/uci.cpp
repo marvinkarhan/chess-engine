@@ -43,7 +43,6 @@ void uciPosition(Board &board, std::istringstream &ss)
   board.parseFenString(fen);
 
   // parse moves if there are moves
-  // while (ss >> token && (m = UCI::to_move(pos, token)) != MOVE_NONE)
   while (ss >> token && (move = uciToMove(token, board)) != 0)
   {
     board.makeMove(move);

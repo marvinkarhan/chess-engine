@@ -15,10 +15,10 @@ void testNegaMax(Board &board, int depth)
   int eval = board.negaMax(depth, -2000000, 2000000);
   // int eval = board.iterativeDeepening(5);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
-  // std::cout << "moves: ";
-  // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
-  //   std::cout << toUciString(move) << " ";
-  // std::cout << std::endl;
+  std::cout << "moves: ";
+  for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
+    std::cout << toUciString(move) << " ";
+  std::cout << std::endl;
   board.makeMove(board.hashTable[board.hashValue % board.hashTableSize].bestMove);
 }
 
@@ -49,7 +49,7 @@ void benchmarkNegaMax()
 
   Board board;
   int maxMoves = 50;
-  int depth = 6;
+  int depth = 8;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
