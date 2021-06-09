@@ -667,16 +667,16 @@ Move *Board::generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory
   return moveList;
 }
 
-bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, int kingSquare, BB occupied)
+bool Board::moveIsLegal(const Move &checkedMove, bool activeSide, BB blockersBB, int kingSquare, BB occupied)
 {
   // special case: castle
-  if (moveType(move) == CASTLING)
+  if (moveType(checkedMove) == CASTLING)
   {
     for (auto &castle : CASTLING_OPTIONS)
     {
       int cSquare = castle[0];
       BB cWay = castle[1];
-      if (targetSquare(move) == cSquare)
+      if (targetSquare(checkedMove) == cSquare)
         while (cWay)
           // check is attacked on any square he has to move over in order to castle
           if (attackers(pop_lsb(cWay), activeSide, occupied))
@@ -684,15 +684,16 @@ bool Board::moveIsLegal(const Move &move, bool activeSide, BB blockers, int king
     }
   }
   // special case: en passant
-  if (moveType(move) == EN_PASSANT)
-    // if piece is pinned it has to move in the ray it is pinned
-    return (~blockers & SQUARE_BBS[originSquare(move)]) || LINE_BBS[originSquare(move)][kingSquare] & SQUARE_BBS[targetSquare(move)];
+  if (moveType(checkedMove) == EN_PASSANT)
+    // if piece is pinned it has to move in the ray it is pinned and after making the move the king cannot be attacked
+    return ((~blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)]) &&
+           !(blockers(kingSquare, activeSide, piecesByType[ALL_PIECES] ^ move(epSquareBB, activeSide ? DOWN : UP)) & SQUARE_BBS[originSquare(checkedMove)]);
   // special case: king is moving
-  if (originSquare(move) == kingSquare)
+  if (originSquare(checkedMove) == kingSquare)
     // is king attacked after moving
-    return !attackers(targetSquare(move), activeSide, occupied ^ SQUARE_BBS[originSquare(move)]);
+    return !attackers(targetSquare(checkedMove), activeSide, occupied ^ SQUARE_BBS[originSquare(checkedMove)]);
   // rest is eiter not a blocker or is moving along the ray of him and the king
-  return (!blockers & SQUARE_BBS[originSquare(move)]) || LINE_BBS[originSquare(move)][kingSquare] & SQUARE_BBS[targetSquare(move)];
+  return (!blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)];
 }
 
 bool Board::stalemate()
@@ -948,8 +949,10 @@ bool Board::makeMove(const Move &newMove)
   {
     std::cout << "move was illegal (king attacked): " << toUciString(newMove) << std::endl;
     printBitboard(attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]));
+    prettyPrint();
     printStateHistory();
     unmakeMove(newMove);
+    throw;
     return false;
   }
   return true;
