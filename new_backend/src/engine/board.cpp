@@ -450,7 +450,7 @@ std::vector<Move> Board::getPV()
 {
   HashEntry entry = hashTable[hashValue % hashTableSize];
   std::vector<Move> moves;
-  while (entry.bestMove) {
+  while (entry.bestMove && entry.key == hashValue) {
     if (entry.bestMove != NONE_MOVE)
     {
       moves.push_back(entry.bestMove);
