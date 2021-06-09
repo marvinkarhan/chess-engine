@@ -49,7 +49,7 @@ void benchmarkNegaMax()
 
   Board board;
   int maxMoves = 50;
-  int depth = 8;
+  int depth = 7;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
@@ -60,7 +60,7 @@ void benchmarkNegaMax()
     int eval = board.negaMax(depth, -2000000, 2000000);
     auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - newNegaMax;
-    Move nextMove = board.hashTable[board.hashValue % board.hashTableSize].bestMove;
+    Move nextMove = board.getPV()[0];
     board.makeMove(nextMove);
     if (elapsedNegaMax.count() > peak)
     {
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
   // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
-  testNegaMax(board, 8);
+  // testNegaMax(board, 8);
   // // std::cout << "PV Node: ";
   // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
   // {
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 
   // testZobrist();
-  // benchmarkNegaMax();
+  benchmarkNegaMax();
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

@@ -166,6 +166,24 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   if((nodeCount & 2047) == 0) {
 		stopSearch = time(NULL) > endTime;
 	}
+  HashEntryFlag hashFlag = UPPER_BOUND;
+  Move bestMove = NONE_MOVE;
+  HashEntry *entry = probeHash();
+  if (entry->key == hashValue)
+  {
+    bestMove = entry->bestMove;
+    if (entry->depth >= depth)
+    {
+      hashTableHits++;
+      if (entry->flag == EXACT)
+        return entry->score;
+      if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
+        return alpha;
+      if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
+        return beta;
+    }
+  }
+
 
   int standPat = evaluate();
   int score;
@@ -174,7 +192,7 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   if (alpha < standPat)
     alpha = standPat;
 
-  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ATTACKS);
+  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ATTACKS, bestMove);
   int moveIteratorSize = moveIterator.size();
   if (stalemate())
   {
@@ -192,13 +210,18 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
     if (stopSearch)
       return 0;
 
-    if (score >= beta)
+    if (score >= beta) {
+      storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
+    }
     if (score > alpha)
     {
+      bestMove = move;
+      hashFlag = EXACT;
       alpha = score;
     }
   }
+  storeHash(depth, alpha, bestMove, hashFlag);
   return alpha;
 }
 
@@ -789,8 +812,9 @@ void Board::restore()
 void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
 {
   HashEntry *entry = &hashTable[hashValue % hashTableSize];
-  if (entry->depth > depth)
+  if (entry->depth > depth) {
     return;
+  }
   if (entry->key && entry->key != hashValue)
   {
     overwrites++;
