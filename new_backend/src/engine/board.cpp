@@ -448,15 +448,15 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 
 std::vector<Move> Board::getPV()
 {
-  HashEntry *entry = &hashTable[hashValue % hashTableSize];
+  HashEntry entry = hashTable[hashValue % hashTableSize];
   std::vector<Move> moves;
-  while (entry->key == hashValue) {
-    if (entry->bestMove != NONE_MOVE)
+  while (entry.bestMove) {
+    if (entry.bestMove != NONE_MOVE)
     {
-      moves.push_back(entry->bestMove);
-      makeMove(entry->bestMove);
-      entry = &hashTable[hashValue % hashTableSize];
+      moves.push_back(entry.bestMove);
+      makeMove(entry.bestMove);
     }
+    entry = hashTable[hashValue % hashTableSize];
   }
 
   for (auto move = moves.rbegin(); move != moves.rend(); ++move)
