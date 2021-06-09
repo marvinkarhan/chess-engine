@@ -64,7 +64,7 @@ int Board::iterativeDeepening(int timeInSeconds)
     score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
     if (time(NULL) < endTime)
     {
-      std::cout << "info depth " << currDepth << " score cp " << score << " nodes " << nodeCount << " pv";
+      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"; // <<  " score cp " << score
       std::vector<Move> pv = getPV();
       for (Move move : pv)
       {
@@ -455,6 +455,7 @@ std::vector<Move> Board::getPV()
     {
       moves.push_back(entry->bestMove);
       makeMove(entry->bestMove);
+      entry = &hashTable[hashValue % hashTableSize];
     }
   }
 
