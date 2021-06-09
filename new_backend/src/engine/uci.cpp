@@ -14,8 +14,7 @@ void uciGo(Board &board)
   int eval = board.evaluateNextMove(lastMove);
   // int eval = board.iterativeDeepening(5);
   // signal we made out final decision (should be done by iterative deepening on some time or depth constraint)
-  std::vector<Move> moves = board.latestPV;
-  std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
+  std::cout << "bestmove " << toUciString(board.getPV()[0]) << std::endl;
 }
 
 void uciPosition(Board &board, std::istringstream &ss)
@@ -95,7 +94,7 @@ void uciLoop()
     // else if (token == "register")
     // some custom debugging commands
     else if (token == "print")
-      board.printBitboard(board.allPiecesBB());
+      board.prettyPrint();
 
   } while (token != "quit");
   std::cout << "uciLoop finished" << std::endl;

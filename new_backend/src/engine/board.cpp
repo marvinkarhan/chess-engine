@@ -71,7 +71,6 @@ int Board::iterativeDeepening(int timeInSeconds)
         std::cout << " " << toUciString(move);
       }
       std::cout << std::endl;
-      latestPV = pv;
       currDepth++;
     }
     nodeCount = 0;
@@ -142,6 +141,24 @@ void Board::printBitboard(BB bb)
     result.insert(0, tmpLine + "\r\n");
   }
   std::cout << result;
+}
+
+void Board::prettyPrint()
+{
+  BB bb = piecesByType[ALL_PIECES];
+  std::string lineSeperator = "+---+---+---+---+---+---+---+---+";
+  for (int i = 7; i >= 0; i--)
+  {
+    std::cout << "   " + lineSeperator << std::endl;
+    std::cout << " " << i + 1 << " | ";
+    for (int j = 7; j >= 0; j--)
+    {
+      std::cout << CharIndexToPiece[piecePos[i * 8 + j]] << " | ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << "   " + lineSeperator << std::endl;
+  std::cout << "     A   B   C   D   E   F   G   H" << std::endl;
 }
 
 int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
@@ -217,8 +234,8 @@ int Board::negaMax(int depth, int alpha, int beta)
 
   if (depth == 0)
   {
-    // return evaluate();
-    return quiesce(alpha, beta);
+    return evaluate();
+    // return quiesce(alpha, beta);
   }
 
   if((nodeCount & 2047) == 0) {
@@ -237,8 +254,6 @@ int Board::negaMax(int depth, int alpha, int beta)
   }
   for (Move move : moveIterator)
   {
-    if (move == 0)
-      cout << "null move" << endl;
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha);
     unmakeMove(move);
@@ -800,7 +815,6 @@ void Board::zobristToggleCastle()
 
 bool Board::makeMove(const Move &newMove)
 {
-  
   if (newMove == NONE_MOVE)
   {
     std::cout << "can't null move" << std::endl;
@@ -813,18 +827,21 @@ bool Board::makeMove(const Move &newMove)
   Piece originPiece = piecePos[originSquare(newMove)];
   PieceType originPieceType = getPieceType(originPiece);
   Piece targetPiece = piecePos[targetSquare(newMove)];
+
+  store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
+
   if (originPiece == NO_PIECE)
   {
-    std::cout << castleWhiteKingSide << std::endl;
+    prettyPrint();
     std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
     return false;
   }
   
-  store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
-
   // target piece only exists on capture
   if (targetPiece)
   {
+    if (in_between(originSquare(newMove), targetSquare(newMove)) & piecesByType[ALL_PIECES])
+      std::cout << "capture thru friendly piece" << std::endl;
     deletePiece(targetSquare(newMove));
     capture = true;
   }
@@ -856,7 +873,8 @@ bool Board::makeMove(const Move &newMove)
     if (epSquareBB)
       hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
     epSquareBB = getPotentialEPSquareBB(originSquare(newMove), targetSquare(newMove), *this);
-    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
+    if (epSquareBB)
+      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
   }
   else
   {

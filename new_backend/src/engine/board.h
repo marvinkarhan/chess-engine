@@ -4,6 +4,7 @@
 #include "time.h"
 #include <iostream>
 #include <string>
+#include <queue>
 #include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
@@ -52,7 +53,6 @@ public:
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
   u64 epSquareBB, hashValue, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
-  std::vector<Move> latestPV;
   time_t endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
   /* Saves values of pieces on the board */
@@ -82,6 +82,7 @@ public:
   u64 getHash();
   void resetBoard();
   void printBitboard(BB bb);
+  void prettyPrint();
   Evaluation evaluateMoves(int depth, string lastMove);
   FenString toFenString();
   void printEveryPiece();
@@ -171,6 +172,17 @@ public:
       total++;
     }
     std::cout << "Current states stored in history: " << std::to_string(total) << std::endl;
+  }
+  int getStateHistory()
+  {
+    StoredBoard *currState = state;
+    int total = 0;
+    while (currState)
+    {
+      currState = currState->oldBoard;
+      total++;
+    }
+    return total;
   }
 };
 

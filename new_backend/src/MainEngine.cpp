@@ -16,7 +16,7 @@ void testNegaMax(Board &board, int depth)
   // int eval = board.iterativeDeepening(5);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
-  for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
+  for (Move move : board.getPV())
     std::cout << toUciString(move) << " ";
   std::cout << std::endl;
   board.makeMove(board.hashTable[board.hashValue % board.hashTableSize].bestMove);
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
   // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
-  // testNegaMax(board, 7);
+  testNegaMax(board, 8);
   // // std::cout << "PV Node: ";
   // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
   // {
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 
   // testZobrist();
-  benchmarkNegaMax();
+  // benchmarkNegaMax();
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

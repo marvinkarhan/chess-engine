@@ -92,9 +92,9 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       auto finish = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> elapsed = finish - start;
       std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
-      //std::vector<Move> moves = userBoard->getPV();
-      cout << "variation: " << toUciString(userBoard->hashTable[userBoard->hashValue % userBoard->hashTableSize].bestMove) << endl;
-      userBoard->makeMove(userBoard->hashTable[userBoard->hashValue % userBoard->hashTableSize].bestMove);
+      // std::vector<Move> moves = userBoard->getPV();
+      cout << "variation: " << toUciString(userBoard->getPV()[0]) << endl;
+      userBoard->makeMove(userBoard->getPV()[0]);
       cout << "Made move" << endl;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();
@@ -121,9 +121,9 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       Board *userBoard = SessionMap[pointerToSession];
       // currently not working because its a speed decrease
       // can only be done effective by saving the moves when making them
-      // if (userBoard->state->move)
+      // if (!userBoard->state->move)
       // {
-      //   cout << "no move to unmake" << endl;
+      //   cout << "no move to unmake: " << userBoard->state->hashValue << endl;
       //   return;
       // }
       // userBoard->unmakeMove(userBoard->state->move);

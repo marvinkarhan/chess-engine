@@ -354,7 +354,6 @@ constexpr int ZobristPieceOffset[15] = {
     640,
     704};
 
-
 extern void initConstants();
 
 /** Based on https: //en.wikipedia.org/wiki/Linear_congruential_generator */
