@@ -27,9 +27,9 @@ void testMoveGen(Board &board, MoveGenCategory category = ALL)
 {
   MoveList<moveType> legalMoves(board, board.activeSide, category);
   std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
-  for (Move move : legalMoves)
+  for (ValuedMove move : legalMoves)
   {
-    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) + " ";
+    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) + ", value: " << move.value << std::endl;
   }
   std::cout << std::endl;
 }
@@ -49,7 +49,7 @@ void benchmarkNegaMax()
 
   Board board;
   int maxMoves = 50;
-  int depth = 8;
+  int depth = 7;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  // Board board("rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1");
-  // Board board(KIWI_PETE_POS_FEN);
+  Board board3("rBbqk2r/pp3ppp/5n2/8/1bpP4/8/PP2B1PP/RN1Q1KNR b kq - 0 9");
+  Board board2(KIWI_PETE_POS_FEN);
   Board board;
   auto start = std::chrono::high_resolution_clock::now();
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
@@ -235,7 +235,9 @@ int main(int argc, char *argv[])
   // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
   // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
-  testNegaMax(board, 8);
+  testNegaMax(board, 6);
+  testNegaMax(board2, 6);
+  testNegaMax(board3, 6);
   // // std::cout << "PV Node: ";
   // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
   // {

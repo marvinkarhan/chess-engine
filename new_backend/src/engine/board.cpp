@@ -9,6 +9,7 @@
 #include <chrono>
 #include "environment.h"
 #include "time.h"
+#include "stdlib.h"
 
 #include <bitset>
 #include <map>
@@ -40,15 +41,16 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
 
 int Board::evaluateNextMove(string lastMove)
 {
-  // if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
-  // {
-  //   json newJson = currentOpeningTable[lastMove];
-  //   string nextMove = getRandomMove(newJson);
-  //   int move = uciToMove(nextMove, *this);
-  //   currentOpeningTable = currentOpeningTable[lastMove][nextMove];
-  //   cout << "OPENING TABLE" << endl;
-  //   return 0;
-  // }
+  if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
+  {
+    json newJson = currentOpeningTable[lastMove];
+    string nextMove = getRandomMove(newJson);
+    int move = uciToMove(nextMove, *this);
+    currentOpeningTable = currentOpeningTable[lastMove][nextMove];
+    hashTable[hashValue % hashTableSize].bestMove = move;
+    cout << "OPENING TABLE" << endl;
+    return 0;
+  }
   int score = iterativeDeepening(5);
   return score;
 }
@@ -465,7 +467,7 @@ std::vector<Move> Board::getPV()
   return moves;
 }
 
-Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category)
+ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category)
 {
   BB pawnBB = pieces(activeSide, PAWN), rookBB = pieces(activeSide, ROOK), knightBB = pieces(activeSide, KNIGHT), bishopBB = pieces(activeSide, BISHOP), queenBB = pieces(activeSide, QUEEN), kingBB = pieces(activeSide, KING);
   int kingSquare = bitScanForward(kingBB);
@@ -640,7 +642,7 @@ Move *Board::generatePseudoLegalMoves(Move *moveList, bool activeSide, MoveGenCa
   return moveList;
 }
 
-Move *Board::generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category)
+ValuedMove *Board::generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category)
 {
   BB kingBB = pieces(activeSide, KING);
   int kingSquare = bitScanForward(kingBB);
@@ -695,6 +697,23 @@ bool Board::moveIsLegal(const Move &checkedMove, bool activeSide, BB blockersBB,
     return !attackers(targetSquare(checkedMove), activeSide, occupied ^ SQUARE_BBS[originSquare(checkedMove)]);
   // rest is eiter not a blocker or is moving along the ray of him and the king
   return (!blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)];
+}
+
+void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd) {
+  for (ValuedMove *currMove = moveListStart; currMove != moveListEnd; currMove++)
+  {
+    Piece originPiece = piecePos[targetSquare(*currMove)];
+    Piece targetPiece = piecePos[targetSquare(*currMove)];
+    // captures
+    if (targetPiece)
+    {
+      // implement MVV-LVA (Most Valuable Victim - Least Valuable Aggressor)
+      // kinda only implementing MVV
+      currMove->value = mvvLva[originPiece][targetPiece];
+      // always sort attacks in front
+      currMove->value += 10000;
+    }
+  }
 }
 
 bool Board::stalemate()

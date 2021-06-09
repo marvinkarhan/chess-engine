@@ -4,7 +4,7 @@
 #include "time.h"
 #include <iostream>
 #include <string>
-#include <queue>
+#include <algorithm>
 #include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
@@ -37,6 +37,22 @@ struct HashEntry
   int score;
   Move bestMove;
 };
+
+
+struct ValuedMove
+{
+  Move move;
+  int value = 0;
+
+  // change default behavior to work like in normal Move type
+  operator Move() const { return move; }
+  void operator=(Move m) { move = m; }
+};
+
+constexpr bool compareValuedMoves(const ValuedMove &move1, const ValuedMove &move2)
+{
+  return move1.value > move2.value;
+}
 
 class Board
 {
@@ -92,9 +108,10 @@ public:
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
   std::vector<Move> getPV();
-  Move *generatePseudoLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category);
-  Move *generateLegalMoves(Move *moveList, bool activeSide, MoveGenCategory category);
+  ValuedMove *generatePseudoLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
+  ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
   bool moveIsLegal(const Move &move, bool activeSide, BB blockers, int kingSquare, BB occupied);
+  void evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd);
   bool stalemate();
   bool stalemate(int moveListSize);
   bool checkmate();
@@ -189,21 +206,25 @@ public:
 template <MoveGenType moveType>
 struct MoveList
 {
-  Move moves[MAX_MOVES], *last;
+  ValuedMove moves[MAX_MOVES], *last;
   MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL, Move bestMove = NONE_MOVE)
   {
     last = moves;
     if (bestMove != NONE_MOVE)
     {
-      *last++ = bestMove;
+      last->move = bestMove;
+      last->value = 100000;
+      last++;
     }
-    if (moveType == PSEUDO_LEGAL_MOVES)
+    if constexpr (moveType == PSEUDO_LEGAL_MOVES)
       last = board.generatePseudoLegalMoves(last, activeSide, category);
-    else if (moveType == LEGAL_MOVES)
+    else if constexpr (moveType == LEGAL_MOVES)
       last = board.generateLegalMoves(last, activeSide, category);
+    board.evalMoves(moves, last);
+    std::sort(moves, last, compareValuedMoves);
   }
   // implement iterator pattern
-  const Move *begin() const { return moves; }
-  const Move *end() const { return last; }
+  const ValuedMove *begin() const { return moves; }
+  const ValuedMove *end() const { return last; }
   size_t size() const { return last - moves; }
 };
