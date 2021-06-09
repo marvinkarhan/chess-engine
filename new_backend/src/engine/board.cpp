@@ -234,8 +234,8 @@ int Board::negaMax(int depth, int alpha, int beta)
 
   if (depth == 0)
   {
-    return evaluate();
-    // return quiesce(alpha, beta);
+    // return evaluate();
+    return quiesce(alpha, beta);
   }
 
   if((nodeCount & 2047) == 0) {
