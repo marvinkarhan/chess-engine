@@ -169,6 +169,23 @@ void testZobrist()
   }
 }
 
+void testPopCount() {
+  cout << "TEST POP COUNT" << endl;
+  Board board;
+  BB testBoard = 1ULL;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ?" << bbGreaterThanOne(testBoard) << endl;
+  testBoard <<= 63;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  testBoard |= 1ULL;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  testBoard |= Mask::FULL;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+}
+
 void divide(int depth, std::string fen = START_POS_FEN)
 {
   Board board(fen);
@@ -222,6 +239,8 @@ int main(int argc, char *argv[])
   benchmarkNegaMax(7, 50);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
+
+  testPopCount();
 
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;

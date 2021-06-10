@@ -237,6 +237,26 @@ int Board::evaluate()
   int score = 0;
   score += pieceValues;
   score += pieceSquareValues;
+  // Bishop pair bonus
+  if (bbGreaterThanOne(pieces(1, BISHOP)))
+    score += BISHOP_PAIR;
+  if (bbGreaterThanOne(pieces(0, BISHOP)))
+    score -= BISHOP_PAIR;
+  // Knight pair penality
+  if (bbGreaterThanOne(pieces(1, KNIGHT)))
+    score += KNIGHT_PAIR;
+  if (bbGreaterThanOne(pieces(0, KNIGHT)))
+    score -= KNIGHT_PAIR;
+  // Rook pair penality
+  if (bbGreaterThanOne(pieces(1, ROOK)))
+    score += ROOK_PAIR;
+  if (bbGreaterThanOne(pieces(0, ROOK)))
+    score -= ROOK_PAIR;
+  // No Pawn penality
+  if (!(pieces(1,PAWN)))
+    score += NO_PAWNS;
+  if (!(pieces(0,PAWN)))
+    score -= NO_PAWNS;    
   return score * sideMultiplier;
 }
 

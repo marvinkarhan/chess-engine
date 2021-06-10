@@ -222,6 +222,12 @@ constexpr int mvvLva[15][15] = {
     {0, 101, 201, 301, 401, 501, 601, 0, 0, 101, 201, 301, 401, 501, 601}, // queen
     {0, 100, 200, 300, 400, 500, 600, 0, 0, 100, 200, 300, 400, 500, 600}, // king
 };
+enum AdditionalMaterial {
+  BISHOP_PAIR = 50,
+  ROOK_PAIR = -20,
+  KNIGHT_PAIR = -20,
+  NO_PAWNS = -400,
+};
 
 // lookuptable, indexed by the piece enum in constants
 constexpr int PIECE_SQUARE_TABLES[15][64] = {
