@@ -28,6 +28,14 @@ struct StoredBoard
   StoredBoard *oldBoard; // board state before store
 };
 
+
+// BITBOARD POP COUNT HELPER
+
+constexpr bool bbGreaterThanOne(BB bb) {
+  return (bb & (bb-1));
+};
+
+
 // information stored in the TT Hash Table
 struct HashEntry
 {

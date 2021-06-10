@@ -165,9 +165,10 @@ void Board::prettyPrint()
 
 int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 {
-  if((nodeCount & 2047) == 0) {
-		stopSearch = time(NULL) > endTime;
-	}
+  if ((nodeCount & 2047) == 0)
+  {
+    stopSearch = time(NULL) > endTime;
+  }
   HashEntryFlag hashFlag = UPPER_BOUND;
   Move bestMove = NONE_MOVE;
   HashEntry *entry = probeHash();
@@ -185,7 +186,6 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
         return beta;
     }
   }
-
 
   int standPat = evaluate();
   int score;
@@ -212,7 +212,8 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
     if (stopSearch)
       return 0;
 
-    if (score >= beta) {
+    if (score >= beta)
+    {
       storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
     }
@@ -233,6 +234,26 @@ int Board::evaluate()
   int score = 0;
   score += pieceValues;
   score += pieceSquareValues;
+  // Bishop pair bonus
+  if (bbGreaterThanOne(pieces(1, BISHOP)))
+    score += BISHOP_PAIR;
+  if (bbGreaterThanOne(pieces(0, BISHOP)))
+    score -= BISHOP_PAIR;
+  // Knight pair penality
+  if (bbGreaterThanOne(pieces(1, KNIGHT)))
+    score += KNIGHT_PAIR;
+  if (bbGreaterThanOne(pieces(0, KNIGHT)))
+    score -= KNIGHT_PAIR;
+  // Rook pair penality
+  if (bbGreaterThanOne(pieces(1, ROOK)))
+    score += ROOK_PAIR;
+  if (bbGreaterThanOne(pieces(0, ROOK)))
+    score -= ROOK_PAIR;
+  // No Pawn penality
+  if (!(pieces(1,PAWN)))
+    score += NO_PAWNS;
+  if (!(pieces(0,PAWN)))
+    score -= NO_PAWNS;    
   return score * sideMultiplier;
 }
 
@@ -263,10 +284,11 @@ int Board::negaMax(int depth, int alpha, int beta)
     return quiesce(alpha, beta);
   }
 
-  if((nodeCount & 2047) == 0) {
-		stopSearch = time(NULL) > endTime;
-	}
-  
+  if ((nodeCount & 2047) == 0)
+  {
+    stopSearch = time(NULL) > endTime;
+  }
+
   nodeCount++;
 
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ALL, bestMove);
@@ -475,7 +497,8 @@ std::vector<Move> Board::getPV()
 {
   HashEntry entry = hashTable[hashValue % hashTableSize];
   std::vector<Move> moves;
-  while (entry.bestMove && entry.key == hashValue) {
+  while (entry.bestMove && entry.key == hashValue)
+  {
     if (entry.bestMove != NONE_MOVE)
     {
       moves.push_back(entry.bestMove);
@@ -486,7 +509,7 @@ std::vector<Move> Board::getPV()
 
   for (auto move = moves.rbegin(); move != moves.rend(); ++move)
     unmakeMove(*move);
-  
+
   return moves;
 }
 
@@ -831,7 +854,8 @@ void Board::restore()
 void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
 {
   HashEntry *entry = &hashTable[hashValue % hashTableSize];
-  if (entry->depth > depth) {
+  if (entry->depth > depth)
+  {
     return;
   }
   if (entry->key && entry->key != hashValue)
@@ -843,7 +867,6 @@ void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
   entry->flag = hashFlag;
   entry->score = score;
   entry->bestMove = move;
-
 }
 
 void Board::zobristToggleCastle()
@@ -881,7 +904,7 @@ bool Board::makeMove(const Move &newMove)
     std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
     return false;
   }
-  
+
   // target piece only exists on capture
   if (targetPiece)
   {
@@ -890,7 +913,7 @@ bool Board::makeMove(const Move &newMove)
     deletePiece(targetSquare(newMove));
     capture = true;
   }
-  
+
   // update bitboards to represent change
   updatePiece(originSquare(newMove), targetSquare(newMove));
 

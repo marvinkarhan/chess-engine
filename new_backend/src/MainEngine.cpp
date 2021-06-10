@@ -49,7 +49,7 @@ void benchmarkNegaMax()
 
   Board board;
   int maxMoves = 50;
-  int depth = 7;
+  int depth = 6;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
@@ -158,6 +158,23 @@ void testZobrist()
   }
 }
 
+void testPopCount() {
+  cout << "TEST POP COUNT" << endl;
+  Board board;
+  BB testBoard = 1ULL;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ?" << bbGreaterThanOne(testBoard) << endl;
+  testBoard <<= 63;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  testBoard |= 1ULL;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  testBoard |= Mask::FULL;
+  board.printBitboard(testBoard);
+  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+}
+
 void divide(int depth, std::string fen = START_POS_FEN)
 {
   Board board(fen);
@@ -249,6 +266,8 @@ int main(int argc, char *argv[])
   benchmarkNegaMax();
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
+
+  testPopCount();
 
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
