@@ -22,13 +22,22 @@ struct StoredBoard
   StoredBoard *oldBoard; // board state before store
 };
 
-
 // BITBOARD POP COUNT HELPER
 
-constexpr bool bbGreaterThanOne(BB bb) {
-  return (bb & (bb-1));
+constexpr bool bbGreaterThanOne(BB bb)
+{
+  return (bb & (bb - 1));
 };
-
+inline int popCount(BB bb)
+{
+  int count = 0;
+  while (bb)
+  {
+    count++;
+    bb &= bb - 1; // reset LS1B
+  }
+  return count;
+};
 
 // information stored in the TT Hash Table
 struct HashEntry
@@ -93,6 +102,7 @@ public:
   void printEveryPiece();
   BB allPiecesBB();
   void parseFenString(FenString fen);
+  BB pieceMoves(PieceType type, bool activeSide);
   BB potentialSlidingAttackers(int square, bool activeSide);
   BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
   BB blockers(int square, bool activeSide, BB occupied);
@@ -127,10 +137,14 @@ public:
   {
     return &hashTable[hashValue % hashTableSize];
   }
-  int countHashTableSize() {
+
+  int countHashTableSize()
+  {
     int count = 0;
-    for(int i = 0; i < hashTableSize; i++) {
-      if(hashTable[i].key) {
+    for (int i = 0; i < hashTableSize; i++)
+    {
+      if (hashTable[i].key)
+      {
         count++;
       }
     }
