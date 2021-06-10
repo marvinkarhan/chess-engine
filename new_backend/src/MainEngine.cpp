@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 
-  testPopCount();
+  // testPopCount();
 
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;

@@ -53,7 +53,7 @@ int Board::evaluateNextMove(string lastMove)
   //   cout << "OPENING TABLE" << endl;
   //   return 0;
   // }
-  int score = iterativeDeepening(5);
+  int score = iterativeDeepening(2);
   return score;
 }
 
