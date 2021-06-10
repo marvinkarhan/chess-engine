@@ -1,18 +1,20 @@
-#include "board.h"
-#include "moveHelper.h"
+#include "time.h"
+#include "stdlib.h"
 #include <string>
 #include <iostream>
 #include <vector>
 #include <sstream>
-#include "../vendor/include/nlohmann/json.hpp"
 #include <fstream>
 #include <chrono>
-#include "environment.h"
-#include "time.h"
-#include "stdlib.h"
-
 #include <bitset>
 #include <map>
+#include <algorithm>
+#include "../vendor/include/nlohmann/json.hpp"
+
+#include "board.h"
+#include "moveHelper.h"
+#include "environment.h"
+#include "movepicker.h"
 
 using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
@@ -41,16 +43,16 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
 
 int Board::evaluateNextMove(string lastMove)
 {
-  if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
-  {
-    json newJson = currentOpeningTable[lastMove];
-    string nextMove = getRandomMove(newJson);
-    int move = uciToMove(nextMove, *this);
-    currentOpeningTable = currentOpeningTable[lastMove][nextMove];
-    hashTable[hashValue % hashTableSize].bestMove = move;
-    cout << "OPENING TABLE" << endl;
-    return 0;
-  }
+  // if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
+  // {
+  //   json newJson = currentOpeningTable[lastMove];
+  //   string nextMove = getRandomMove(newJson);
+  //   int move = uciToMove(nextMove, *this);
+  //   currentOpeningTable = currentOpeningTable[lastMove][nextMove];
+  //   hashTable[hashValue % hashTableSize].bestMove = move;
+  //   cout << "OPENING TABLE" << endl;
+  //   return 0;
+  // }
   int score = iterativeDeepening(5);
   return score;
 }
@@ -165,12 +167,16 @@ void Board::prettyPrint()
 
 int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 {
-  if((nodeCount & 2047) == 0) {
-		stopSearch = time(NULL) > endTime;
-	}
-  HashEntryFlag hashFlag = UPPER_BOUND;
+  // track time control in interval
+  if ((nodeCount & 2047) == 0)
+  {
+    stopSearch = time(NULL) > endTime;
+  }
+
+  // HashEntryFlag hashFlag = UPPER_BOUND;
   Move bestMove = NONE_MOVE;
   HashEntry *entry = probeHash();
+  int score;
   if (entry->key == hashValue)
   {
     bestMove = entry->bestMove;
@@ -178,32 +184,29 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
     {
       hashTableHits++;
       if (entry->flag == EXACT)
-        return entry->score;
+        score = entry->score;
       if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
-        return alpha;
+        score = alpha;
       if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
-        return beta;
+        score = beta;
     }
   }
 
-
   int standPat = evaluate();
-  int score;
   if (standPat >= beta)
     return beta;
   if (alpha < standPat)
     alpha = standPat;
 
-  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ATTACKS, bestMove);
-  int moveIteratorSize = moveIterator.size();
   if (stalemate())
   {
-    if (attackers(bitScanForward(pieces(activeSide, KING)), activeSide, piecesByType[ALL_PIECES]))
+    if (isKingAttacked())
       return CHECKMATE_VALUE - depth;
     return 0;
   }
-
-  for (auto move : moveIterator)
+  MovePicker movePicker(*this, bestMove, true);
+  Move move;
+  while ((move = movePicker.nextMove()) != NONE_MOVE)
   {
     makeMove(move);
     score = -quiesce(-beta, -alpha, depth - 1);
@@ -212,18 +215,19 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
     if (stopSearch)
       return 0;
 
-    if (score >= beta) {
-      storeHash(depth, beta, move, LOWER_BOUND);
+    if (score >= beta)
+    {
+      // storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
     }
     if (score > alpha)
     {
-      bestMove = move;
-      hashFlag = EXACT;
+      // bestMove = move;
+      // hashFlag = EXACT;
       alpha = score;
     }
   }
-  storeHash(depth, alpha, bestMove, hashFlag);
+  // storeHash(depth, alpha, bestMove, hashFlag);
   return alpha;
 }
 
@@ -249,11 +253,11 @@ int Board::negaMax(int depth, int alpha, int beta)
     {
       hashTableHits++;
       if (entry->flag == EXACT)
-        return entry->score;
+        score = entry->score; // may be risky
       if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
-        return alpha;
+        score = alpha; // may be risky
       if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
-        return beta;
+        score = beta;
     }
   }
 
@@ -263,21 +267,24 @@ int Board::negaMax(int depth, int alpha, int beta)
     return quiesce(alpha, beta);
   }
 
-  if((nodeCount & 2047) == 0) {
-		stopSearch = time(NULL) > endTime;
-	}
-  
+  // track time control in interval
+  if ((nodeCount & 2047) == 0)
+  {
+    stopSearch = time(NULL) > endTime;
+  }
+
   nodeCount++;
 
-  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, ALL, bestMove);
-  int moveIteratorSize = moveIterator.size();
-  if (stalemate(moveIteratorSize))
+  if (stalemate())
   {
-    if (checkmate(moveIteratorSize))
+    if (isKingAttacked())
       return CHECKMATE_VALUE - depth;
     return 0;
   }
-  for (Move move : moveIterator)
+
+  MovePicker movePicker(*this, bestMove);
+  Move move;
+  while ((move = movePicker.nextMove()) != NONE_MOVE)
   {
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha);
@@ -473,20 +480,23 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 
 std::vector<Move> Board::getPV()
 {
-  HashEntry entry = hashTable[hashValue % hashTableSize];
+  HashEntry *entry = &hashTable[hashValue % hashTableSize];
   std::vector<Move> moves;
-  while (entry.bestMove && entry.key == hashValue) {
-    if (entry.bestMove != NONE_MOVE)
-    {
-      moves.push_back(entry.bestMove);
-      makeMove(entry.bestMove);
-    }
-    entry = hashTable[hashValue % hashTableSize];
+  std::vector<u64> hashValues;
+  while (entry->bestMove != NONE_MOVE &&
+         entry->key == hashValue)
+  {
+    moves.push_back(entry->bestMove);
+    hashValues.push_back(hashValue);
+    makeMove(entry->bestMove);
+    entry = &hashTable[hashValue % hashTableSize];
+    // prevent loops
+    if (std::find(hashValues.begin(), hashValues.end(), entry->key) != hashValues.end())
+      break;
   }
-
   for (auto move = moves.rbegin(); move != moves.rend(); ++move)
     unmakeMove(*move);
-  
+
   return moves;
 }
 
@@ -495,22 +505,27 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
   BB pawnBB = pieces(activeSide, PAWN), rookBB = pieces(activeSide, ROOK), knightBB = pieces(activeSide, KNIGHT), bishopBB = pieces(activeSide, BISHOP), queenBB = pieces(activeSide, QUEEN), kingBB = pieces(activeSide, KING);
   int kingSquare = bitScanForward(kingBB);
   BB friendliesBB = piecesBySide[activeSide];
-  BB notFriendliesBB = ~friendliesBB;
   BB enemiesBB = piecesBySide[!activeSide];
   BB occupiedBB = piecesByType[ALL_PIECES];
   BB emptyBB = ~occupiedBB;
   BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
-  BB targetSquaresBB = FULL;
+  BB targetSquaresBB = ~friendliesBB;
   BB bb, bb2;
   int originSquare, targetSquare;
   if (category == EVASIONS)
   {
     int fistKingAttackerSquare = bitScanForward(kingAttackersBB);
     targetSquaresBB = in_between(kingSquare, fistKingAttackerSquare) | SQUARE_BBS[fistKingAttackerSquare];
+    enemiesBB = kingAttackersBB;
   }
   else if (category == ATTACKS)
   {
     targetSquaresBB = enemiesBB;
+  }
+  else if (category == QUIETS)
+  {
+    targetSquaresBB = ~occupiedBB;
+    enemiesBB = BB(0);
   }
   // more than one king attacker = only king moves possible
   if (!pop_last_bb(kingAttackersBB))
@@ -528,8 +543,12 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
     if (category != ATTACKS)
     {
       bb = move(pawnsNotOnPromotionRank, moveDirection) & emptyBB;
-      bb2 = move(R3orR6 & bb, moveDirection) & emptyBB & targetSquaresBB;
-      bb &= targetSquaresBB;
+      bb2 = move(R3orR6 & bb, moveDirection) & emptyBB;
+      if (category == EVASIONS)
+      {
+        bb &= targetSquaresBB;
+        bb2 &= targetSquaresBB;
+      }
       while (bb)
       {
         targetSquare = pop_lsb(bb);
@@ -545,21 +564,23 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
     BB pawnsOnPromotionRank = pawnBB & promotionRank;
     if (pawnsOnPromotionRank)
     {
-      bb = move(pawnsOnPromotionRank, moveDirection) & emptyBB & targetSquaresBB;
+      bb = move(pawnsOnPromotionRank, moveDirection) & emptyBB;
+      if (category == EVASIONS)
+        bb &= targetSquaresBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
         for (PieceType promotion : PROMOTION_OPTIONS)
           *moveList++ = createMove<PROMOTION>(targetSquare - 8 * directionFactor, targetSquare, promotion);
       }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB & targetSquaresBB;
+      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
         for (PieceType promotion : PROMOTION_OPTIONS)
           *moveList++ = createMove<PROMOTION>(targetSquare - 9 * directionFactor, targetSquare, promotion);
       }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB & targetSquaresBB;
+      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
@@ -567,28 +588,31 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
           *moveList++ = createMove<PROMOTION>(targetSquare - 7 * directionFactor, targetSquare, promotion);
       }
     }
-    // pawn captures
-    bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB & targetSquaresBB;
-    while (bb)
+    if (category != QUIETS)
     {
-      targetSquare = pop_lsb(bb);
-      *moveList++ = createMove(targetSquare - 9 * directionFactor, targetSquare);
-    }
-    bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB & targetSquaresBB;
-    while (bb)
-    {
-      targetSquare = pop_lsb(bb);
-      *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
-    }
-    // en passant
-    if (epSquareBB && (targetSquaresBB & move(epSquareBB, activeSide ? DOWN : UP)))
-    {
-      int epSquare = bitScanForward(epSquareBB);
-      bb = pawnsNotOnPromotionRank & PAWN_ATTACKS_BBS[epSquare][!activeSide];
+      // pawn captures
+      bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
-        *moveList++ = createMove<EN_PASSANT>(targetSquare, epSquare);
+        *moveList++ = createMove(targetSquare - 9 * directionFactor, targetSquare);
+      }
+      bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB;
+      while (bb)
+      {
+        targetSquare = pop_lsb(bb);
+        *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
+      }
+      // en passant
+      if (epSquareBB && (targetSquaresBB & move(epSquareBB, activeSide ? DOWN : UP)))
+      {
+        int epSquare = bitScanForward(epSquareBB);
+        bb = pawnsNotOnPromotionRank & PAWN_ATTACKS_BBS[epSquare][!activeSide];
+        while (bb)
+        {
+          targetSquare = pop_lsb(bb);
+          *moveList++ = createMove<EN_PASSANT>(targetSquare, epSquare);
+        }
       }
     }
     // rook moves
@@ -628,7 +652,7 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
     while (knightBB)
     {
       originSquare = pop_lsb(knightBB);
-      bb = KNIGHT_MOVE_BBS[originSquare] & notFriendliesBB & targetSquaresBB;
+      bb = KNIGHT_MOVE_BBS[originSquare] & targetSquaresBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
@@ -638,12 +662,14 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
   }
   // king moves
   bb = KING_MOVES_BBS[kingSquare] & ~friendliesBB;
+  if (category != EVASIONS)
+    bb &= targetSquaresBB;
   while (bb)
   {
     targetSquare = pop_lsb(bb);
     *moveList++ = createMove(kingSquare, targetSquare);
   }
-  if (category != ATTACKS)
+  if (category != ATTACKS && category != EVASIONS)
   {
     // castle
     if (activeSide)
@@ -667,13 +693,9 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
 
 ValuedMove *Board::generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category)
 {
-  BB kingBB = pieces(activeSide, KING);
-  int kingSquare = bitScanForward(kingBB);
+  int kingSquare = bitScanForward(pieces(activeSide, KING));
   BB occupiedBB = piecesByType[ALL_PIECES];
   BB blockersBB = blockers(kingSquare, activeSide, occupiedBB);
-  BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
-  bool onlyEvasions = (bool)kingAttackersBB;
-  category = onlyEvasions ? EVASIONS : category;
   for (auto move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide, category))
   {
     // only check if move is legal is it is one of:
@@ -693,7 +715,7 @@ ValuedMove *Board::generateLegalMoves(ValuedMove *moveList, bool activeSide, Mov
   return moveList;
 }
 
-bool Board::moveIsLegal(const Move &checkedMove, bool activeSide, BB blockersBB, int kingSquare, BB occupied)
+bool Board::moveIsLegal(const Move checkedMove, bool activeSide, BB blockersBB, int kingSquare, BB occupied)
 {
   // special case: castle
   if (moveType(checkedMove) == CASTLING)
@@ -722,7 +744,61 @@ bool Board::moveIsLegal(const Move &checkedMove, bool activeSide, BB blockersBB,
   return (!blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)];
 }
 
-void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd) {
+// used for hash move validation to avoid making moves generated by hash collistion of diffrent positions but same hash keys
+bool Board::moveIsPseudoLegal(const Move checkedMove)
+{
+  int originSq = originSquare(checkedMove);
+  int targetSq = targetSquare(checkedMove);
+  Piece originPiece = piecePos[originSq];
+  PieceType originPieceType = getPieceType(originPiece);
+
+  // do expensive check for none normal moves
+  if (true || moveType(checkedMove) != NORMAL || originPieceType == PAWN)
+  {
+    MoveList moveList = MoveList<LEGAL_MOVES>(*this, activeSide, isKingAttacked() ? EVASIONS : ALL);
+    // is move contained in pseudo legal moves
+    return std::find(moveList.begin(), moveList.end(), checkedMove) != moveList.end();
+  }
+  // is the promotion is anything other than 0 it is a promotion move (can't because it has to be a normal one)
+  if (promotion(checkedMove) != ALL_PIECES)
+    return false;
+  // origin piece is no piece
+  if (originPiece == NO_PIECE)
+    return false;
+  // piece os not belong to active side
+  if (getPieceSide(originPiece) != activeSide)
+    return false;
+  // piece target square is already occupied by a friendly
+  if (pieces(activeSide) & SQUARE_BBS[targetSq])
+    return false;
+  // check for slider move
+  if (
+      (originPieceType == BISHOP || originPieceType == ROOK || originPieceType == QUEEN) &&
+      (!may_move(originSq, targetSq, piecesByType[ALL_PIECES])))
+    return false;
+  else if (originPieceType == KING && attackers(targetSquare(checkedMove), activeSide, piecesByType[ALL_PIECES] ^ SQUARE_BBS[originSquare(checkedMove)]))
+    return false; // is king attacked after moving
+  // king is under attack
+  BB kingAttackersBB = kingAttackers();
+  if (kingAttackersBB)
+  {
+    if (originPieceType != KING)
+    {
+      // double check
+      if (pop_last_bb(kingAttackersBB))
+        return false;
+
+      // remove the attacker or piece has to block the attacker
+      if (!((kingAttackersBB & SQUARE_BBS[targetSq]) ||
+            (in_between(bitScanForward(pieces(activeSide, KING)), bitScanForward(kingAttackersBB)) & SQUARE_BBS[targetSq])))
+        return false;
+    }
+  }
+  return true;
+}
+
+void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd)
+{
   for (ValuedMove *currMove = moveListStart; currMove != moveListEnd; currMove++)
   {
     Piece originPiece = piecePos[targetSquare(*currMove)];
@@ -752,14 +828,14 @@ bool Board::stalemate(int moveListSize)
 
 bool Board::checkmate()
 {
-  BB kingAttackersBB = attackers(bitScanForward(pieces(activeSide, KING)), activeSide, piecesByType[ALL_PIECES]);
+  BB kingAttackersBB = kingAttackers();
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   return moveIterator.size() == 0 && kingAttackersBB;
 }
 
 bool Board::checkmate(int moveListSize)
 {
-  BB kingAttackersBB = attackers(bitScanForward(pieces(activeSide, KING)), activeSide, piecesByType[ALL_PIECES]);
+  BB kingAttackersBB = kingAttackers();
   return moveListSize == 0 && kingAttackersBB;
 }
 
@@ -831,7 +907,8 @@ void Board::restore()
 void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
 {
   HashEntry *entry = &hashTable[hashValue % hashTableSize];
-  if (entry->depth > depth) {
+  if (entry->depth > depth)
+  {
     return;
   }
   if (entry->key && entry->key != hashValue)
@@ -843,7 +920,6 @@ void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
   entry->flag = hashFlag;
   entry->score = score;
   entry->bestMove = move;
-
 }
 
 void Board::zobristToggleCastle()
@@ -881,7 +957,7 @@ bool Board::makeMove(const Move &newMove)
     std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
     return false;
   }
-  
+
   // target piece only exists on capture
   if (targetPiece)
   {
@@ -890,7 +966,7 @@ bool Board::makeMove(const Move &newMove)
     deletePiece(targetSquare(newMove));
     capture = true;
   }
-  
+
   // update bitboards to represent change
   updatePiece(originSquare(newMove), targetSquare(newMove));
 
@@ -991,11 +1067,12 @@ bool Board::makeMove(const Move &newMove)
   // unmake move if it was illegal
   if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))
   {
-    std::cout << "move was illegal (king attacked): " << toUciString(newMove) << std::endl;
+    std::cout << "move was illegal (king attacked): " << toUciString(newMove) << ", Piece: " << CharIndexToPiece[originPiece] << ", Side: " << !activeSide << std::endl;
     printBitboard(attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]));
     prettyPrint();
     printStateHistory();
     unmakeMove(newMove);
+    std::cout << "fen (after unmake): " << toFenString() << std::endl;
     throw;
     return false;
   }

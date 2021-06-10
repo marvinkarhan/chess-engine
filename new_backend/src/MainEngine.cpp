@@ -1,3 +1,4 @@
+#include "engine/movepicker.h"
 #include "engine/constants.h"
 #include "engine/move.h"
 #include "engine/board.h"
@@ -12,8 +13,8 @@ const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 803164768
 
 void testNegaMax(Board &board, int depth)
 {
-  int eval = board.negaMax(depth, -2000000, 2000000);
-  // int eval = board.iterativeDeepening(5);
+  // int eval = board.negaMax(depth, -2000000, 2000000);
+  int eval = board.iterativeDeepening(10000);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
   for (Move move : board.getPV())
@@ -29,9 +30,22 @@ void testMoveGen(Board &board, MoveGenCategory category = ALL)
   std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
   for (ValuedMove move : legalMoves)
   {
-    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) + ", value: " << move.value << std::endl;
+    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) + ", value: " << move.value << " ";
   }
   std::cout << std::endl;
+}
+
+void testMovePicker(Board &board, bool attacksOnly = false)
+{
+  MovePicker movePicker(board, NONE_MOVE, attacksOnly);
+  Move move;
+  int count = 0;
+  while ((move = movePicker.nextMove()) != NONE_MOVE)
+  {
+    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) << " ";
+    count++;
+  }
+  std::cout << std::endl << "size: " << count << std::endl;
 }
 
 void perft(int depth, u64 result, std::string fen = START_POS_FEN)
@@ -44,12 +58,9 @@ void perft(int depth, u64 result, std::string fen = START_POS_FEN)
   else
     std::cout << pertResult << " !== " << result << std::endl;
 }
-void benchmarkNegaMax()
+void benchmarkNegaMax(int depth, int maxMoves)
 {
-
   Board board;
-  int maxMoves = 50;
-  int depth = 7;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
@@ -118,9 +129,9 @@ void testZobrist()
   cout << "Check equal and unequal fens and their hashes" << endl;
   bool equal = true;
   bool different = true;
-  for (int i = 0; i < fens.size(); i++)
+  for (size_t i = 0; i < fens.size(); i++)
   {
-    for (int j = i + 1; j < fens.size(); j++)
+    for (size_t j = i + 1; j < fens.size(); j++)
     {
       if (fens[i] == fens[j])
       {
@@ -169,35 +180,21 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board3("rBbqk2r/pp3ppp/5n2/8/1bpP4/8/PP2B1PP/RN1Q1KNR b kq - 0 9");
-  Board board2(KIWI_PETE_POS_FEN);
+  // Board board("r1r3k1/q2pbp2/4p1p1/3bP2p/1pN4P/1p1Q2B1/P1P2PP1/1K3BR1 w q - 0 1");
+  // Board board(KIWI_PETE_POS_FEN);
   Board board;
   auto start = std::chrono::high_resolution_clock::now();
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
   // std::cout << "LEGAL_MOVES" << std::endl;
   // testMoveGen<LEGAL_MOVES>(board);
+  // std::cout << "LEGAL_MOVES - ATTACKS" << std::endl;
+  // testMoveGen<LEGAL_MOVES>(board, ATTACKS);
 
-  // board.makeMove(uciToMove("e7e5", board));
-  // board.makeMove(uciToMove("d2d3", board));
-  // board.makeMove(uciToMove("d8e7", board));
-  // board.makeMove(uciToMove("d1d2", board));
-  // board.printBitboard(board.piecesByType[ALL_PIECES]);
-  // std::cout << "fen: " << board.toFenString() << std::endl;
-  // board.printEveryPiece();
-  // board.printBitboard(board.allPiecesBB());
-
-  // std::cout << "Board hash:" << board.hashValue << std::endl;
-  // Move move1 = uciToMove("g1f3", board);
-  // board.makeMove(move1);
-  // std::cout << "Board hash:" << board.hashValue << std::endl;
-  // Move move2 = uciToMove("g8f6", board);
-  // board.makeMove(move2);
-  // std::cout << "Board hash:" << board.hashValue << std::endl;
-  // board.unmakeMove(move2);
-  // std::cout << "Board hash:" << board.hashValue << std::endl;
-  // board.unmakeMove(move1);
-  // std::cout << "Board hash:" << board.hashValue << std::endl;
+  // std::cout << "MovePicker" << std::endl;
+  // testMovePicker(board);
+  // std::cout << "MovePicker attacksOnly (only good/equal attacks)" << std::endl;
+  // testMovePicker(board, true);
 
   // testNegaMax(board, 7);
   // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
@@ -207,46 +204,22 @@ int main(int argc, char *argv[])
   // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
   // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 
-  // testNegaMax(board, 7);
-  // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
-  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
-  // std::cout << "Hash table fill: " << board.countHashTableSize() << std::endl;
-  // std::cout << "Hash table fill: " << (float)board.countHashTableSize() / board.hashTableSize * 100 << "%" << std::endl;
-  // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
-  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
-
-  // testNegaMax(board, 7);
-  // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
-  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
-  // std::cout << "Hash table fill: " << board.countHashTableSize() << std::endl;
-  // std::cout << "Hash table fill: " << (float)board.countHashTableSize() / board.hashTableSize * 100 << "%" << std::endl;
-  // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
-  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
-  // std::cout << "calls overall: " << board.calls << std::endl;
   // testZobrist();
-  // perft(3, 8902);
-  // perft(4, 197281);
-  // perft(5, 4865609);
   // perft(5, KIWI_PETE_RESULTS[4], KIWI_PETE_POS_FEN);
 
   // divide(5);
   // divide(5, KIWI_PETE_POS_FEN);
-  // divide(4, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/1R2K2R b Kkq - 1 1");
-  // divide(3, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPpP/1R2K2R w Kkq - 0 2");
-  // divide(2, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/P1N2Q2/1PPBBPpP/1R2K2R b Kkq - 0 2");
 
-  // testNegaMax(board, 8);
-  // // std::cout << "PV Node: ";
-  // for (Move move : (board.latestPV.empty() ? board.getPV() : board.latestPV))
+  // for(int i = 0; i < 50; i++)
   // {
-  //   std::cout << toUciString(move) + " ";
+  //   std::cout << "nr: " << i << std::endl;
+  //   testNegaMax(board, 7);
   // }
-  // std::cout << std::endl;
-  // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
-  // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
+
+  // testNegaMax(board, 9);
 
   // testZobrist();
-  benchmarkNegaMax();
+  benchmarkNegaMax(7, 50);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

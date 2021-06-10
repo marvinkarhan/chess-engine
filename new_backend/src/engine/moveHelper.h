@@ -32,7 +32,7 @@ static std::vector<std::vector<Direction>> KNIGHT_MOVES{
     {DOWN, DOWN, LEFT},
     {DOWN, DOWN, RIGHT}};
 
-inline int bitScanForward(BB bb)
+constexpr int bitScanForward(BB bb)
 {
   /* OLD (NOT C++ Way) */
   // """
