@@ -10,12 +10,6 @@
 using namespace std;
 using namespace nlohmann;
 
-struct Evaluation
-{
-  int evaluation;
-  vector<string> moves;
-};
-
 // stores partial information about a board usefull for unmake move
 struct StoredBoard
 {
@@ -55,21 +49,6 @@ struct HashEntry
   Move bestMove;
 };
 
-struct ValuedMove
-{
-  Move move;
-  int value = 0;
-
-  // change default behavior to work like in normal Move type
-  operator Move() const { return move; }
-  void operator=(Move m) { move = m; }
-};
-
-constexpr bool compareValuedMoves(const ValuedMove &move1, const ValuedMove &move2)
-{
-  return move1.value > move2.value;
-}
-
 class Board
 {
 
@@ -103,6 +82,10 @@ public:
   {
     return piecesBySide[getPieceSide(piece)] & piecesByType[getPieceType(piece)];
   }
+  inline BB pieces(PieceType piece)
+  {
+    return piecesByType[piece];
+  }
   int negaMax(int depth, int alpha, int beta);
   int iterativeDeepening(int timeInSeconds);
   int quiesce(int alpha, int beta, int depth = 0);
@@ -115,7 +98,6 @@ public:
   void resetBoard();
   void printBitboard(BB bb);
   void prettyPrint();
-  Evaluation evaluateMoves(int depth, string lastMove);
   FenString toFenString();
   void printEveryPiece();
   BB allPiecesBB();
@@ -127,8 +109,17 @@ public:
   std::vector<Move> getPV();
   ValuedMove *generatePseudoLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
   ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
-  bool moveIsLegal(const Move &move, bool activeSide, BB blockers, int kingSquare, BB occupied);
+  bool moveIsLegal(const Move move, bool activeSide, BB blockers, int kingSquare, BB occupied);
+  bool moveIsPseudoLegal(const Move move);
   void evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd);
+  inline bool isKingAttacked()
+  {
+    return bool(kingAttackers());
+  }
+  inline BB kingAttackers()
+  {
+    return attackers(DEBRUIJN_INDEX[((pieces(activeSide, KING) ^ (pieces(activeSide, KING) - 1)) * DEBRUIJN) >> 58], activeSide, piecesByType[ALL_PIECES]);
+  }
   bool stalemate();
   bool stalemate(int moveListSize);
   bool checkmate();
@@ -142,7 +133,6 @@ public:
   void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
   void zobristToggleCastle();
   // to simplify updating piece positions
-
   constexpr HashEntry *probeHash()
   {
     return &hashTable[hashValue % hashTableSize];
@@ -226,21 +216,12 @@ template <MoveGenType moveType>
 struct MoveList
 {
   ValuedMove moves[MAX_MOVES], *last;
-  MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL, Move bestMove = NONE_MOVE)
+  MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL)
   {
-    last = moves;
-    if (bestMove != NONE_MOVE)
-    {
-      last->move = bestMove;
-      last->value = 100000;
-      last++;
-    }
     if constexpr (moveType == PSEUDO_LEGAL_MOVES)
-      last = board.generatePseudoLegalMoves(last, activeSide, category);
+      last = board.generatePseudoLegalMoves(moves, activeSide, category);
     else if constexpr (moveType == LEGAL_MOVES)
-      last = board.generateLegalMoves(last, activeSide, category);
-    board.evalMoves(moves, last);
-    std::sort(moves, last, compareValuedMoves);
+      last = board.generateLegalMoves(moves, activeSide, category);
   }
   // implement iterator pattern
   const ValuedMove *begin() const { return moves; }

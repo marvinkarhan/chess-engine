@@ -65,3 +65,18 @@ std::string inline toUciString(Move move)
 {
   return SQUARE_TO_ALGEBRAIC[originSquare(move)] + SQUARE_TO_ALGEBRAIC[targetSquare(move)] + (promotion(move) ? std::string(1, CharIndexToPiece[promotion(move)]) : "");
 }
+
+struct ValuedMove
+{
+  Move move;
+  int value;
+
+  // change default behavior to work like in normal Move type
+  operator Move() const { return move; }
+  void operator=(Move m) { move = m; }
+};
+// for sorting purposes
+inline bool operator<(const ValuedMove &move1, const ValuedMove &move2)
+{
+  return move1.value < move2.value;
+}
