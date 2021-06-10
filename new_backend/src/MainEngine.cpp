@@ -49,7 +49,7 @@ void benchmarkNegaMax()
 
   Board board;
   int maxMoves = 50;
-  int depth = 6;
+  int depth = 7;
   cout << "Benchmark normal negaMax with " << maxMoves << " moves on depth: " << depth << endl;
   auto start = std::chrono::high_resolution_clock::now();
   double peak;
@@ -188,8 +188,32 @@ int main(int argc, char *argv[])
 
   Board board3("rBbqk2r/pp3ppp/5n2/8/1bpP4/8/PP2B1PP/RN1Q1KNR b kq - 0 9");
   Board board2(KIWI_PETE_POS_FEN);
-  Board board;
+  Board board("r1b1k2r/pp3ppp/3B4/1b2q1n1/2pB1P2/2N2N2/PP5P/R2Q1K1R w kq - 0 9");
+  // Board board("8/2r1r3/8/8/r7/3K4/r7/8 w - - 0 1");
   auto start = std::chrono::high_resolution_clock::now();
+
+  // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::BISHOP,board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::ROOK,board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::QUEEN,board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::KING,board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::PAWN,board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::BISHOP,!board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::ROOK,!board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::QUEEN,!board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::KING,!board.activeSide);
+  // board.printBitboard(attackFields);
+  // attackFields = board.pieceMoves(PieceType::PAWN,!board.activeSide);
+  // board.printBitboard(attackFields);
   // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
   // std::cout << "LEGAL_MOVES" << std::endl;
@@ -267,7 +291,7 @@ int main(int argc, char *argv[])
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 
-  testPopCount();
+  // testPopCount();
 
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;

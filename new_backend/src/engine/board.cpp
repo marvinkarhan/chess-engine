@@ -41,17 +41,17 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
 
 int Board::evaluateNextMove(string lastMove)
 {
-  if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
-  {
-    json newJson = currentOpeningTable[lastMove];
-    string nextMove = getRandomMove(newJson);
-    int move = uciToMove(nextMove, *this);
-    currentOpeningTable = currentOpeningTable[lastMove][nextMove];
-    hashTable[hashValue % hashTableSize].bestMove = move;
-    cout << "OPENING TABLE" << endl;
-    return 0;
-  }
-  int score = iterativeDeepening(5);
+  // if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
+  // {
+  //   json newJson = currentOpeningTable[lastMove];
+  //   string nextMove = getRandomMove(newJson);
+  //   int move = uciToMove(nextMove, *this);
+  //   currentOpeningTable = currentOpeningTable[lastMove][nextMove];
+  //   hashTable[hashValue % hashTableSize].bestMove = move;
+  //   cout << "OPENING TABLE" << endl;
+  //   return 0;
+  // }
+  int score = iterativeDeepening(50);
   return score;
 }
 
@@ -131,18 +131,22 @@ void Board::resetBoard()
 void Board::printBitboard(BB bb)
 {
   std::string result = "";
+  std::string lineSeperator = "+---+---+---+---+---+---+---+---+";
   for (int i = 0; i < 8; i++)
   {
-    std::string tmpLine = "";
+    std::string tmpLine = " ";
     for (int j = 0; j < 8; j++)
     {
-      tmpLine.insert(0, " " + std::to_string(bb & 1));
+      tmpLine.insert(0, "" + std::to_string(bb & 1) + " | ");
       bb >>= 1;
     }
-    tmpLine.erase(0, 1);
-    result.insert(0, tmpLine + "\r\n");
+
+    // tmpLine.erase(0, 1);
+    result.insert(0, " " + to_string(i + 1) + " | " + tmpLine + "\r\n   " + lineSeperator + "\r\n");
   }
+  result.insert(0, "   " + lineSeperator + "\r\n");
   std::cout << result;
+  std::cout << "     A   B   C   D   E   F   G   H" << std::endl;
 }
 
 void Board::prettyPrint()
@@ -253,7 +257,20 @@ int Board::evaluate()
   if (!(pieces(1,PAWN)))
     score += NO_PAWNS;
   if (!(pieces(0,PAWN)))
-    score -= NO_PAWNS;    
+    score -= NO_PAWNS;
+  score += popCount(pieceMoves(PAWN,1)) * 8;
+  score += popCount(pieceMoves(PAWN,0)) * -8;
+  score += popCount(pieceMoves(BISHOP,1)) * 15;
+  score += popCount(pieceMoves(BISHOP,0)) * -15;
+  score += popCount(pieceMoves(KNIGHT,1)) * 12;
+  score += popCount(pieceMoves(KNIGHT,0)) * -12;
+  score += popCount(pieceMoves(ROOK,1)) * 7;
+  score += popCount(pieceMoves(ROOK,0)) * -7;
+  score += popCount(pieceMoves(QUEEN,1)) * 6;
+  score += popCount(pieceMoves(QUEEN,0)) * -6;
+  // score += popCount(pieceMoves(KING,1)) * 4;
+  // score += popCount(pieceMoves(KING,0)) * -4;
+
   return score * sideMultiplier;
 }
 
@@ -474,6 +491,81 @@ BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /
     attackersBB |= KING_MOVES_BBS[square] & pieces(!activeSide, KING);
   }
   return attackersBB;
+}
+
+BB Board::pieceMoves(PieceType type, bool activeSide)
+{
+  BB attackFields = BB(0);
+  BB ownPieces = piecesBySide[activeSide];
+  switch (type)
+  {
+  case PieceType::PAWN:
+  {
+    BB pawns = pieces(activeSide, PAWN);
+    attackFields = pawn_attacks(pawns, activeSide, ownPieces) & piecesBySide[!activeSide];
+    if (activeSide)
+    {
+      BB oneUP = move(pawns, UP) & ~piecesByType[ALL_PIECES];
+      attackFields |= oneUP;
+      BB doublePawnPush = oneUP & RANK_3;
+      attackFields |= move(doublePawnPush, UP) & ~piecesByType[ALL_PIECES];
+    } else {
+      BB oneDown = move(pawns, DOWN) & ~piecesByType[ALL_PIECES];
+      attackFields |= oneDown;
+      BB doublePawnPush = oneDown & RANK_6;
+      attackFields |= move(doublePawnPush, DOWN) & ~piecesByType[ALL_PIECES];     
+    } 
+    return attackFields;
+  }
+  case PieceType::BISHOP:
+  {
+    BB bishops = pieces(activeSide, BISHOP);
+    return bishop_moves(bishops, ~piecesByType[ALL_PIECES], ownPieces);
+  }
+  case PieceType::KNIGHT:
+  {
+    BB knights = pieces(activeSide, KNIGHT);
+    int KnightSquare = 0;
+    while (knights)
+    {
+      KnightSquare = pop_lsb(knights);
+      attackFields |= KNIGHT_MOVE_BBS[KnightSquare] & ~ownPieces;
+    }
+    return attackFields;
+  }
+  case PieceType::ROOK:
+  {
+    BB rooks = pieces(activeSide, ROOK);
+    return rook_moves(rooks, ~piecesByType[ALL_PIECES], ownPieces);
+  }
+  case PieceType::QUEEN:
+  {
+    BB queens = pieces(activeSide, QUEEN);
+    return queen_moves(queens, ~piecesByType[ALL_PIECES], ownPieces);
+  }
+  case PieceType::KING:
+  {
+    BB king = pieces(activeSide, KING);
+    int kingSquare = 0;
+    kingSquare = pop_lsb(king);
+    BB kingMoves = KING_MOVES_BBS[kingSquare] & ~ownPieces;
+    int kingMoveSquare = 0;
+    BB realKingMoves = BB(0);
+    while (kingMoves)
+    {
+      kingMoveSquare = pop_lsb(kingMoves);
+      BB kingAttackers = attackers(kingMoveSquare, activeSide, piecesByType[ALL_PIECES]);
+      if (!kingAttackers)
+        realKingMoves |= (1ULL << kingMoveSquare);
+    }
+    attackFields |= realKingMoves;
+    break;
+  }
+  default:
+    //all
+
+    break;
+  }
 }
 
 BB Board::blockers(int square, bool activeSide, BB occupied)
@@ -745,7 +837,8 @@ bool Board::moveIsLegal(const Move &checkedMove, bool activeSide, BB blockersBB,
   return (!blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)];
 }
 
-void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd) {
+void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd)
+{
   for (ValuedMove *currMove = moveListStart; currMove != moveListEnd; currMove++)
   {
     Piece originPiece = piecePos[targetSquare(*currMove)];
