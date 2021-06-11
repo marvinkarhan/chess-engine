@@ -6,13 +6,23 @@
 
 MovePicker::MovePicker(Board &b, Move hMove, bool onlyAttacks /*= false*/) : board(b), hashMove(hMove), onlyWinningEqualAttacks(onlyAttacks)
 {
-  stage = board.isKingAttacked() ? EVASIONS_INIT_STAGE : (hMove ? HASH_STAGE : ATTACKS_INIT_STAGE);
+  if (board.isKingAttacked())
+    if (hMove && b.moveIsPseudoLegal(hMove))
+      stage = EVASION_HASH_STAGE;
+    else 
+      stage = EVASIONS_INIT_STAGE;
+  else
+    if (hMove && b.moveIsPseudoLegal(hMove))
+      stage = HASH_STAGE;
+    else 
+      stage = ATTACKS_INIT_STAGE;
 }
 
 Move MovePicker::nextMove()
 {
   switch (stage)
   {
+  case EVASION_HASH_STAGE:
   case HASH_STAGE:
     stage++;
     return hashMove;
@@ -68,11 +78,13 @@ Move MovePicker::nextMove()
     last = board.generateLegalMoves(current, board.activeSide, EVASIONS);
 
     evalute<EVASIONS>();
+    std::sort(current, last);
+
     stage++;
     [[fallthrough]];
   case EVASIONS_STAGE:
-    return searchNext([&]()
-                      { return onlyWinningEqualAttacks ? (see(*current) ? true : false) : true; });
+    return searchBest([]()
+                      { return true; });
     // done
   }
   return NONE_MOVE; // fallback

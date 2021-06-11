@@ -14,13 +14,13 @@ const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 803164768
 void testNegaMax(Board &board, int depth)
 {
   // int eval = board.negaMax(depth, -2000000, 2000000);
-  int eval = board.iterativeDeepening(2);
+  int eval = board.iterativeDeepening(5);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
   for (Move move : board.getPV())
     std::cout << toUciString(move) << " ";
   std::cout << std::endl;
-  board.makeMove(board.getPV()[0]);
+  // board.makeMove(board.getPV()[0]);
 }
 
 template <MoveGenType moveType>
@@ -30,7 +30,7 @@ void testMoveGen(Board &board, MoveGenCategory category = ALL)
   std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
   for (ValuedMove move : legalMoves)
   {
-    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) + ", value: " << move.value << " ";
+    std::cout << CharIndexToPiece[board.piecePos[originSquare(move)]] << ": " << toUciString(move) << " ";
   }
   std::cout << std::endl;
 }
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board("2r3k1/p1r4p/R4p2/1p2pP2/4P3/P1P3P1/1KP1B2P/3R4 w - - 1 24");
+  Board board("rnbqkb1r/ppNppppp/5n2/8/8/1P6/P1PPPPPP/R1BQKBNR b KQkq - 0 4");
   // Board board(KIWI_PETE_POS_FEN);
   // Board board;
   auto start = std::chrono::high_resolution_clock::now();
@@ -228,15 +228,15 @@ int main(int argc, char *argv[])
   // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
   // std::cout << "LEGAL_MOVES" << std::endl;
   // testMoveGen<LEGAL_MOVES>(board);
-  // std::cout << "LEGAL_MOVES - ATTACKS" << std::endl;
-  // testMoveGen<LEGAL_MOVES>(board, ATTACKS);
+  // std::cout << "PSEUDO_LEGAL_MOVES - EVASIONS" << std::endl;
+  // testMoveGen<PSEUDO_LEGAL_MOVES>(board, EVASIONS);
+  // std::cout << "LEGAL_MOVES - EVASIONS" << std::endl;
+  // testMoveGen<LEGAL_MOVES>(board, EVASIONS);
 
-  // std::cout << "MovePicker" << std::endl;
-  // testMovePicker(board);
-  // std::cout << "MovePicker attacksOnly (only good/equal attacks)" << std::endl;
-  // testMovePicker(board, true);
-  // std::cout << "MovePicker evasions" << std::endl;
-  // testMovePicker(board, true);
+  std::cout << "MovePicker" << std::endl;
+  testMovePicker(board);
+  std::cout << "MovePicker attacksOnly (only good/equal attacks)" << std::endl;
+  testMovePicker(board, true);
 
   // testNegaMax(board, 7);
   // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
@@ -247,7 +247,8 @@ int main(int argc, char *argv[])
   // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 
   // testZobrist();
-  // perft(5, KIWI_PETE_RESULTS[4], KIWI_PETE_POS_FEN);
+  // perft(6, KIWI_PETE_RESULTS[5], KIWI_PETE_POS_FEN);
+  // perft(6, 119060324, START_POS_FEN);
 
   // divide(5);
   // divide(5, KIWI_PETE_POS_FEN);
@@ -258,12 +259,13 @@ int main(int argc, char *argv[])
   //   testNegaMax(board, 7);
   // }
 
-  testNegaMax(board, 7);
+  // testNegaMax(board, 7);
 
   // testZobrist();
   // benchmarkNegaMax(7, 50);
 
-  // std::cout << std::to_string(board.evaluate()) << std::endl;
+  // std::cout << "fen: " << board.toFenString() << std::endl;
+  // std::cout << "eval: " << std::to_string(board.evaluate()) << std::endl;
 
   // testPopCount();
 

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <vector>
 #include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
@@ -67,8 +68,9 @@ public:
   time_t endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
   // quadratic pv table
-  Move pvTable[64][64];
-  int pvLength[64];
+  Move pvTable[MAX_DEPTH][MAX_DEPTH];
+  std::vector<Move> latestPv;
+  int pvLength[MAX_DEPTH];
   int ply = 0;
   /* Saves values of pieces on the board */
   int pieceValues = 0;
@@ -113,7 +115,7 @@ public:
   std::vector<Move> getPV();
   ValuedMove *generatePseudoLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
   ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
-  bool moveIsLegal(const Move move, bool activeSide, BB blockers, int kingSquare, BB occupied);
+  bool moveIsLegal(const Move move, bool activeSide, BB blockers, int kingSquare);
   bool moveIsPseudoLegal(const Move move);
   void evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd);
   inline bool isKingAttacked()
