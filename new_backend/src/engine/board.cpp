@@ -57,16 +57,18 @@ int Board::evaluateNextMove(string lastMove)
   return score;
 }
 
-int Board::iterativeDeepening(int timeInSeconds)
-{
-  endTime = time(NULL) + timeInSeconds;
+int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth /*= MAX_DEPTH*/)
+{ 
+  if (timeInSeconds)
+    endTime = time(NULL) + timeInSeconds;
   int score, latestScore, currDepth = 1;
   stopSearch = false;
-  while (time(NULL) < endTime)
+  while (!stopSearch && currDepth < maxDepth)
   {
     nodeCount = 0;
     score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
-    if (time(NULL) < endTime)
+    // only print info if search wasent stopped during search
+    if (!stopSearch)
     {
       latestScore = score;
       std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"

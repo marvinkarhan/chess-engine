@@ -93,7 +93,7 @@ public:
     return piecesByType[piece];
   }
   int negaMax(int depth, int alpha, int beta);
-  int iterativeDeepening(int timeInSeconds);
+  int iterativeDeepening(time_t timeInSeconds = LLONG_MAX, int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
   int evaluateNextMove(string lastMove);

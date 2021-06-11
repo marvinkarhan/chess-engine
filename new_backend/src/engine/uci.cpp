@@ -85,6 +85,7 @@ void uciLoop()
     else if (token == "stop")
     {
       board.endTime = time(NULL);
+      board.stopSearch = true;
       std::vector<Move> moves = board.getPV();
       std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
     }
