@@ -58,18 +58,35 @@ int Board::evaluateNextMove(string lastMove)
 }
 
 int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth /*= MAX_DEPTH*/)
-{ 
+{
   if (timeInSeconds)
     endTime = time(NULL) + timeInSeconds;
-  int score, latestScore, currDepth = 1;
+  int score, currDepth = 1;
   stopSearch = false;
+  // init val for aspiration windows
+  int alpha = latestScore - ASPIRATION_WINDOW_VALUE;
+  int beta = latestScore + ASPIRATION_WINDOW_VALUE;
   while (!stopSearch && currDepth <= maxDepth)
   {
     nodeCount = 0;
-    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
+    score = negaMax(currDepth, alpha, beta);
     // only print info if search wasent stopped during search
     if (!stopSearch)
     {
+      // possible aspiration window widening
+      if (score <= alpha)
+      {
+        alpha -= ASPIRATION_WINDOW_VALUE;
+        continue;
+      }
+      if (score >= beta)
+      {
+        beta += ASPIRATION_WINDOW_VALUE;
+        continue;
+      }
+      // setup aspiration window
+      alpha = score - ASPIRATION_WINDOW_VALUE;
+      beta = score + ASPIRATION_WINDOW_VALUE;
       latestScore = score;
       std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"
                 << " score cp " << latestScore;

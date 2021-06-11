@@ -187,6 +187,8 @@ constexpr int PieceValues[15] = {
     900,
     20000};
 
+const int ASPIRATION_WINDOW_VALUE = PieceValues[WHITE_PAWN];
+
 constexpr int NormalizedPieceValues[15] = {
     0,
     100,
