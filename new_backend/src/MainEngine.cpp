@@ -14,13 +14,13 @@ const u64 KIWI_PETE_RESULTS[6] = {48, 2039, 97862, 4085603, 193690690, 803164768
 void testNegaMax(Board &board, int depth)
 {
   // int eval = board.negaMax(depth, -2000000, 2000000);
-  int eval = board.iterativeDeepening(10000);
+  int eval = board.iterativeDeepening(2);
   std::cout << "evaluation: " << std::to_string(eval) << std::endl;
   std::cout << "moves: ";
   for (Move move : board.getPV())
     std::cout << toUciString(move) << " ";
   std::cout << std::endl;
-  board.makeMove(board.hashTable[board.hashValue % board.hashTableSize].bestMove);
+  board.makeMove(board.getPV()[0]);
 }
 
 template <MoveGenType moveType>
@@ -71,7 +71,7 @@ void benchmarkNegaMax(int depth, int maxMoves)
     int eval = board.negaMax(depth, -2000000, 2000000);
     auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - newNegaMax;
-    Move nextMove = board.getPV()[0];
+    Move nextMove = board.hashTable[board.hashValue % board.hashTableSize].bestMove;
     board.makeMove(nextMove);
     if (elapsedNegaMax.count() > peak)
     {
@@ -197,9 +197,9 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  // Board board("r1r3k1/q2pbp2/4p1p1/3bP2p/1pN4P/1p1Q2B1/P1P2PP1/1K3BR1 w q - 0 1");
+  Board board("2r3k1/p1r4p/R4p2/1p2pP2/4P3/P1P3P1/1KP1B2P/3R4 w - - 1 24");
   // Board board(KIWI_PETE_POS_FEN);
-  Board board;
+  // Board board;
   auto start = std::chrono::high_resolution_clock::now();
 
   // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
@@ -235,6 +235,8 @@ int main(int argc, char *argv[])
   // testMovePicker(board);
   // std::cout << "MovePicker attacksOnly (only good/equal attacks)" << std::endl;
   // testMovePicker(board, true);
+  // std::cout << "MovePicker evasions" << std::endl;
+  // testMovePicker(board, true);
 
   // testNegaMax(board, 7);
   // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
@@ -256,10 +258,10 @@ int main(int argc, char *argv[])
   //   testNegaMax(board, 7);
   // }
 
-  // testNegaMax(board, 9);
+  testNegaMax(board, 7);
 
   // testZobrist();
-  benchmarkNegaMax(7, 50);
+  // benchmarkNegaMax(7, 50);
 
   // std::cout << std::to_string(board.evaluate()) << std::endl;
 

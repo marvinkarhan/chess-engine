@@ -66,6 +66,10 @@ public:
   int fullMoves, halfMoves, openingMoves;
   time_t endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
+  // quadratic pv table
+  Move pvTable[64][64];
+  int pvLength[64];
+  int ply = 0;
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;

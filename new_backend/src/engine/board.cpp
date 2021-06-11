@@ -53,7 +53,7 @@ int Board::evaluateNextMove(string lastMove)
   //   cout << "OPENING TABLE" << endl;
   //   return 0;
   // }
-  int score = iterativeDeepening(2);
+  int score = iterativeDeepening(1);
   return score;
 }
 
@@ -65,19 +65,16 @@ int Board::iterativeDeepening(int timeInSeconds)
   stopSearch = false;
   while (time(NULL) < endTime)
   {
-    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
-    if (time(NULL) < endTime)
-    {
-      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"; // <<  " score cp " << score
-      std::vector<Move> pv = getPV();
-      for (Move move : pv)
-      {
-        std::cout << " " << toUciString(move);
-      }
-      std::cout << std::endl;
-      currDepth++;
-    }
     nodeCount = 0;
+    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
+    std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"; // <<  " score cp " << score
+    std::vector<Move> pv = getPV();
+    for (Move move : pv)
+    {
+      std::cout << " " << toUciString(move);
+    }
+    std::cout << std::endl;
+    currDepth++;
   }
   stopSearch = true;
   return score;
@@ -172,29 +169,29 @@ void Board::prettyPrint()
 int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 {
   // track time control in interval
-  if ((nodeCount & 2047) == 0)
-  {
-    stopSearch = time(NULL) > endTime;
-  }
+  // if ((nodeCount & 2047) == 0)
+  // {
+  //   stopSearch = time(NULL) > endTime;
+  // }
 
   // HashEntryFlag hashFlag = UPPER_BOUND;
   Move bestMove = NONE_MOVE;
-  HashEntry *entry = probeHash();
+  // HashEntry *entry = probeHash();
   int score;
-  if (entry->key == hashValue)
-  {
-    bestMove = entry->bestMove;
-    if (entry->depth >= depth)
-    {
-      hashTableHits++;
-      if (entry->flag == EXACT)
-        score = entry->score;
-      if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
-        score = alpha;
-      if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
-        score = beta;
-    }
-  }
+  // if (entry->key == hashValue)
+  // {
+  //   bestMove = entry->bestMove;
+  //   if (entry->depth >= depth)
+  //   {
+  //     hashTableHits++;
+  //     if (entry->flag == EXACT)
+  //       score = entry->score;
+  //     else if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
+  //       score = alpha;
+  //     else if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
+  //       score = beta;
+  //   }
+  // }
 
   int standPat = evaluate();
   if (standPat >= beta)
@@ -212,12 +209,13 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   Move move;
   while ((move = movePicker.nextMove()) != NONE_MOVE)
   {
+    ply++;
     makeMove(move);
     score = -quiesce(-beta, -alpha, depth - 1);
     unmakeMove(move);
-
-    if (stopSearch)
-      return 0;
+    ply--;
+    // if (stopSearch)
+    //   return 0;
 
     if (score >= beta)
     {
@@ -257,20 +255,20 @@ int Board::evaluate()
   if (bbGreaterThanOne(pieces(0, ROOK)))
     score -= ROOK_PAIR;
   // No Pawn penality
-  if (!(pieces(1,PAWN)))
+  if (!(pieces(1, PAWN)))
     score += NO_PAWNS;
-  if (!(pieces(0,PAWN)))
+  if (!(pieces(0, PAWN)))
     score -= NO_PAWNS;
-  score += popCount(pieceMoves(PAWN,1)) * 8;
-  score += popCount(pieceMoves(PAWN,0)) * -8;
-  score += popCount(pieceMoves(BISHOP,1)) * 15;
-  score += popCount(pieceMoves(BISHOP,0)) * -15;
-  score += popCount(pieceMoves(KNIGHT,1)) * 12;
-  score += popCount(pieceMoves(KNIGHT,0)) * -12;
-  score += popCount(pieceMoves(ROOK,1)) * 7;
-  score += popCount(pieceMoves(ROOK,0)) * -7;
-  score += popCount(pieceMoves(QUEEN,1)) * 6;
-  score += popCount(pieceMoves(QUEEN,0)) * -6;
+  score += popCount(pieceMoves(PAWN, 1)) * 8;
+  score += popCount(pieceMoves(PAWN, 0)) * -8;
+  score += popCount(pieceMoves(BISHOP, 1)) * 15;
+  score += popCount(pieceMoves(BISHOP, 0)) * -15;
+  score += popCount(pieceMoves(KNIGHT, 1)) * 12;
+  score += popCount(pieceMoves(KNIGHT, 0)) * -12;
+  score += popCount(pieceMoves(ROOK, 1)) * 7;
+  score += popCount(pieceMoves(ROOK, 0)) * -7;
+  score += popCount(pieceMoves(QUEEN, 1)) * 6;
+  score += popCount(pieceMoves(QUEEN, 0)) * -6;
   // score += popCount(pieceMoves(KING,1)) * 4;
   // score += popCount(pieceMoves(KING,0)) * -4;
 
@@ -279,24 +277,26 @@ int Board::evaluate()
 
 int Board::negaMax(int depth, int alpha, int beta)
 {
+  pvLength[ply] = ply;
+  int moveCount = 0;
   HashEntryFlag hashFlag = UPPER_BOUND;
   int score;
   Move bestMove = NONE_MOVE;
-  HashEntry *entry = probeHash();
-  if (entry->key == hashValue)
-  {
-    bestMove = entry->bestMove;
-    if (entry->depth >= depth)
-    {
-      hashTableHits++;
-      if (entry->flag == EXACT)
-        score = entry->score; // may be risky
-      if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
-        score = alpha; // may be risky
-      if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
-        score = beta;
-    }
-  }
+  // HashEntry *entry = probeHash();
+  // if (entry->key == hashValue)
+  // {
+  //   bestMove = entry->bestMove;
+  //   if (entry->depth >= depth)
+  //   {
+  //     hashTableHits++;
+  //     if (entry->flag == EXACT)
+  //       score = entry->score; // may be risky
+  //     else if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
+  //       score = alpha; // may be risky
+  //     else if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
+  //       score = beta;
+  //   }
+  // }
 
   if (depth == 0)
   {
@@ -305,10 +305,10 @@ int Board::negaMax(int depth, int alpha, int beta)
   }
 
   // track time control in interval
-  if ((nodeCount & 2047) == 0)
-  {
-    stopSearch = time(NULL) > endTime;
-  }
+  // if ((nodeCount & 2047) == 0)
+  // {
+  //   stopSearch = time(NULL) > endTime;
+  // }
 
   nodeCount++;
 
@@ -323,16 +323,17 @@ int Board::negaMax(int depth, int alpha, int beta)
   Move move;
   while ((move = movePicker.nextMove()) != NONE_MOVE)
   {
+    ply++;
     makeMove(move);
     score = -negaMax(depth - 1, -beta, -alpha);
     unmakeMove(move);
-
-    if (stopSearch)
-      return 0;
+    ply--;
+    // if (stopSearch)
+    //   return 0;
 
     if (score >= beta)
     {
-      storeHash(depth, beta, move, LOWER_BOUND);
+      // storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
     }
     if (score > alpha)
@@ -340,9 +341,14 @@ int Board::negaMax(int depth, int alpha, int beta)
       hashFlag = EXACT;
       alpha = score;
       bestMove = move;
+      // add move to pv table
+      pvTable[ply][ply] = move;
+      for (int next_ply = ply + 1; next_ply < pvLength[ply + 1]; next_ply++)
+        pvTable[ply][next_ply] = pvTable[ply + 1][next_ply];
+      pvLength[ply] = pvLength[ply + 1];
     }
   }
-  storeHash(depth, alpha, bestMove, hashFlag);
+  // storeHash(depth, alpha, bestMove, hashFlag);
   return alpha;
 }
 
@@ -501,59 +507,61 @@ BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /
 BB Board::pieceMoves(PieceType type, bool activeSide)
 {
   BB attackFields = BB(0);
-  BB ownPieces = piecesBySide[activeSide];
+  BB firendlies = piecesBySide[activeSide];
   switch (type)
   {
-  case PieceType::PAWN:
+  case PAWN:
   {
     BB pawns = pieces(activeSide, PAWN);
-    attackFields = pawn_attacks(pawns, activeSide, ownPieces) & piecesBySide[!activeSide];
+    attackFields = pawn_attacks(pawns, activeSide, firendlies) & piecesBySide[!activeSide];
     if (activeSide)
     {
       BB oneUP = move(pawns, UP) & ~piecesByType[ALL_PIECES];
       attackFields |= oneUP;
       BB doublePawnPush = oneUP & RANK_3;
       attackFields |= move(doublePawnPush, UP) & ~piecesByType[ALL_PIECES];
-    } else {
+    }
+    else
+    {
       BB oneDown = move(pawns, DOWN) & ~piecesByType[ALL_PIECES];
       attackFields |= oneDown;
       BB doublePawnPush = oneDown & RANK_6;
-      attackFields |= move(doublePawnPush, DOWN) & ~piecesByType[ALL_PIECES];     
-    } 
+      attackFields |= move(doublePawnPush, DOWN) & ~piecesByType[ALL_PIECES];
+    }
     return attackFields;
   }
-  case PieceType::BISHOP:
+  case BISHOP:
   {
     BB bishops = pieces(activeSide, BISHOP);
-    return bishop_moves(bishops, ~piecesByType[ALL_PIECES], ownPieces);
+    return bishop_moves(bishops, ~piecesByType[ALL_PIECES], firendlies);
   }
-  case PieceType::KNIGHT:
+  case KNIGHT:
   {
     BB knights = pieces(activeSide, KNIGHT);
     int KnightSquare = 0;
     while (knights)
     {
       KnightSquare = pop_lsb(knights);
-      attackFields |= KNIGHT_MOVE_BBS[KnightSquare] & ~ownPieces;
+      attackFields |= KNIGHT_MOVE_BBS[KnightSquare] & ~firendlies;
     }
     return attackFields;
   }
-  case PieceType::ROOK:
+  case ROOK:
   {
     BB rooks = pieces(activeSide, ROOK);
-    return rook_moves(rooks, ~piecesByType[ALL_PIECES], ownPieces);
+    return rook_moves(rooks, ~piecesByType[ALL_PIECES], firendlies);
   }
-  case PieceType::QUEEN:
+  case QUEEN:
   {
     BB queens = pieces(activeSide, QUEEN);
-    return queen_moves(queens, ~piecesByType[ALL_PIECES], ownPieces);
+    return queen_moves(queens, ~piecesByType[ALL_PIECES], firendlies);
   }
-  case PieceType::KING:
+  case KING:
   {
     BB king = pieces(activeSide, KING);
     int kingSquare = 0;
     kingSquare = pop_lsb(king);
-    BB kingMoves = KING_MOVES_BBS[kingSquare] & ~ownPieces;
+    BB kingMoves = KING_MOVES_BBS[kingSquare] & ~firendlies;
     int kingMoveSquare = 0;
     BB realKingMoves = BB(0);
     while (kingMoves)
@@ -566,10 +574,8 @@ BB Board::pieceMoves(PieceType type, bool activeSide)
     attackFields |= realKingMoves;
     break;
   }
-  default:
-    //all
-
-    break;
+  default: // ALL
+    return BB(0);
   }
 }
 
@@ -592,23 +598,12 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 
 std::vector<Move> Board::getPV()
 {
-  HashEntry *entry = &hashTable[hashValue % hashTableSize];
   std::vector<Move> moves;
-  std::vector<u64> hashValues;
-  while (entry->bestMove != NONE_MOVE &&
-         entry->key == hashValue)
+  // get PV from quadratic pv table
+  for (int count = 0; count < pvLength[0]; count++)
   {
-    moves.push_back(entry->bestMove);
-    hashValues.push_back(hashValue);
-    makeMove(entry->bestMove);
-    entry = &hashTable[hashValue % hashTableSize];
-    // prevent loops
-    if (std::find(hashValues.begin(), hashValues.end(), entry->key) != hashValues.end())
-      break;
+      moves.push_back(pvTable[0][count]);
   }
-  for (auto move = moves.rbegin(); move != moves.rend(); ++move)
-    unmakeMove(*move);
-
   return moves;
 }
 
