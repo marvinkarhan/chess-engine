@@ -63,7 +63,7 @@ int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth
     endTime = time(NULL) + timeInSeconds;
   int score, latestScore, currDepth = 1;
   stopSearch = false;
-  while (!stopSearch && currDepth < maxDepth)
+  while (!stopSearch && currDepth <= maxDepth)
   {
     nodeCount = 0;
     score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
@@ -313,7 +313,6 @@ int Board::negaMax(int depth, int alpha, int beta)
 
   nodeCount++;
   int moveCounter = 0;
-
   MovePicker movePicker(*this, bestMove);
   Move move;
   while ((move = movePicker.nextMove()) != NONE_MOVE)
@@ -339,7 +338,8 @@ int Board::negaMax(int depth, int alpha, int beta)
       alpha = score;
       bestMove = move;
       // add quiet moves to history heuristics
-      if (piecePos[targetSquare(move)])
+      // if (!piecePos[targetSquare(move)])
+      //   historyHeuristicTable[piecePos[originSquare(move)]][targetSquare(move)] += depth * depth;
       // add move to pv table
       pvTable[ply][ply] = move;
       for (int next_ply = ply + 1; next_ply < pvLength[ply + 1]; next_ply++)

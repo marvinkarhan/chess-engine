@@ -72,8 +72,8 @@ public:
   std::vector<Move> latestPv;
   int pvLength[MAX_DEPTH];
   int ply = 0;
-  // indexed by [piece][targetSquare]
-  int historyHeuristicTable[12][64];
+  // indexed by [piece][targetSquare] (#15 because king = 14)
+  // int historyHeuristicTable[15][64] = {0};
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;

@@ -58,7 +58,7 @@ void testNegaMax(Board &board, int depth)
   for (Move move : board.getPV())
     std::cout << toUciString(move) << " ";
   std::cout << std::endl;
-  // board.makeMove(board.getPV()[0]);
+  board.makeMove(board.getPV()[0]);
 }
 
 template <MoveGenType moveType>
@@ -272,9 +272,9 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board("rnbqkb1r/ppNppppp/5n2/8/8/1P6/P1PPPPPP/R1BQKBNR b KQkq - 0 4");
+  // Board board("rnbqkb1r/ppNppppp/5n2/8/8/1P6/P1PPPPPP/R1BQKBNR b KQkq - 0 4");
   // Board board(KIWI_PETE_POS_FEN);
-  // Board board;
+  Board board;
   auto start = std::chrono::high_resolution_clock::now();
 
   // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
@@ -328,9 +328,9 @@ int main(int argc, char *argv[])
   // divide(5);
   // divide(5, KIWI_PETE_POS_FEN);
 
-  effectiveBranchingFactor();
+  // effectiveBranchingFactor();
 
-  // testNegaMax(board, 7);
+  testNegaMax(board, 8);
 
   // testZobrist();
   // benchmarkNegaMax(7, 50);

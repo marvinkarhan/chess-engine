@@ -40,7 +40,7 @@ private:
   bool see(Move move);
   // adds a score to every move (current to last)
   template <MoveGenCategory category>
-  void evalute();
+  void evaluate();
   // searches for a move that satisfies the filter condition
   template <typename condition>
   Move searchBest(condition filter);
