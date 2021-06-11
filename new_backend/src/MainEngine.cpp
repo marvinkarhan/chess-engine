@@ -328,9 +328,9 @@ int main(int argc, char *argv[])
   // divide(5);
   // divide(5, KIWI_PETE_POS_FEN);
 
-  // effectiveBranchingFactor();
+  effectiveBranchingFactor();
 
-  testNegaMax(board, 8);
+  // testNegaMax(board, 8);
 
   // testZobrist();
   // benchmarkNegaMax(7, 50);

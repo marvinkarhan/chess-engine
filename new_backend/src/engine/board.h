@@ -74,6 +74,8 @@ public:
   int ply = 0;
   // indexed by [piece][targetSquare] (#15 because king = 14)
   // int historyHeuristicTable[15][64] = {0};
+  // killer moves
+  ValuedMove killerMoves[MAX_DEPTH][2];
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;

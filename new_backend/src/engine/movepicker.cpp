@@ -47,6 +47,20 @@ Move MovePicker::nextMove()
     }
     stage++;
     [[fallthrough]];
+  case KILLERS_INIT_STAGE:
+    // swap pointer to the killer move array
+    current = std::begin(board.killerMoves[board.ply]);
+    last = std::end(board.killerMoves[board.ply]);
+
+    stage++;
+    [[fallthrough]];
+  case KILLERS_STAGE:
+    if (searchNext([&]()
+                   { return *current != NONE_MOVE && board.moveIsPseudoLegal(*current); }))
+      return *(current - 1);
+
+    stage++;
+    [[fallthrough]];
   case QUIETS_INIT_STAGE:
     // skip bad captures
     current = losingCapturesEnd;
@@ -58,8 +72,9 @@ Move MovePicker::nextMove()
     stage++;
     [[fallthrough]];
   case QUIETS_STAGE:
-    if (searchNext([]()
-                   { return true; }))
+    if (searchNext([&]()
+                   { return *current != board.killerMoves[board.ply][0].move &&
+                            *current != board.killerMoves[board.ply][1].move; }))
       return *(current - 1);
     stage++;
     [[fallthrough]];
@@ -166,7 +181,7 @@ void MovePicker::evaluate()
     else if constexpr (category == QUIETS)
       // order by piece square table -> should be replaced by history heuristics later
       move.value = PIECE_SQUARE_TABLES[board.piecePos[originSquare(move)]][63 - originSquare(move)] - PIECE_SQUARE_TABLES[board.piecePos[targetSquare(move)]][63 - targetSquare(move)];
-      // move.value = board.historyHeuristicTable[board.piecePos[originSquare(move)]][targetSquare(move)];
+    // move.value = board.historyHeuristicTable[board.piecePos[originSquare(move)]][targetSquare(move)];
     else // category == EVASIONS
     {
       if (board.piecePos[targetSquare(move)] || moveType(move) == EN_PASSANT)
@@ -175,7 +190,7 @@ void MovePicker::evaluate()
       else
         // order by piece square table -> should be replaced by history heuristics later
         move.value = PIECE_SQUARE_TABLES[board.piecePos[originSquare(move)]][63 - originSquare(move)] - PIECE_SQUARE_TABLES[board.piecePos[targetSquare(move)]][63 - targetSquare(move)];
-        // move.value = board.historyHeuristicTable[board.piecePos[originSquare(move)]][targetSquare(move)];
+      // move.value = board.historyHeuristicTable[board.piecePos[originSquare(move)]][targetSquare(move)];
     }
   }
 }

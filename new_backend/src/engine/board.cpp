@@ -329,6 +329,12 @@ int Board::negaMax(int depth, int alpha, int beta)
 
     if (score >= beta)
     {
+      // add killer moves if quiet move
+      if (!piecePos[targetSquare(move)])
+      {
+        killerMoves[ply][1] = killerMoves[ply][0];
+        killerMoves[ply][0] = move;
+      }
       storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
     }
