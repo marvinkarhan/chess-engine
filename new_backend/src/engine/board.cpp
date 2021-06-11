@@ -338,6 +338,8 @@ int Board::negaMax(int depth, int alpha, int beta)
       hashFlag = EXACT;
       alpha = score;
       bestMove = move;
+      // add quiet moves to history heuristics
+      if (piecePos[targetSquare(move)])
       // add move to pv table
       pvTable[ply][ply] = move;
       for (int next_ply = ply + 1; next_ply < pvLength[ply + 1]; next_ply++)
@@ -915,24 +917,6 @@ bool Board::moveIsPseudoLegal(const Move checkedMove)
     }
   }
   return true;
-}
-
-void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd)
-{
-  for (ValuedMove *currMove = moveListStart; currMove != moveListEnd; currMove++)
-  {
-    Piece originPiece = piecePos[targetSquare(*currMove)];
-    Piece targetPiece = piecePos[targetSquare(*currMove)];
-    // captures
-    if (targetPiece)
-    {
-      // implement MVV-LVA (Most Valuable Victim - Least Valuable Aggressor)
-      // kinda only implementing MVV
-      currMove->value = mvvLva[originPiece][targetPiece];
-      // always sort attacks in front
-      currMove->value += 10000;
-    }
-  }
 }
 
 bool Board::stalemate()

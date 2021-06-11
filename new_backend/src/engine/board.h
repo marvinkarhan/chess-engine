@@ -72,6 +72,8 @@ public:
   std::vector<Move> latestPv;
   int pvLength[MAX_DEPTH];
   int ply = 0;
+  // indexed by [piece][targetSquare]
+  int historyHeuristicTable[12][64];
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;
@@ -117,7 +119,6 @@ public:
   ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
   bool moveIsLegal(const Move move, bool activeSide, BB blockers, int kingSquare);
   bool moveIsPseudoLegal(const Move move);
-  void evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd);
   inline bool isKingAttacked()
   {
     return bool(kingAttackers());
