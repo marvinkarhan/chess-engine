@@ -197,46 +197,54 @@ int main(int argc, char *argv[])
 {
   initConstants();
 
-  Board board("rnbqkb1r/ppNppppp/5n2/8/8/1P6/P1PPPPPP/R1BQKBNR b KQkq - 0 4");
-  // Board board(KIWI_PETE_POS_FEN);
-  // Board board;
+  // Board board("rnbqkb1r/ppNppppp/5n2/8/8/1P6/P1PPPPPP/R1BQKBNR b KQkq - 0 4");
+  // // Board board(KIWI_PETE_POS_FEN);
+  Board board;
+
   auto start = std::chrono::high_resolution_clock::now();
+  board.evaluateNextMove("");
+  cout << toUciString(board.getPV()[0]) << endl;
 
-  // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::BISHOP,board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::ROOK,board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::QUEEN,board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::KING,board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::PAWN,board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::BISHOP,!board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::ROOK,!board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::QUEEN,!board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::KING,!board.activeSide);
-  // board.printBitboard(attackFields);
-  // attackFields = board.pieceMoves(PieceType::PAWN,!board.activeSide);
-  // board.printBitboard(attackFields);
-  // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
-  // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
-  // std::cout << "LEGAL_MOVES" << std::endl;
-  // testMoveGen<LEGAL_MOVES>(board);
-  // std::cout << "PSEUDO_LEGAL_MOVES - EVASIONS" << std::endl;
-  // testMoveGen<PSEUDO_LEGAL_MOVES>(board, EVASIONS);
-  // std::cout << "LEGAL_MOVES - EVASIONS" << std::endl;
-  // testMoveGen<LEGAL_MOVES>(board, EVASIONS);
+  board.parseFenString(START_POS_FEN);
+  board.evaluateNextMove("");
+  cout << toUciString(board.getPV()[0]) << endl;
+  // // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::BISHOP,board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::ROOK,board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::QUEEN,board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::KING,board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::PAWN,board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::BISHOP,!board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::ROOK,!board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::QUEEN,!board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::KING,!board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // attackFields = board.pieceMoves(PieceType::PAWN,!board.activeSide);
+  // // board.printBitboard(attackFields);
+  // // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
+  // // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
+  // // std::cout << "LEGAL_MOVES" << std::endl;
+  // // testMoveGen<LEGAL_MOVES>(board);
+  // // std::cout << "PSEUDO_LEGAL_MOVES - EVASIONS" << std::endl;
+  // // testMoveGen<PSEUDO_LEGAL_MOVES>(board, EVASIONS);
+  // // std::cout << "LEGAL_MOVES - EVASIONS" << std::endl;
+  // // testMoveGen<LEGAL_MOVES>(board, EVASIONS);
 
-  std::cout << "MovePicker" << std::endl;
-  testMovePicker(board);
-  std::cout << "MovePicker attacksOnly (only good/equal attacks)" << std::endl;
-  testMovePicker(board, true);
+  // std::cout << "MovePicker" << std::endl;
+  // testMovePicker(board);
+  // std::cout << "MovePicker attacksOnly (only good/equal attacks)" << std::endl;
+  // testMovePicker(board, true);
+
+
 
   // testNegaMax(board, 7);
   // cout << toUciString(board.hashTable[board.hashValue % board.hashTableSize].bestMove) << endl;
