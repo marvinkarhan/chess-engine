@@ -329,6 +329,9 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
   }
   bool kingChecked = isKingAttacked();
 
+  // check extension
+  if (kingChecked)
+    depth++;
   // prune only if not in check
   // (don't know if causes bugs)
   // if (!kingChecked)
