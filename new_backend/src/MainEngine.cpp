@@ -329,15 +329,10 @@ int main(int argc, char *argv[])
   // divide(5, KIWI_PETE_POS_FEN);
 
   // effectiveBranchingFactor();
-
-  for (size_t i = 0; i < 20; i++)
-  {
-    testNegaMax(board, 8);
-  }
   
 
   // testZobrist();
-  // benchmarkNegaMax(7, 50);
+  benchmarkNegaMax(7, 50);
 
   // std::cout << "fen: " << board.toFenString() << std::endl;
   // std::cout << "eval: " << std::to_string(board.evaluate()) << std::endl;

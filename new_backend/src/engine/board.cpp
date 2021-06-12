@@ -294,7 +294,7 @@ int Board::evaluate()
   return score * sideMultiplier;
 }
 
-int Board::negaMax(int depth, int alpha, int beta)
+int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*/)
 {
   // track time control in interval
   if ((nodeCount & 2047) == 0)
@@ -327,6 +327,49 @@ int Board::negaMax(int depth, int alpha, int beta)
     // return evaluate();
     return quiesce(alpha, beta);
   }
+  bool kingChecked = isKingAttacked();
+
+  // prune only if not in check
+  // (don't know if causes bugs)
+  // if (!kingChecked)
+  // {
+  //   int staticEvaluation = evaluate(); // for pruning purposes
+  //   // null move pruning
+  //   // prove that any move is better than no move
+  //   if (nullMoveAllowed)
+  //   {
+  //     if (ply > 0 && depth > 2 && staticEvaluation >= beta)
+  //     {
+  //       makeNullMove();
+  //       int nullScore = -negaMax(depth - 3, -beta, 1 - beta, false);
+        
+  //       if (stopSearch)
+  //         return 0;
+
+  //       if (nullScore >= beta)
+  //       {
+  //         unmakeNullMove();
+  //         return beta;
+  //       }
+  //       else // mate thread extension
+  //       {
+  //         if (negaMax(depth - 3, CHECKMATE_VALUE / 2 - 1, CHECKMATE_VALUE / 2, false) > CHECKMATE_VALUE / 2)
+  //           depth++;
+  //         unmakeNullMove();
+  //       }
+
+
+  //       // if (nullScore >= beta)
+  //       // {
+  //       //   // verification search
+  //       //   int s = negaMax(depth - 3, beta - 1, beta, false);
+  //       //   // if still ok
+  //       //   if (s >= beta)
+  //       //     return beta;
+  //       // }
+  //     }
+  //   }
+  // }
 
   nodeCount++;
   int moveCounter = 0;
@@ -1255,4 +1298,24 @@ void Board::unmakeMove(const Move &oldMove)
     }
   }
   restore();
+}
+// changes side without moving anything
+void Board::makeNullMove()
+{
+  store();
+
+  if (epSquareBB)
+  {
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
+    epSquareBB = 0;
+  }
+  halfMoves = 0;
+  activeSide = !activeSide;
+  hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
+}
+
+void Board::unmakeNullMove()
+{
+  restore();
+  activeSide = !activeSide;
 }

@@ -97,7 +97,7 @@ public:
   {
     return piecesByType[piece];
   }
-  int negaMax(int depth, int alpha, int beta);
+  int negaMax(int depth, int alpha, int beta, bool nullMoveAllowed =true);
   int iterativeDeepening(time_t timeInSeconds = LLONG_MAX, int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
@@ -197,6 +197,8 @@ public:
   }
   bool makeMove(const Move &newMove);
   void unmakeMove(const Move &oldMove);
+  void makeNullMove();
+  void unmakeNullMove();
   /* for debugging */
   void printStateHistory()
   {
