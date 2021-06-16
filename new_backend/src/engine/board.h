@@ -72,6 +72,11 @@ public:
   std::vector<Move> latestPv;
   int pvLength[MAX_DEPTH];
   int ply = 0;
+  int latestScore = 0;
+  // indexed by [piece][targetSquare] (#15 because king = 14)
+  // int historyHeuristicTable[15][64] = {0};
+  // killer moves
+  ValuedMove killerMoves[MAX_DEPTH][2];
   /* Saves values of pieces on the board */
   int pieceValues = 0;
   int pieceSquareValues = 0;
@@ -92,8 +97,8 @@ public:
   {
     return piecesByType[piece];
   }
-  int negaMax(int depth, int alpha, int beta);
-  int iterativeDeepening(int timeInSeconds);
+  int negaMax(int depth, int alpha, int beta, bool nullMoveAllowed =true);
+  int iterativeDeepening(time_t timeInSeconds = LLONG_MAX, int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
   int evaluateNextMove(string lastMove);
@@ -117,7 +122,6 @@ public:
   ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
   bool moveIsLegal(const Move move, bool activeSide, BB blockers, int kingSquare);
   bool moveIsPseudoLegal(const Move move);
-  void evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd);
   inline bool isKingAttacked()
   {
     return bool(kingAttackers());
@@ -193,6 +197,8 @@ public:
   }
   bool makeMove(const Move &newMove);
   void unmakeMove(const Move &oldMove);
+  void makeNullMove();
+  void unmakeNullMove();
   /* for debugging */
   void printStateHistory()
   {

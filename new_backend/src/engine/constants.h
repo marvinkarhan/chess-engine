@@ -187,6 +187,8 @@ constexpr int PieceValues[15] = {
     900,
     20000};
 
+const int ASPIRATION_WINDOW_VALUE = PieceValues[WHITE_PAWN];
+
 constexpr int NormalizedPieceValues[15] = {
     0,
     100,
@@ -222,7 +224,8 @@ constexpr int mvvLva[15][15] = {
     {0, 101, 201, 301, 401, 501, 601, 0, 0, 101, 201, 301, 401, 501, 601}, // queen
     {0, 100, 200, 300, 400, 500, 600, 0, 0, 100, 200, 300, 400, 500, 600}, // king
 };
-enum AdditionalMaterial {
+enum AdditionalMaterial
+{
   BISHOP_PAIR = 50,
   ROOK_PAIR = -20,
   KNIGHT_PAIR = -20,

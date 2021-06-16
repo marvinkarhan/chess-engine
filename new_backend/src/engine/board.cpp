@@ -68,17 +68,36 @@ int Board::evaluateNextMove(string lastMove)
   return score;
 }
 
-int Board::iterativeDeepening(int timeInSeconds)
+int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth /*= MAX_DEPTH*/)
 {
-  endTime = time(NULL) + timeInSeconds;
-  int score, latestScore, currDepth = 1;
+  if (timeInSeconds)
+    endTime = time(NULL) + timeInSeconds;
+  int score, currDepth = 1;
   stopSearch = false;
-  while (time(NULL) < endTime)
+  // init val for aspiration windows
+  int alpha = latestScore - ASPIRATION_WINDOW_VALUE;
+  int beta = latestScore + ASPIRATION_WINDOW_VALUE;
+  while (!stopSearch && currDepth <= maxDepth)
   {
     nodeCount = 0;
-    score = negaMax(currDepth, MIN_ALPHA, MIN_BETA);
-    if (time(NULL) < endTime)
+    score = negaMax(currDepth, alpha, beta);
+    // only print info if search wasent stopped during search
+    if (!stopSearch)
     {
+      // possible aspiration window widening
+      if (score <= alpha)
+      {
+        alpha -= ASPIRATION_WINDOW_VALUE;
+        continue;
+      }
+      if (score >= beta)
+      {
+        beta += ASPIRATION_WINDOW_VALUE;
+        continue;
+      }
+      // setup aspiration window
+      alpha = score - ASPIRATION_WINDOW_VALUE;
+      beta = score + ASPIRATION_WINDOW_VALUE;
       latestScore = score;
       std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"
                 << " score cp " << latestScore;
@@ -289,7 +308,7 @@ int Board::evaluate()
   return score * sideMultiplier;
 }
 
-int Board::negaMax(int depth, int alpha, int beta)
+int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*/)
 {
   // track time control in interval
   if ((nodeCount & 2047) == 0)
@@ -322,10 +341,55 @@ int Board::negaMax(int depth, int alpha, int beta)
     // return evaluate();
     return quiesce(alpha, beta);
   }
+  bool kingChecked = isKingAttacked();
+
+  // check extension
+  if (kingChecked)
+    depth++;
+  // prune only if not in check
+  // (don't know if causes bugs)
+  // if (!kingChecked)
+  // {
+  //   int staticEvaluation = evaluate(); // for pruning purposes
+  //   // null move pruning
+  //   // prove that any move is better than no move
+  //   if (nullMoveAllowed)
+  //   {
+  //     if (ply > 0 && depth > 2 && staticEvaluation >= beta)
+  //     {
+  //       makeNullMove();
+  //       int nullScore = -negaMax(depth - 3, -beta, 1 - beta, false);
+        
+  //       if (stopSearch)
+  //         return 0;
+
+  //       if (nullScore >= beta)
+  //       {
+  //         unmakeNullMove();
+  //         return beta;
+  //       }
+  //       else // mate thread extension
+  //       {
+  //         if (negaMax(depth - 3, CHECKMATE_VALUE / 2 - 1, CHECKMATE_VALUE / 2, false) > CHECKMATE_VALUE / 2)
+  //           depth++;
+  //         unmakeNullMove();
+  //       }
+
+
+  //       // if (nullScore >= beta)
+  //       // {
+  //       //   // verification search
+  //       //   int s = negaMax(depth - 3, beta - 1, beta, false);
+  //       //   // if still ok
+  //       //   if (s >= beta)
+  //       //     return beta;
+  //       // }
+  //     }
+  //   }
+  // }
 
   nodeCount++;
   int moveCounter = 0;
-
   MovePicker movePicker(*this, bestMove);
   Move move;
   while ((move = movePicker.nextMove()) != NONE_MOVE)
@@ -342,6 +406,12 @@ int Board::negaMax(int depth, int alpha, int beta)
 
     if (score >= beta)
     {
+      // add killer moves if quiet move
+      if (!piecePos[targetSquare(move)])
+      {
+        killerMoves[ply][1] = killerMoves[ply][0];
+        killerMoves[ply][0] = move;
+      }
       storeHash(depth, beta, move, LOWER_BOUND);
       return beta;
     }
@@ -350,6 +420,9 @@ int Board::negaMax(int depth, int alpha, int beta)
       hashFlag = EXACT;
       alpha = score;
       bestMove = move;
+      // add quiet moves to history heuristics
+      // if (!piecePos[targetSquare(move)])
+      //   historyHeuristicTable[piecePos[originSquare(move)]][targetSquare(move)] += depth * depth;
       // add move to pv table
       pvTable[ply][ply] = move;
       for (int next_ply = ply + 1; next_ply < pvLength[ply + 1]; next_ply++)
@@ -929,24 +1002,6 @@ bool Board::moveIsPseudoLegal(const Move checkedMove)
   return true;
 }
 
-void Board::evalMoves(ValuedMove *moveListStart, ValuedMove *moveListEnd)
-{
-  for (ValuedMove *currMove = moveListStart; currMove != moveListEnd; currMove++)
-  {
-    Piece originPiece = piecePos[targetSquare(*currMove)];
-    Piece targetPiece = piecePos[targetSquare(*currMove)];
-    // captures
-    if (targetPiece)
-    {
-      // implement MVV-LVA (Most Valuable Victim - Least Valuable Aggressor)
-      // kinda only implementing MVV
-      currMove->value = mvvLva[originPiece][targetPiece];
-      // always sort attacks in front
-      currMove->value += 10000;
-    }
-  }
-}
-
 bool Board::stalemate()
 {
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
@@ -1260,4 +1315,24 @@ void Board::unmakeMove(const Move &oldMove)
     }
   }
   restore();
+}
+// changes side without moving anything
+void Board::makeNullMove()
+{
+  store();
+
+  if (epSquareBB)
+  {
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
+    epSquareBB = 0;
+  }
+  halfMoves = 0;
+  activeSide = !activeSide;
+  hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
+}
+
+void Board::unmakeNullMove()
+{
+  restore();
+  activeSide = !activeSide;
 }
