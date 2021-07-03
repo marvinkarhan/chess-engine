@@ -23,12 +23,6 @@ struct StoredBoard
   StoredBoard *oldBoard; // board state before store
 };
 
-// BITBOARD POP COUNT HELPER
-
-constexpr bool bbGreaterThanOne(BB bb)
-{
-  return (bb & (bb - 1));
-};
 inline int popCount(BB bb)
 {
   int count = 0;

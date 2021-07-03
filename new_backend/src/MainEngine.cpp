@@ -214,16 +214,16 @@ void testPopCount()
   Board board;
   BB testBoard = 1ULL;
   board.printBitboard(testBoard);
-  cout << "GREATER THAN 1 ?" << bbGreaterThanOne(testBoard) << endl;
+  cout << "GREATER THAN 1 ?" << pop_last_bb(testBoard) << endl;
   testBoard <<= 63;
   board.printBitboard(testBoard);
-  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  cout << "GREATER THAN 1 ? " << pop_last_bb(testBoard) << endl;
   testBoard |= 1ULL;
   board.printBitboard(testBoard);
-  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  cout << "GREATER THAN 1 ? " << pop_last_bb(testBoard) << endl;
   testBoard |= Mask::FULL;
   board.printBitboard(testBoard);
-  cout << "GREATER THAN 1 ? " << bbGreaterThanOne(testBoard) << endl;
+  cout << "GREATER THAN 1 ? " << pop_last_bb(testBoard) << endl;
 }
 
 void divide(int depth, std::string fen = START_POS_FEN)

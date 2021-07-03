@@ -55,7 +55,7 @@ inline int pop_lsb(BB &bb)
   return index;
 }
 
-inline BB pop_last_bb(BB bb)
+constexpr BB pop_last_bb(BB bb)
 {
   bb &= bb - 1;
   return bb;

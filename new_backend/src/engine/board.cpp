@@ -259,19 +259,19 @@ int Board::evaluate()
   score += pieceValues;
   score += pieceSquareValues;
   // Bishop pair bonus
-  if (bbGreaterThanOne(pieces(1, BISHOP)))
+  if (pop_last_bb(pieces(1, BISHOP)))
     score += BISHOP_PAIR;
-  if (bbGreaterThanOne(pieces(0, BISHOP)))
+  if (pop_last_bb(pieces(0, BISHOP)))
     score -= BISHOP_PAIR;
   // Knight pair penalty
-  if (bbGreaterThanOne(pieces(1, KNIGHT)))
+  if (pop_last_bb(pieces(1, KNIGHT)))
     score += KNIGHT_PAIR;
-  if (bbGreaterThanOne(pieces(0, KNIGHT)))
+  if (pop_last_bb(pieces(0, KNIGHT)))
     score -= KNIGHT_PAIR;
   // Rook pair penalty
-  if (bbGreaterThanOne(pieces(1, ROOK)))
+  if (pop_last_bb(pieces(1, ROOK)))
     score += ROOK_PAIR;
-  if (bbGreaterThanOne(pieces(0, ROOK)))
+  if (pop_last_bb(pieces(0, ROOK)))
     score -= ROOK_PAIR;
   // No Pawn penalty
   if (!(pieces(1, PAWN)))
