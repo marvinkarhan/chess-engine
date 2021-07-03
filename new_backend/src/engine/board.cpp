@@ -24,6 +24,7 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
   fullMoves = 0;
   openingMoves = 10;
   state = nullptr;
+  stopSearch = false;
   parseFenString(fen);
   std::ifstream fileStream(environment::__OPENING_JSON__);
   fileStream >> currentOpeningTable;
@@ -43,14 +44,24 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
 
 int Board::evaluateNextMove(string lastMove)
 {
-  // if (fullMoves * 2 < openingMoves && tableContainsKey(lastMove, currentOpeningTable) && !openingFinished)
+  // if (fullMoves * 2 < openingMoves && (lastMove.empty() || tableContainsKey(lastMove, currentOpeningTable)) && !openingFinished)
   // {
-  //   json newJson = currentOpeningTable[lastMove];
+  //   json newJson;
+  //   // Chose side 
+  //   if(!lastMove.empty())
+  //     newJson = currentOpeningTable[lastMove];
+  //   else
+  //     newJson = currentOpeningTable;
   //   string nextMove = getRandomMove(newJson);
   //   int move = uciToMove(nextMove, *this);
   //   currentOpeningTable = currentOpeningTable[lastMove][nextMove];
-  //   hashTable[hashValue % hashTableSize].bestMove = move;
-  //   cout << "OPENING TABLE" << endl;
+  //   cout << "OPENING TABLE: " << toUciString(move) << endl;
+  //   // add move to pv table
+  //   pvLength[ply] = 0;
+  //   pvTable[ply][ply] = move;
+  //   for (int next_ply = ply + 1; next_ply < pvLength[ply + 1]; next_ply++)
+  //     pvTable[ply][next_ply] = pvTable[ply + 1][next_ply];
+  //   pvLength[ply] = pvLength[ply + 1];
   //   return 0;
   // }
   int score = iterativeDeepening(5);
@@ -129,6 +140,9 @@ string Board::getRandomMove(json openingTable)
 
 void Board::resetBoard()
 {
+  stopSearch = false;
+  openingFinished = false;
+  std::vector<Move> latestPv;
   for (int i = 0; i < 7; i++)
     piecesByType[i] = BB(0);
   for (int i = 0; i < 2; i++)
@@ -278,16 +292,16 @@ int Board::evaluate()
     score += NO_PAWNS;
   if (!(pieces(0, PAWN)))
     score -= NO_PAWNS;
-  score += popCount(pieceMoves(PAWN, 1)) * 8;
-  score += popCount(pieceMoves(PAWN, 0)) * -8;
-  score += popCount(pieceMoves(BISHOP, 1)) * 15;
-  score += popCount(pieceMoves(BISHOP, 0)) * -15;
-  score += popCount(pieceMoves(KNIGHT, 1)) * 12;
-  score += popCount(pieceMoves(KNIGHT, 0)) * -12;
-  score += popCount(pieceMoves(ROOK, 1)) * 7;
-  score += popCount(pieceMoves(ROOK, 0)) * -7;
-  score += popCount(pieceMoves(QUEEN, 1)) * 6;
-  score += popCount(pieceMoves(QUEEN, 0)) * -6;
+  score += popCount(pieceMoves(PAWN, 1)) * 7;
+  score += popCount(pieceMoves(PAWN, 0)) * -7;
+  score += popCount(pieceMoves(BISHOP, 1)) * 6;
+  score += popCount(pieceMoves(BISHOP, 0)) * -6;
+  score += popCount(pieceMoves(KNIGHT, 1)) * 5;
+  score += popCount(pieceMoves(KNIGHT, 0)) * -5;
+  score += popCount(pieceMoves(ROOK, 1)) * 4;
+  score += popCount(pieceMoves(ROOK, 0)) * -4;
+  score += popCount(pieceMoves(QUEEN, 1)) * 3;
+  score += popCount(pieceMoves(QUEEN, 0)) * -3;
   // score += popCount(pieceMoves(KING,1)) * 4;
   // score += popCount(pieceMoves(KING,0)) * -4;
 
@@ -672,7 +686,7 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 }
 
 std::vector<Move> Board::getPV()
-{
+{  
   std::vector<Move> moves;
   if (stopSearch || (pvLength[0] == 0) && !latestPv.empty())
   {

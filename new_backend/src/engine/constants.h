@@ -9,7 +9,7 @@ typedef std::string FenString;
 
 const int MIN_ALPHA = -2000000;
 const int MIN_BETA = 2000000;
-const int CHECKMATE_VALUE = -20000;
+const int CHECKMATE_VALUE = -200000;
 const int SCORE_UNKNOWN = MIN_ALPHA - 1;
 const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
