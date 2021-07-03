@@ -302,6 +302,7 @@ int Board::evaluate()
   score += popCount(pieceMoves(ROOK, 0)) * -4;
   score += popCount(pieceMoves(QUEEN, 1)) * 3;
   score += popCount(pieceMoves(QUEEN, 0)) * -3;
+
   // score += popCount(pieceMoves(KING,1)) * 4;
   // score += popCount(pieceMoves(KING,0)) * -4;
 

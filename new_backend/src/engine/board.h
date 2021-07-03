@@ -23,17 +23,6 @@ struct StoredBoard
   StoredBoard *oldBoard; // board state before store
 };
 
-inline int popCount(BB bb)
-{
-  int count = 0;
-  while (bb)
-  {
-    count++;
-    bb &= bb - 1; // reset LS1B
-  }
-  return count;
-};
-
 // information stored in the TT Hash Table
 struct HashEntry
 {

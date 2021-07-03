@@ -360,6 +360,8 @@ extern BB KING_MOVES_BBS[64];
 extern BB PAWN_ATTACKS_BBS[64][2];
 extern BB REY_BBS[64][64];
 extern BB LINE_BBS[64][64];
+// to save space only use a 8 bit int
+extern uint8_t STATIC_POP_COUNT_16[1 << 16];
 
 //ZOBRIST STUFF
 extern u64 ZOBRIST_TABLE[781];

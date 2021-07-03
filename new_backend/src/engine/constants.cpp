@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "movehelper.h"
 #include <vector>
+#include <bitset>
 
 std::string SQUARE_TO_ALGEBRAIC[64] = {
     "h1",
@@ -80,6 +81,7 @@ BB KING_MOVES_BBS[64];
 BB PAWN_ATTACKS_BBS[64][2];
 BB REY_BBS[64][64];
 BB LINE_BBS[64][64];
+uint8_t STATIC_POP_COUNT_16[1 << 16];
 u64 ZOBRIST_TABLE[781];
 
 void initArrRectangular()
@@ -194,8 +196,10 @@ void initConstants()
     ZOBRIST_TABLE[i] = seed;
   }
 
-
   initArrRectangular();
 
   initArrRectangularLines();
+
+  for (int i = 0; i < (1 << 16); i++)
+    STATIC_POP_COUNT_16[i] = uint8_t(std::bitset<16>(i).count());
 }

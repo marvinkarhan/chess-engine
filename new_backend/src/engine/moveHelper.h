@@ -61,6 +61,20 @@ constexpr BB pop_last_bb(BB bb)
   return bb;
 }
 
+inline int popCount(BB bb)
+{
+  // split bb into four parts
+  union
+  {
+    BB bb;
+    uint16_t parts[4];
+  } split = {bb};
+  return STATIC_POP_COUNT_16[split.parts[0]] +
+         STATIC_POP_COUNT_16[split.parts[1]] +
+         STATIC_POP_COUNT_16[split.parts[2]] +
+         STATIC_POP_COUNT_16[split.parts[3]];
+};
+
 // """
 // following functions are helper functions
 // they take a bitboard (bb)

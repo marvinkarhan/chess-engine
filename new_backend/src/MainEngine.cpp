@@ -276,12 +276,12 @@ int main(int argc, char *argv[])
   // Board board(KIWI_PETE_POS_FEN);
   Board board;
   auto start = std::chrono::high_resolution_clock::now();
-  board.evaluateNextMove("");
-  cout << toUciString(board.getPV()[0]) << endl;
+  // board.evaluateNextMove("");
+  // cout << toUciString(board.getPV()[0]) << endl;
 
-  board.parseFenString(START_POS_FEN);
-  board.evaluateNextMove("");
-  cout << toUciString(board.getPV()[0]) << endl;
+  // board.parseFenString(START_POS_FEN);
+  // board.evaluateNextMove("");
+  // cout << toUciString(board.getPV()[0]) << endl;
   // // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
   // // board.printBitboard(attackFields);
   // // attackFields = board.pieceMoves(PieceType::BISHOP,board.activeSide);
