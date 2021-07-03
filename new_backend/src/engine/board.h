@@ -84,6 +84,7 @@ public:
   int iterativeDeepening(time_t timeInSeconds = LLONG_MAX, int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
+  int evaluteMobility();
   int evaluateNextMove(string lastMove);
   Board(FenString fen = START_POS_FEN);
   ~Board();

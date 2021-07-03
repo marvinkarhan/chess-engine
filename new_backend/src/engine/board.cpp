@@ -292,6 +292,14 @@ int Board::evaluate()
     score += NO_PAWNS;
   if (!(pieces(0, PAWN)))
     score -= NO_PAWNS;
+  score += evaluteMobility();
+
+  return score * sideMultiplier;
+}
+
+int Board::evaluteMobility()
+{
+  int score = 0;
   score += popCount(pieceMoves(PAWN, 1)) * 7;
   score += popCount(pieceMoves(PAWN, 0)) * -7;
   score += popCount(pieceMoves(BISHOP, 1)) * 6;
@@ -302,11 +310,9 @@ int Board::evaluate()
   score += popCount(pieceMoves(ROOK, 0)) * -4;
   score += popCount(pieceMoves(QUEEN, 1)) * 3;
   score += popCount(pieceMoves(QUEEN, 0)) * -3;
-
   // score += popCount(pieceMoves(KING,1)) * 4;
   // score += popCount(pieceMoves(KING,0)) * -4;
-
-  return score * sideMultiplier;
+  return score;
 }
 
 int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*/)
