@@ -46,7 +46,7 @@ public:
   BB piecesBySide[2];
   Piece piecePos[64];
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
-  u64 epSquareBB, hashValue, nodeCount, hashTableHits = 0;
+  u64 epSquareBB, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
   time_t endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
@@ -125,11 +125,11 @@ public:
   void restore();
   int probeHash(int depth, int alpha, int beta, Move *bestMove);
   void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
-  void zobristToggleCastle();
+  void zobristToggleCastle(u64 &hashValue);
   // to simplify updating piece positions
   constexpr HashEntry *probeHash()
   {
-    return &hashTable[hashValue % hashTableSize];
+    return &hashTable[state->hashValue % hashTableSize];
   }
 
   int countHashTableSize()
@@ -153,7 +153,6 @@ public:
     piecesBySide[getPieceSide(piece)] |= targetBB;
     pieceValues += PieceValues[piece];
     pieceSquareValues += PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1);
-    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[piece] + targetSquare];
   }
   inline void updatePiece(int originSquare, int targetSquare)
   {
@@ -165,7 +164,6 @@ public:
     piecesByType[getPieceType(piece)] ^= bb;
     piecesBySide[getPieceSide(piece)] ^= bb;
     pieceSquareValues += (PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1)) - (PIECE_SQUARE_TABLES[piece][63 - originSquare] * (getPieceSide(piece) ? 1 : -1));
-    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[piece] + originSquare] | ZOBRIST_TABLE[ZobristPieceOffset[piece] + targetSquare];
   }
   inline void deletePiece(int targetSquare)
   {
@@ -177,7 +175,6 @@ public:
     piecesBySide[getPieceSide(piece)] ^= targetBB;
     pieceValues -= PieceValues[piece];
     pieceSquareValues -= PIECE_SQUARE_TABLES[piece][63 - targetSquare] * (getPieceSide(piece) ? 1 : -1);
-    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[piece] + targetSquare];
   }
   bool makeMove(const Move &newMove);
   void unmakeMove(const Move &oldMove);

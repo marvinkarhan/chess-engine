@@ -110,7 +110,7 @@ void benchmarkNegaMax(int depth, int maxMoves)
     int eval = board.negaMax(depth, -2000000, 2000000);
     auto newNegaMaxFinish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsedNegaMax = newNegaMaxFinish - newNegaMax;
-    Move nextMove = board.hashTable[board.hashValue % board.hashTableSize].bestMove;
+    Move nextMove = board.hashTable[board.state->hashValue % board.hashTableSize].bestMove;
     board.makeMove(nextMove);
     if (elapsedNegaMax.count() > peak)
     {
@@ -160,8 +160,8 @@ void testZobrist()
     int eval = board.negaMax(depth, -2000000, 2000000);
     Move nextMove = board.getPV()[0];
     board.makeMove(nextMove);
-    cout << "Move Nr.: " << std::setfill('0') << std::setw(5) << i << ", move: " << toUciString(nextMove) << ", fen: " << setfill('-') << std::setw(100) << board.toFenString() << ", hash: " << board.hashValue << endl;
-    hashes.push_back(board.hashValue);
+    cout << "Move Nr.: " << std::setfill('0') << std::setw(5) << i << ", move: " << toUciString(nextMove) << ", fen: " << setfill('-') << std::setw(100) << board.toFenString() << ", hash: " << board.state->hashValue << endl;
+    hashes.push_back(board.state->hashValue);
     fens.push_back(board.toFenString());
   }
 
@@ -282,28 +282,6 @@ int main(int argc, char *argv[])
   // board.parseFenString(START_POS_FEN);
   // board.evaluateNextMove("");
   // cout << toUciString(board.getPV()[0]) << endl;
-  // // BB attackFields = board.pieceMoves(PieceType::KNIGHT,board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::BISHOP,board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::ROOK,board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::QUEEN,board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::KING,board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::PAWN,board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::BISHOP,!board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::ROOK,!board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::QUEEN,!board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::KING,!board.activeSide);
-  // // board.printBitboard(attackFields);
-  // // attackFields = board.pieceMoves(PieceType::PAWN,!board.activeSide);
-  // // board.printBitboard(attackFields);
   // // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
   // // std::cout << "LEGAL_MOVES" << std::endl;
@@ -340,7 +318,8 @@ int main(int argc, char *argv[])
   // divide(5, KIWI_PETE_POS_FEN);
 
   // effectiveBranchingFactor();
-  
+  // board.parseFenString("Q1k2b1r/3npppp/2p1b3/8/3P4/2N2N2/5PPR/2B1K3 b - - 2 16");
+  // testNegaMax(board, 7);
 
   // testZobrist();
   benchmarkNegaMax(7, 50);
