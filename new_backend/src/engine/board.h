@@ -20,6 +20,8 @@ struct StoredBoard
   Piece capturedPiece;
   u64 hashValue;
 
+  RepetitionType repetition;
+
   StoredBoard *oldBoard; // board state before store
 };
 
@@ -114,10 +116,10 @@ public:
   {
     return attackers(DEBRUIJN_INDEX[((pieces(activeSide, KING) ^ (pieces(activeSide, KING) - 1)) * DEBRUIJN) >> 58], activeSide, piecesByType[ALL_PIECES]);
   }
+  bool hasRepetitions();
+  bool partialStalemate();
   bool stalemate();
-  bool stalemate(int moveListSize);
   bool checkmate();
-  bool checkmate(int moveListSize);
   auto getMovesTree(int depth);
   u64 perft(int depth);
   std::string divide(int depth);

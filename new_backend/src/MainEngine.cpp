@@ -276,12 +276,7 @@ int main(int argc, char *argv[])
   // Board board(KIWI_PETE_POS_FEN);
   Board board;
   auto start = std::chrono::high_resolution_clock::now();
-  // board.evaluateNextMove("");
-  // cout << toUciString(board.getPV()[0]) << endl;
 
-  // board.parseFenString(START_POS_FEN);
-  // board.evaluateNextMove("");
-  // cout << toUciString(board.getPV()[0]) << endl;
   // // std::cout << "PSEUDO_LEGAL_MOVES" << std::endl;
   // // testMoveGen<PSEUDO_LEGAL_MOVES>(board);
   // // std::cout << "LEGAL_MOVES" << std::endl;

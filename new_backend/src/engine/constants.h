@@ -10,11 +10,19 @@ typedef std::string FenString;
 const int MIN_ALPHA = -2000000;
 const int MIN_BETA = 2000000;
 const int CHECKMATE_VALUE = -200000;
+const int STALEMATE_VALUE = 0;
 const int SCORE_UNKNOWN = MIN_ALPHA - 1;
 const FenString START_POS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 const int MAX_MOVES = 256;
 const int MAX_DEPTH = 64;
+
+enum RepetitionType
+{
+  NO_REPETITION,
+  TWO_FOLD,
+  THREE_FOLD
+};
 
 enum MoveGenType
 {

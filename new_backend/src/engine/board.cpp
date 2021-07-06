@@ -232,6 +232,9 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   //   }
   // }
 
+  if (partialStalemate())
+    return STALEMATE_VALUE;
+
   int standPat = evaluate();
   if (standPat >= beta)
     return beta;
@@ -321,6 +324,15 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
   if ((nodeCount & 2047) == 0)
   {
     stopSearch = time(NULL) > endTime;
+  }
+
+  // check for potential stalemate by repetition
+  // try to make it a directed acyclic graph (no cycles)
+  // if stalemate improves the result
+  if (halfMoves >= 3 && alpha < STALEMATE_VALUE && hasRepetitions())
+  {
+    if (STALEMATE_VALUE >= beta)
+      return STALEMATE_VALUE;
   }
 
   pvLength[ply] = ply;
@@ -1012,15 +1024,32 @@ bool Board::moveIsPseudoLegal(const Move checkedMove)
   return true;
 }
 
+bool Board::hasRepetitions()
+{
+  StoredBoard *stateP = state;
+  int bound = halfMoves;
+  while (bound-- >= 4)
+  {
+    if (stateP->repetition)
+      return true;
+    stateP = stateP->oldBoard;
+  }
+  return false;
+}
+
+// checks for 50-Move Rule and repetition draws
+bool Board::partialStalemate()
+{
+  if (halfMoves >= 100 && (!kingAttackers() || MoveList<LEGAL_MOVES>(*this, activeSide).size()))
+    return true;
+
+  return state->repetition;
+}
+
 bool Board::stalemate()
 {
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   return moveIterator.size() == 0;
-}
-
-bool Board::stalemate(int moveListSize)
-{
-  return moveListSize == 0;
 }
 
 bool Board::checkmate()
@@ -1028,12 +1057,6 @@ bool Board::checkmate()
   BB kingAttackersBB = kingAttackers();
   MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
   return moveIterator.size() == 0 && kingAttackersBB;
-}
-
-bool Board::checkmate(int moveListSize)
-{
-  BB kingAttackersBB = kingAttackers();
-  return moveListSize == 0 && kingAttackersBB;
 }
 
 auto Board::getMovesTree(int depth) {}
@@ -1081,6 +1104,7 @@ void Board::store(Piece captuedPiece /*= NO_PIECE*/)
   stored->fullMoves = fullMoves;
   stored->halfMoves = halfMoves;
   stored->capturedPiece = captuedPiece;
+  stored->repetition = NO_REPETITION;
   stored->oldBoard = std::move(state);
   state = std::move(stored);
 }
@@ -1270,8 +1294,25 @@ bool Board::makeMove(const Move &newMove)
   // swap sides
   activeSide = !activeSide;
   hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
+  // update key to reflect actual value
   state->hashValue = hashValue;
-  // DEBUG
+  // calculate repetitions
+  // a halfMove counts up reversable moves so we can use it for repetition counting
+  // can only be repetition if atleast 4 half moves where made
+  if (halfMoves >= 4)
+  {
+    // only check every 2nd board because we only check our side moves
+    StoredBoard *stateP = state->oldBoard->oldBoard;
+    for (int i = 4; i < halfMoves; i += 2)
+    {
+      stateP = stateP->oldBoard->oldBoard;
+      if (stateP->hashValue == hashValue)
+      {
+        state->repetition = stateP->repetition == TWO_FOLD ? THREE_FOLD : TWO_FOLD;
+        break;
+      }
+    }
+  }
   // unmake move if it was illegal
   if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))
   {
