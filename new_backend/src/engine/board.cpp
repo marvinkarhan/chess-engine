@@ -1216,6 +1216,7 @@ bool Board::makeMove(const Move &newMove)
       int capturedSquare = bitScanForward(capturedPawnBB);
       state->capturedPiece = Piece(piecePos[capturedSquare]);
       deletePiece(capturedSquare);
+      hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[state->capturedPiece] + capturedSquare];
       capture = true;
     }
     // check for resulting en passant
@@ -1323,13 +1324,13 @@ bool Board::makeMove(const Move &newMove)
     printStateHistory();
     unmakeMove(newMove);
     std::cout << "side to move: " << activeSide << std::endl;
-    MoveList<LEGAL_MOVES> legalMoves(*this, activeSide);
-    std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
-    for (ValuedMove move : legalMoves)
-    {
-      std::cout << CharIndexToPiece[piecePos[originSquare(move)]] << ": " << toUciString(move) << " ";
-    }
-    std::cout << std::endl;
+    // MoveList<LEGAL_MOVES> legalMoves(*this, activeSide);
+    // std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
+    // for (ValuedMove move : legalMoves)
+    // {
+    //   std::cout << CharIndexToPiece[piecePos[originSquare(move)]] << ": " << toUciString(move) << " ";
+    // }
+    // std::cout << std::endl;
     std::cout << "fen (after unmake): " << toFenString() << std::endl;
     throw;
     return false;
