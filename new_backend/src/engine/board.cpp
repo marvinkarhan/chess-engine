@@ -1243,7 +1243,7 @@ bool Board::makeMove(const Move &newMove)
     else if (originSquareBB == (FILE_A & RANK_1) || targetSquareBB == (FILE_A & RANK_1))
       castleWhiteQueenSide = false;
   }
-  else if (originPiece == BLACK_ROOK || targetPiece == BLACK_ROOK)
+  if (originPiece == BLACK_ROOK || targetPiece == BLACK_ROOK)
   {
     if (originSquareBB == (FILE_H & RANK_8) || targetSquareBB == (FILE_H & RANK_8))
       castleBlackKingSide = false;
@@ -1324,13 +1324,6 @@ bool Board::makeMove(const Move &newMove)
     printStateHistory();
     unmakeMove(newMove);
     std::cout << "side to move: " << activeSide << std::endl;
-    // MoveList<LEGAL_MOVES> legalMoves(*this, activeSide);
-    // std::cout << "size: " + std::to_string(legalMoves.size()) << std::endl;
-    // for (ValuedMove move : legalMoves)
-    // {
-    //   std::cout << CharIndexToPiece[piecePos[originSquare(move)]] << ": " << toUciString(move) << " ";
-    // }
-    // std::cout << std::endl;
     std::cout << "fen (after unmake): " << toFenString() << std::endl;
     throw;
     return false;
