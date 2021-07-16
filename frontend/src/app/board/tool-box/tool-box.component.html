@@ -1,3 +1,14 @@
+<div class="actions">
+  <div class="action">
+    <fa-icon [icon]="faSwapBoard" [size]="'2x'"></fa-icon>
+    <span>Brett drehen</span>
+  </div>
+  <div class="action">
+    <fa-icon [icon]="faNewGame" [size]="'2x'"></fa-icon>
+    <span>Neues Spiel</span>
+  </div>
+</div>
+
 <div *ngIf="(this.service.aiMoves$ | async) as aiMoves" class="evaluation-bar">
-  <evaluation-bar *ngIf="aiMoves && aiMoves.length > 0 && aiMoves[0] != ''"></evaluation-bar>
+  <evaluation-bar [hidden]="!(aiMoves && aiMoves.length > 0 && aiMoves[0] != '')"></evaluation-bar>
 </div>

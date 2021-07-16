@@ -1,12 +1,49 @@
 :host {
-  width: 300px;
+  width: 250px;
   background: #6b707a;
   margin: 0 20px;
   border-radius: 3px;
   display: flex;
   overflow: hidden;
+  display: flex;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+
+  .action {
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 3px;
+    padding: 6px;
+    cursor: pointer;
+    background: #888d96;
+    box-shadow: -3px 3px #565a62;
+    user-select: none;
+
+    &:active {
+      transform: translate(-3px, 3px);
+      box-shadow: none;
+    }
+
+    fa-icon {
+      display: flex;
+      align-items: center;
+    }
+
+    span {
+      flex: 1;
+      font-weight: bold;
+      text-align: center;
+    }
+  }
 }
 
 .evaluation-bar {
-  margin-left: auto;
+  width: 50px;
 }
