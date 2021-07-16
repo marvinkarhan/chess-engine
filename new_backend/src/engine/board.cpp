@@ -64,7 +64,7 @@ int Board::evaluateNextMove(string lastMove)
   //   pvLength[ply] = pvLength[ply + 1];
   //   return 0;
   // }
-  int score = iterativeDeepening(5);
+  int score = iterativeDeepening(1);
   return score;
 }
 
@@ -77,6 +77,7 @@ int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth
   // init val for aspiration windows
   int alpha = latestScore - ASPIRATION_WINDOW_VALUE;
   int beta = latestScore + ASPIRATION_WINDOW_VALUE;
+  std::vector<Move> pv;
   while (!stopSearch && currDepth <= maxDepth)
   {
     nodeCount = 0;
@@ -84,6 +85,16 @@ int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth
     // only print info if search wasent stopped during search
     if (!stopSearch)
     {
+      pv = getPV();
+      // if checkmate was found quit
+      if (score <= CHECKMATE_VALUE) {
+        // position is already mate
+        if (pv[0] == NONE_MOVE) {
+          std::cout << "info depth 0 score mate 0" << std::endl;
+          std::cout << "bestmove (none)" << std::endl;
+        }
+        stopSearch = true;
+      }
       // possible aspiration window widening
       if (score <= alpha)
       {
@@ -101,7 +112,6 @@ int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth
       latestScore = score;
       std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"
                 << " score cp " << latestScore;
-      std::vector<Move> pv = getPV();
       for (Move move : pv)
       {
         std::cout << " " << toUciString(move);
@@ -111,6 +121,8 @@ int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth
     }
   }
   stopSearch = true;
+  // signal we made out final decision
+  std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
   return latestScore;
 }
 
@@ -923,6 +935,8 @@ ValuedMove *Board::generateLegalMoves(ValuedMove *moveList, bool activeSide, Mov
 {
   int kingSquare = bitScanForward(pieces(activeSide, KING));
   BB blockersBB = blockers(kingSquare, activeSide, piecesByType[ALL_PIECES]);
+  if (category != EVASIONS && kingAttackers())
+    category = EVASIONS;
   for (auto move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide, category))
   {
     // only check if move is legal is it is one of:
@@ -1055,8 +1069,11 @@ bool Board::stalemate()
 bool Board::checkmate()
 {
   BB kingAttackersBB = kingAttackers();
-  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
-  return moveIterator.size() == 0 && kingAttackersBB;
+  if (kingAttackersBB) {
+    MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, EVASIONS);
+    return moveIterator.size() == 0;
+  }
+  return false;
 }
 
 auto Board::getMovesTree(int depth) {}
@@ -1171,7 +1188,7 @@ bool Board::makeMove(const Move &newMove)
   u64 hashValue = state->hashValue;
 
   store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
-
+  state->move = newMove;
   // DEBUG
   if (originPiece == NO_PIECE)
   {

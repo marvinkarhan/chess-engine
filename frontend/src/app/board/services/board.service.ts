@@ -25,6 +25,8 @@ export class BoardService implements OnDestroy {
   public pieces$ = this._pieces$.asObservable();
   private _evaluation$ = new BehaviorSubject<number>(0.5);
   public evaluation$ = this._evaluation$.asObservable();
+  private _aiMoves$ = new BehaviorSubject<string[]>([]);
+  public aiMoves$ = this._aiMoves$.asObservable();
   private _subs$ = new Subscription();
 
   constructor(
@@ -74,6 +76,7 @@ export class BoardService implements OnDestroy {
           this._uciToBoard(pieces, boardInformation.moves);
           this._pieces$.next(pieces);
           this._evaluation$.next(boardInformation.evaluation);
+          this._aiMoves$.next(boardInformation.aiMoves);
           this._boardAudio.playMoveSound();
           console.log('DEBUG BOARDINFO', boardInformation);
         })

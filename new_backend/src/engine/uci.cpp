@@ -13,8 +13,6 @@ void uciGo(Board &board)
 {
   int eval = board.evaluateNextMove(lastMove);
   // int eval = board.iterativeDeepening(5);
-  // signal we made out final decision (should be done by iterative deepening on some time or depth constraint)
-  std::cout << "bestmove " << toUciString(board.getPV()[0]) << std::endl;
 }
 
 void uciPosition(Board &board, std::istringstream &ss)

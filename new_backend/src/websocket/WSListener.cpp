@@ -56,10 +56,8 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
     {
       cout << "Requested new board!" << endl;
-      // Board *board = new Board("8/6k1/8/8/4K3/1q6/8/7q w - - 0 1");
-      // Board board("r3k2r/pbpp1ppp/1p6/2bBPP2/8/1QPp1P1q/PP1P3P/RNBR3K w kq - 0 1");
-      // Board board("r3r2k/ppp4b/8/3pP3/7Q/2Pq4/PP3PPP/2K4R w Kq - 0 1");
-      // Board board("2N2knr/1p1Q3p/r5q1/4p1p1/P1P1p3/1P4PP/5P2/R2R2K1 w Qk - 0 1");
+      // Board *board = new Board("r3r1k1/p4pbp/1pp3p1/1q4N1/8/1BP4Q/PP2nPPP/R4K1R b - - 0 1");
+      // Board *board = new Board("k7/8/8/8/8/8/1R6/2R4K w - - 0 1");
       Board *board = new Board();
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
@@ -85,17 +83,21 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
 
       Board *userBoard = SessionMap[pointerToSession];
       userBoard->makeMove(uciToMove(request->move->c_str(), *userBoard));
-      int depth = 5;
-      cout << "depth: " << depth << endl;
-      auto start = std::chrono::high_resolution_clock::now();
-      int eval = userBoard->evaluateNextMove(request->move->c_str());
-      auto finish = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double> elapsed = finish - start;
-      std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
-      // std::vector<Move> moves = userBoard->getPV();
-      cout << "variation: " << toUciString(userBoard->getPV()[0]) << endl;
-      userBoard->makeMove(userBoard->getPV()[0]);
-      cout << "Made move" << endl;
+      int eval = 0;
+      bool gameOver = userBoard->checkmate() || userBoard->stalemate();
+      if (!gameOver)
+      {
+        int depth = 5;
+        cout << "depth: " << depth << endl;
+        auto start = std::chrono::high_resolution_clock::now();
+        eval = userBoard->evaluateNextMove(request->move->c_str());
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = finish - start;
+        std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
+        cout << "variation: " << toUciString(userBoard->getPV()[0]) << endl;
+        userBoard->makeMove(userBoard->getPV()[0]);
+        cout << "Made move" << endl;
+      }
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();
       socketResponse->moves = {};
@@ -106,10 +108,10 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       }
       socketResponse->evaluation = (float)eval / 100;
       socketResponse->aiMoves = {};
-      // for (Move move : moves)
-      // {
-      //   socketResponse->aiMoves->push_back(toUciString(move).c_str());
-      // }
+      if (!gameOver)
+        for (Move move : userBoard->getPV())
+          socketResponse->aiMoves->push_back(toUciString(move).c_str());
+
       auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
@@ -119,14 +121,12 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       cout << "Requested unmake Move " << endl;
 
       Board *userBoard = SessionMap[pointerToSession];
-      // currently not working because its a speed decrease
-      // can only be done effective by saving the moves when making them
-      // if (!userBoard->state->move)
-      // {
-      //   cout << "no move to unmake: " << userBoard->state->hashValue << endl;
-      //   return;
-      // }
-      // userBoard->unmakeMove(userBoard->state->move);
+      if (!userBoard->state->move)
+      {
+        cout << "no move to unmake: " << userBoard->toFenString() << endl;
+        return;
+      }
+      userBoard->unmakeMove(userBoard->state->move);
       cout << "unmade move" << endl;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = userBoard->toFenString().c_str();

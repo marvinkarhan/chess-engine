@@ -1,0 +1,3 @@
+<div *ngIf="(this.service.aiMoves$ | async) as aiMoves" class="evaluation-bar">
+  <evaluation-bar *ngIf="aiMoves && aiMoves.length > 0 && aiMoves[0] != ''"></evaluation-bar>
+</div>

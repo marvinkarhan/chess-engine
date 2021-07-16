@@ -19,7 +19,7 @@ struct StoredBoard
   int fullMoves, halfMoves;
   Piece capturedPiece;
   u64 hashValue;
-
+  Move move;
   RepetitionType repetition;
 
   StoredBoard *oldBoard; // board state before store
@@ -215,8 +215,9 @@ struct MoveList
   {
     if constexpr (moveType == PSEUDO_LEGAL_MOVES)
       last = board.generatePseudoLegalMoves(moves, activeSide, category);
-    else if constexpr (moveType == LEGAL_MOVES)
+    else if constexpr (moveType == LEGAL_MOVES) {
       last = board.generateLegalMoves(moves, activeSide, category);
+    }
   }
   // implement iterator pattern
   const ValuedMove *begin() const { return moves; }
