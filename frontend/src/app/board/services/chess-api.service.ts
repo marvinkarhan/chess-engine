@@ -47,4 +47,11 @@ export class ChessApiService {
     this.newSocket?.send(JSON.stringify(request));
   }
 
+  requestSwapBoard(): void {
+    let request = {
+      emitMessage: ChessApiEmits.SWAP_BOARD,
+    };
+    this.newSocket?.send(JSON.stringify(request));
+  }
+
 }

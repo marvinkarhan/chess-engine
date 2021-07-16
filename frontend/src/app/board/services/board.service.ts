@@ -57,6 +57,10 @@ export class BoardService implements OnDestroy {
     this.chessApi.requestUnmakeMove();
   }
 
+  swapSide() {
+    this.chessApi.requestSwapBoard();
+  }
+
   private _clearMoves() {
     let currentPieces = this._pieces$.value;
     currentPieces.forEach((piece) => {

@@ -14,4 +14,8 @@ export class ToolBoxComponent {
 
   constructor(public service: BoardService) { }
 
+  swapSide() {
+    this.service.swapSide();
+  }
+
 }

@@ -7,11 +7,9 @@
 #include "uci.h"
 #include "move.h"
 
-std::string lastMove;
-
 void uciGo(Board &board)
 {
-  int eval = board.evaluateNextMove(lastMove);
+  int eval = board.evaluateNextMove();
   // int eval = board.iterativeDeepening(5);
 }
 
@@ -43,7 +41,6 @@ void uciPosition(Board &board, std::istringstream &ss)
   while (ss >> token && (move = uciToMove(token, board)) != 0)
   {
     board.makeMove(move);
-    lastMove = toUciString(move);
   }
 }
 

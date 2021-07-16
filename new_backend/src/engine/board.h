@@ -87,7 +87,7 @@ public:
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
   int evaluteMobility();
-  int evaluateNextMove(string lastMove);
+  int evaluateNextMove();
   Board(FenString fen = START_POS_FEN);
   ~Board();
   void initHashTableSize(int sizeInMB = 32);

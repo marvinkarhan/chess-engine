@@ -9,4 +9,5 @@ export enum ChessApiEmits {
     GET_BOARD_MOVES = "get_board_moves",
     MAKE_MOVE = "make_move",
     UNMAKE_MOVE = "unmake_move",
+    SWAP_BOARD = "swap_board",
 }

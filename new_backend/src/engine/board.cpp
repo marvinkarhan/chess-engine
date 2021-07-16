@@ -42,7 +42,7 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
   hashTable = new HashEntry[hashTableSize];
 }
 
-int Board::evaluateNextMove(string lastMove)
+int Board::evaluateNextMove()
 {
   // if (fullMoves * 2 < openingMoves && (lastMove.empty() || tableContainsKey(lastMove, currentOpeningTable)) && !openingFinished)
   // {
