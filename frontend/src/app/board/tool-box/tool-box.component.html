@@ -12,7 +12,7 @@
   </div>
   <!-- Siel zeit einstellen -->
   <!-- Fen einspeisen? -->
-  <div class="action" (click)="swapSide()">
+  <div class="action" (click)="swapSide()" [class.disabled]="(service.engineThinking$ | async)">
     <fa-icon [icon]="faSwapBoard" [size]="'2x'"></fa-icon>
     <span>Brett drehen</span>
   </div>

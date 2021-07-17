@@ -94,3 +94,7 @@ $component-width: 250px;
 .evaluation-bar {
   width: 50px;
 }
+
+.disabled {
+  pointer-events: none;
+}
