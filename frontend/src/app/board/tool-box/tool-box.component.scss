@@ -1,8 +1,8 @@
+$component-width: 250px;
+
 :host {
-  width: 250px;
-  background: #6b707a;
+  width: $component-width;
   margin: 0 20px;
-  border-radius: 3px;
   display: flex;
   overflow: hidden;
   display: flex;
@@ -10,23 +10,64 @@
 
 .actions {
   display: flex;
+  justify-content: center;
   flex-direction: column;
+  background: #6b707a;
+  border-radius: 3px;
   flex: 1;
+  color: #292B2F;
+  // color: #444;
+
+  .text {
+    font-weight: bold;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    padding: 6px;
+    margin: 10px;
+  }
+
+  .loading-indicator {
+    height: 2px;
+    width: 100%;
+    border-radius: 2px;
+    background: white;
+    overflow: hidden;
+
+    --slider-width: 50px;
+
+    .loading-slider {
+      // background: #565a62;
+      background: rgba(20,85,30,0.5);
+      width: var(--slider-width);
+      position: relative;
+      height: 2px;
+      margin-left: calc(-1 * calc(var(--slider-width) / 2));
+      animation: bounce-slider infinite 4s;
+    }
+
+    @keyframes bounce-slider {
+      0%   { margin-left: calc(-1 * calc(var(--slider-width) / 2)); }
+      5%   { margin-left: calc(-1 * calc(var(--slider-width) / 2)); }
+      47%  { margin-left: calc(100% - calc(var(--slider-width) / 2)); }
+      53%  { margin-left: calc(100% - calc(var(--slider-width) / 2)); }
+      95%  { margin-left: calc(-1 * calc(var(--slider-width) / 2)); }
+      0%   { margin-left: calc(-1 * calc(var(--slider-width) / 2)); }
+    }
+  }
 
   .action {
     display: flex;
     justify-content: center;
-    margin: 10px;
     height: 40px;
     line-height: 40px;
     border-radius: 3px;
     padding: 6px;
+    margin: 10px;
     cursor: pointer;
     background: #888d96;
     box-shadow: -3px 3px #565a62;
     user-select: none;
-    color: #292B2F;
-    // color: #444;
 
     &:active {
       transform: translate(-3px, 3px);
@@ -43,6 +84,10 @@
       font-weight: bold;
       text-align: center;
     }
+  }
+
+  &.eval-shown {
+    border-radius: 3px 0 0 3px;
   }
 }
 

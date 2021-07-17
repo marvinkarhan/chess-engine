@@ -17,10 +17,9 @@ export class EvaluationBarComponent {
   private MATE_EVALUATION = 2000;
 
   constructor(public service: BoardService, private decimalPipe: DecimalPipe) {
-    this.scorePercent$ = combineLatest([this.service.evaluation$, this.service.aiMoves$]).pipe(
-      map(([evaluation, aiMoves]) => {
-        console.log('evaluation: ', evaluation, this.mateIn(evaluation, aiMoves), evaluation < this.MATE_EVALUATION, Math.ceil((aiMoves.length - 1) / 2), this.service.sideToMove)
-        if (this.isMate(evaluation, aiMoves)) {
+    this.scorePercent$ = this.service.evaluation$.pipe(
+      map((evaluation) => {
+        if (this.isMate(evaluation)) {
           if (this.service.sideToMove == Side.white)
             return evaluation < 0 ? 0 : 100;
           return evaluation > 0 ? 0 : 100;
@@ -31,8 +30,7 @@ export class EvaluationBarComponent {
 
     this.evalString$ = combineLatest([this.service.evaluation$, this.service.aiMoves$]).pipe(
       map(([evaluation, aiMoves]) => {
-        console.log('evaluation: ', evaluation, this.mateIn(evaluation, aiMoves), evaluation < this.MATE_EVALUATION, Math.ceil((aiMoves.length - 1) / 2), this.service.sideToMove)
-        if (this.isMate(evaluation, aiMoves)) {
+        if (this.isMate(evaluation)) {
           return 'M' + this.mateIn(evaluation, aiMoves);
         }
         return this.decimalPipe.transform(evaluation, '1.0-2') || '';
@@ -40,7 +38,7 @@ export class EvaluationBarComponent {
     );
   }
 
-  isMate(evaluation: number, aiMoves: string[]): boolean {
+  isMate(evaluation: number): boolean {
     return evaluation < -this.MATE_EVALUATION || evaluation > this.MATE_EVALUATION;
   }
 

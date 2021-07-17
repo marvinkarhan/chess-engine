@@ -27,6 +27,8 @@ export class BoardService implements OnDestroy {
   public evaluation$ = this._evaluation$.asObservable();
   private _aiMoves$ = new BehaviorSubject<string[]>([]);
   public aiMoves$ = this._aiMoves$.asObservable();
+  private _engineThinking$ = new BehaviorSubject<boolean>(false);
+  public engineThinking$ = this._engineThinking$.asObservable();
   private _subs$ = new Subscription();
 
   constructor(
@@ -47,6 +49,7 @@ export class BoardService implements OnDestroy {
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
     this.chessApi.requestNewMove(uciMove);
+    this._engineThinking$.next(true);
     this._clearMoves();
     // let pieces = this._pieces$.value;
     // pieces[newPositionIndex] = pieces[oldPositionIndex];
@@ -59,6 +62,10 @@ export class BoardService implements OnDestroy {
 
   swapSide() {
     this.chessApi.requestSwapBoard();
+  }
+
+  newBoard() {
+    this.chessApi.requestNewBoard();
   }
 
   private _clearMoves() {
@@ -76,6 +83,7 @@ export class BoardService implements OnDestroy {
       this.chessApi
         .onNewBoardInformation()!
         .subscribe((boardInformation) => {
+          this._engineThinking$.next(false);
           let pieces = this._loadFENString(boardInformation.fen);
           this._uciToBoard(pieces, boardInformation.moves);
           this._pieces$.next(pieces);

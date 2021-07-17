@@ -1,14 +1,27 @@
-<div class="actions">
+<div class="actions" [class.eval-shown]="(showEvalBar$ | async)">
+  <!-- Mute? -->
+  <div class="text">
+    <span *ngIf="(isMate$ | async)">Das Spiel ist vorbei</span>
+    <div *ngIf="!(isMate$ | async) && (service.engineThinking$ | async)">
+      Die KI ist am Zug
+      <div class="loading-indicator">
+        <div class="loading-slider"></div>
+      </div>
+    </div>
+    <span *ngIf="!(isMate$ | async) && !(service.engineThinking$ | async)">Sie sind am Zug</span>
+  </div>
+  <!-- Siel zeit einstellen -->
+  <!-- Fen einspeisen? -->
   <div class="action" (click)="swapSide()">
     <fa-icon [icon]="faSwapBoard" [size]="'2x'"></fa-icon>
     <span>Brett drehen</span>
   </div>
-  <div class="action">
+  <div class="action" (click)="newBoard()">
     <fa-icon [icon]="faNewGame" [size]="'2x'"></fa-icon>
     <span>Neues Spiel</span>
   </div>
 </div>
 
-<div *ngIf="(this.service.aiMoves$ | async) as aiMoves" class="evaluation-bar">
-  <evaluation-bar [hidden]="!(aiMoves && aiMoves.length > 0 && aiMoves[0] != '')"></evaluation-bar>
+<div class="evaluation-bar">
+  <evaluation-bar [hidden]="!(showEvalBar$ | async)"></evaluation-bar>
 </div>
