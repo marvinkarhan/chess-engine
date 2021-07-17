@@ -42,7 +42,7 @@
       ><input
         type="number"
         spellcheck="false"
-        [ngModel]="engineTime"
+        [ngModel]="service.engineTime"
         (ngModelChange)="changeTime($event)"
         (keyup)="$event.stopPropagation()"
         onClick="this.select();"

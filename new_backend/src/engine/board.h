@@ -51,7 +51,7 @@ public:
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
   u64 epSquareBB, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
-  float thinkingTime = 5;
+  float thinkingTime = 0.1;
   long long endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
   // quadratic pv table

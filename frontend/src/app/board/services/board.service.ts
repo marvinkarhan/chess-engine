@@ -20,6 +20,7 @@ import { ChessApiService } from './chess-api.service';
 export class BoardService implements OnDestroy {
   fullMoves: number = 0;
   halfMoves: number = 0;
+  engineTime: number | undefined = 0.1;
   private skipOne = false;
   private _whitePOV$ = new BehaviorSubject<boolean>(true);
   public whitePOV$ = this._whitePOV$.asObservable();
@@ -75,15 +76,22 @@ export class BoardService implements OnDestroy {
     this.chessApi.requestUnmakeMove();
   }
 
-  swapSide() {
+  swapSide(newEngineMove = true) {
     this._whitePOV$.next(!this._whitePOV$.value);
-    this._engineThinking$.next(true);
     this.populateBoard(this._fen$.value, []);
-    this.chessApi.requestNewEngineMove();
+    if (newEngineMove) {
+      this._engineThinking$.next(true);
+      this.chessApi.requestNewEngineMove();
+    }
   }
 
   newBoard(fen = this.START_POS_FEN) {
     this.chessApi.requestNewBoard(fen);
+    // change time again for the new board
+    this.changeTime(this.engineTime || 0.1);
+    if (!this._whitePOV$.value) {
+      this.swapSide(false);
+    }
   }
 
   changeTime(time: number) {

@@ -16,7 +16,6 @@ export class ToolBoxComponent {
   faTime = faHourglass;
   faBoard = faChessBoard;
   faPawn = faChessPawn;
-  engineTime: number | undefined = 5;
   private MATE_EVALUATION = 2000;
   private fen: string | undefined = undefined;
 
@@ -63,7 +62,7 @@ export class ToolBoxComponent {
   changeTime(time: number) {
     console.log(time);
     if (time) {
-      this.engineTime = time;
+      this.service.engineTime = time;
       this.service.changeTime(time);
     }
   }
