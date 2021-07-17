@@ -33,7 +33,7 @@ export class ChessApiService {
     this.newSocket?.send(JSON.stringify(request));
   }
 
-  requestNewMove(uciMove: string): void {
+  requestMakeMove(uciMove: string): void {
     let request = {
       emitMessage: ChessApiEmits.MAKE_MOVE,
       move: uciMove
@@ -48,9 +48,9 @@ export class ChessApiService {
     this.newSocket?.send(JSON.stringify(request));
   }
 
-  requestSwapBoard(): void {
+  requestNewEngineMove(): void {
     let request = {
-      emitMessage: ChessApiEmits.SWAP_BOARD,
+      emitMessage: ChessApiEmits.NEW_ENGINE_MOVE,
     };
     this.newSocket?.send(JSON.stringify(request));
   }

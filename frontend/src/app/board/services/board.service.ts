@@ -20,6 +20,7 @@ import { ChessApiService } from './chess-api.service';
 export class BoardService implements OnDestroy {
   fullMoves: number = 0;
   halfMoves: number = 0;
+  private skipOne = false;
   private _sideToMove$ = new BehaviorSubject<Side>(Side.white);
   public sideToMove$ = this._sideToMove$.asObservable();
   private _pieces$ = new BehaviorSubject<Board>([]);
@@ -53,7 +54,9 @@ export class BoardService implements OnDestroy {
     const newPositionIndex = newPosition.x + 8 * newPosition.y;
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
-    this.chessApi.requestNewMove(uciMove);
+    this.skipOne = true;
+    this.chessApi.requestMakeMove(uciMove);
+    this.chessApi.requestNewEngineMove();
     this._engineThinking$.next(true);
     this._clearMoves();
     // let pieces = this._pieces$.value;
@@ -67,7 +70,7 @@ export class BoardService implements OnDestroy {
 
   swapSide() {
     this._engineThinking$.next(true);
-    this.chessApi.requestSwapBoard();
+    this.chessApi.requestNewEngineMove();
   }
 
   newBoard(fen = this.START_POS_FEN) {
@@ -89,14 +92,17 @@ export class BoardService implements OnDestroy {
       this.chessApi
         .onNewBoardInformation()!
         .subscribe((boardInformation) => {
-          this._engineThinking$.next(false);
           let pieces = this._loadFENString(boardInformation.fen);
           this._uciToBoard(pieces, boardInformation.moves);
           this._pieces$.next(pieces);
-          this._evaluation$.next(boardInformation.evaluation);
-          this._aiMoves$.next(boardInformation.aiMoves);
-          this._fen$.next(boardInformation.fen);
-          this._boardAudio.playMoveSound();
+          if (!this.skipOne) {
+            this._engineThinking$.next(false);
+            this._evaluation$.next(boardInformation.evaluation);
+            this._aiMoves$.next(boardInformation.aiMoves);
+            this._fen$.next(boardInformation.fen);
+            this._boardAudio.playMoveSound();
+          }
+          this.skipOne = false;
           console.log('DEBUG BOARDINFO', boardInformation);
         })
     );

@@ -118,7 +118,14 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
 
       Board *userBoard = SessionMap[pointerToSession];
       userBoard->makeMove(uciToMove(request->move->c_str(), *userBoard));
-      socket.sendOneFrameText(makeEngineMove(userBoard));
+      auto socketResponse = SocketResponse::createShared();
+      socketResponse->fen = userBoard->toFenString().c_str();
+      socketResponse->moves = {};
+      socketResponse->evaluation = 0.0;
+      socketResponse->aiMoves = {""};
+      auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
+      oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
+      socket.sendOneFrameText(json);
     }
     else if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::UNMAKE_MOVE]) == 0)
     {
@@ -145,7 +152,7 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
       socket.sendOneFrameText(json);
     }
-    else if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::SWAP_BOARD]) == 0)
+    else if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_ENGINE_MOVE]) == 0)
     {
       cout << "Requested swap Board " << endl;
       Board *userBoard = SessionMap[pointerToSession];
