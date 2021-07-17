@@ -29,7 +29,11 @@ export class BoardService implements OnDestroy {
   public aiMoves$ = this._aiMoves$.asObservable();
   private _engineThinking$ = new BehaviorSubject<boolean>(false);
   public engineThinking$ = this._engineThinking$.asObservable();
+  private _fen$ = new BehaviorSubject<string>('');
+  public fen$ = this._fen$.asObservable();
   private _subs$ = new Subscription();
+
+  private START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   constructor(
     private chessApi: ChessApiService,
@@ -64,8 +68,8 @@ export class BoardService implements OnDestroy {
     this.chessApi.requestSwapBoard();
   }
 
-  newBoard() {
-    this.chessApi.requestNewBoard();
+  newBoard(fen = this.START_POS_FEN) {
+    this.chessApi.requestNewBoard(fen);
   }
 
   private _clearMoves() {
@@ -89,6 +93,7 @@ export class BoardService implements OnDestroy {
           this._pieces$.next(pieces);
           this._evaluation$.next(boardInformation.evaluation);
           this._aiMoves$.next(boardInformation.aiMoves);
+          this._fen$.next(boardInformation.fen);
           this._boardAudio.playMoveSound();
           console.log('DEBUG BOARDINFO', boardInformation);
         })
@@ -96,7 +101,7 @@ export class BoardService implements OnDestroy {
   }
 
   requestNewBoard() {
-    this.chessApi.connect().subscribe(()=>this.chessApi.requestNewBoard());
+    this.chessApi.connect().subscribe(()=>this.chessApi.requestNewBoard(this.START_POS_FEN));
   }
 
   private _uciToBoard(currentPieces: Board, uciMoves: string[]) {

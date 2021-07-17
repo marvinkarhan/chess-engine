@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { faChess, faChessBoard, faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faChessBoard, faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
 import { faHourglass } from '@fortawesome/free-regular-svg-icons';
 import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -41,5 +41,10 @@ export class ToolBoxComponent {
     return (
       evaluation < -this.MATE_EVALUATION || evaluation > this.MATE_EVALUATION
     );
+  }
+
+  fenEntered(fen: string) {
+    console.log(fen);
+    this.service.newBoard(fen);
   }
 }

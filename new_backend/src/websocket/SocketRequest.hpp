@@ -14,6 +14,7 @@ class SocketRequest : public oatpp::DTO
 class NewBoardRequest : public oatpp::DTO
 {
   DTO_INIT(NewBoardRequest, SocketRequest);
+  DTO_FIELD(String, fen);
 };
 
 class MoveRequest : public oatpp::DTO

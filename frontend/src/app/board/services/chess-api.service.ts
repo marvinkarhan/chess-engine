@@ -25,9 +25,10 @@ export class ChessApiService {
     );
   }
 
-  requestNewBoard() : void {
+  requestNewBoard(fen: string) : void {
     let request = {
-      emitMessage: ChessApiEmits.NEW_BOARD
+      emitMessage: ChessApiEmits.NEW_BOARD,
+      fen
     };
     this.newSocket?.send(JSON.stringify(request));
   }

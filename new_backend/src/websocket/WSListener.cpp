@@ -90,10 +90,11 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
     cout << "Request: " << request->emitMessage->c_str() << endl;
     if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::NEW_BOARD]) == 0)
     {
-      cout << "Requested new board!" << endl;
+      oatpp::Object<NewBoardRequest> request = jsonObjectMapper->readFromString<oatpp::Object<NewBoardRequest>>(wholeMessage);
+      cout << "Requested new board, fen: " << request->fen->c_str() << std::endl;
       // Board *board = new Board("r3r1k1/p4pbp/1pp3p1/1q4N1/8/1BP4Q/PP2nPPP/R4K1R b - - 0 1");
       // Board *board = new Board("k7/8/8/8/8/8/1R6/2R4K w - - 0 1");
-      Board *board = new Board();
+      Board *board = new Board(request->fen->c_str());
       SessionMap[pointerToSession] = board;
       auto socketResponse = SocketResponse::createShared();
       socketResponse->fen = board->toFenString().c_str();

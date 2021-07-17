@@ -33,14 +33,20 @@
   <div class="action input">
     <fa-icon [icon]="faTime" [size]="'2x'"></fa-icon>
     <span class="input-el"
-      ><input type="text" [(ngModel)]="engineTime" />s</span
+      ><input type="text" spellcheck="false" [(ngModel)]="engineTime" />s</span
     >
   </div>
   <div class="action input">
     <!-- <fa-icon [icon]="faBoard" [size]="'2x'"></fa-icon> -->
     <div class="prefix">FEN:</div>
     <div class="input-el">
-      <input type="text" [(ngModel)]="engineTime" />
+      <input
+        type="text"
+        spellcheck="false"
+        [title]="service.fen$ | async"
+        [ngModel]="service.fen$ | async"
+        (ngModelChange)="fenEntered($event)"
+      />
     </div>
   </div>
 </div>
