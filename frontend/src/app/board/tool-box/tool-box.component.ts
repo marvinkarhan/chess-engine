@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faChess, faChessBoard, faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faHourglass } from '@fortawesome/free-regular-svg-icons';
 import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { BoardService } from '../services/board.service';
@@ -12,6 +13,9 @@ import { BoardService } from '../services/board.service';
 export class ToolBoxComponent {
   faSwapBoard = faRetweet;
   faNewGame = faSync;
+  faTime = faHourglass;
+  faBoard = faChessBoard;
+  engineTime: number | undefined = 5;
   private MATE_EVALUATION = 2000;
 
   showEvalBar$ = this.service.aiMoves$.pipe(

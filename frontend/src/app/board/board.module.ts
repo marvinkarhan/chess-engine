@@ -6,10 +6,11 @@ import { PotentialMoveComponent } from './potential-move/potential-move.componen
 import { EvaluationBarComponent } from './evaluation-bar/evaluation-bar.component';
 import { ToolBoxComponent } from './tool-box/tool-box.component';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [BoardComponent, PieceComponent, PotentialMoveComponent, EvaluationBarComponent, ToolBoxComponent],
-  imports: [BrowserModule, FontAwesomeModule],
+  imports: [BrowserModule, FontAwesomeModule, FormsModule],
   exports: [BoardComponent, PieceComponent],
 })
 export class BoardModule {}

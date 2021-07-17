@@ -1,24 +1,47 @@
-<div class="actions" [class.eval-shown]="(showEvalBar$ | async)">
+<div class="actions" [class.eval-shown]="showEvalBar$ | async">
   <!-- Mute? -->
-  <div class="text">
-    <span *ngIf="(isMate$ | async)">Das Spiel ist vorbei</span>
+  <div class="action text">
+    <span *ngIf="isMate$ | async">Das Spiel ist vorbei</span>
     <div *ngIf="!(isMate$ | async) && (service.engineThinking$ | async)">
       Die KI ist am Zug
       <div class="loading-indicator">
         <div class="loading-slider"></div>
       </div>
     </div>
-    <span *ngIf="!(isMate$ | async) && !(service.engineThinking$ | async)">Sie sind am Zug</span>
+    <span *ngIf="!(isMate$ | async) && !(service.engineThinking$ | async)"
+      >Sie sind am Zug</span
+    >
   </div>
+
   <!-- Siel zeit einstellen -->
   <!-- Fen einspeisen? -->
-  <div class="action" (click)="swapSide()" [class.disabled]="(service.engineThinking$ | async)">
-    <fa-icon [icon]="faSwapBoard" [size]="'2x'"></fa-icon>
-    <span>Brett drehen</span>
+  <div class="center">
+    <div
+      class="action button"
+      (click)="swapSide()"
+      [class.disabled]="service.engineThinking$ | async"
+    >
+      <fa-icon [icon]="faSwapBoard" [size]="'2x'"></fa-icon>
+      <span>Brett drehen</span>
+    </div>
+    <div class="action button" (click)="newBoard()">
+      <fa-icon [icon]="faNewGame" [size]="'2x'"></fa-icon>
+      <span>Neues Spiel</span>
+    </div>
   </div>
-  <div class="action" (click)="newBoard()">
-    <fa-icon [icon]="faNewGame" [size]="'2x'"></fa-icon>
-    <span>Neues Spiel</span>
+
+  <div class="action input">
+    <fa-icon [icon]="faTime" [size]="'2x'"></fa-icon>
+    <span class="input-el"
+      ><input type="text" [(ngModel)]="engineTime" />s</span
+    >
+  </div>
+  <div class="action input">
+    <!-- <fa-icon [icon]="faBoard" [size]="'2x'"></fa-icon> -->
+    <div class="prefix">FEN:</div>
+    <div class="input-el">
+      <input type="text" [(ngModel)]="engineTime" />
+    </div>
   </div>
 </div>
 

@@ -1,14 +1,11 @@
-$component-width: 250px;
-
 :host {
-  width: $component-width;
   margin: 0 20px;
   display: flex;
   overflow: hidden;
-  display: flex;
 }
 
 .actions {
+  width: 250px;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -18,17 +15,27 @@ $component-width: 250px;
   color: #292B2F;
   // color: #444;
 
-  .text {
-    font-weight: bold;
+  .action {
+    display: flex;
+    justify-content: center;
     height: 40px;
     line-height: 40px;
-    text-align: center;
     padding: 6px;
     margin: 10px;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  fa-icon, .prefix {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
   }
 
   .loading-indicator {
     height: 2px;
+    margin-top: -6px;
     width: 100%;
     border-radius: 2px;
     background: white;
@@ -56,38 +63,59 @@ $component-width: 250px;
     }
   }
 
-  .action {
-    display: flex;
-    justify-content: center;
-    height: 40px;
-    line-height: 40px;
-    border-radius: 3px;
-    padding: 6px;
-    margin: 10px;
+  &.eval-shown {
+    border-radius: 3px 0 0 3px;
+  }
+
+  .center {
+    margin: auto 0;
+  }
+
+  .button {
     cursor: pointer;
     background: #888d96;
     box-shadow: -3px 3px #565a62;
     user-select: none;
+    border-radius: 3px;
+
+    span {
+      flex: 1;
+      text-align: center;
+    }
 
     &:active {
       transform: translate(-3px, 3px);
       box-shadow: none;
     }
-
-    fa-icon {
-      display: flex;
-      align-items: center;
-    }
-
-    span {
-      flex: 1;
-      font-weight: bold;
-      text-align: center;
-    }
   }
 
-  &.eval-shown {
-    border-radius: 3px 0 0 3px;
+  .text {
+    border-bottom: 1px solid #888d96;
+  }
+
+  .input {
+    align-items: center;
+
+    .input-el {
+      display: flex;
+      flex: 1;
+      font-size: 2rem;
+
+      input {
+        margin: 0 10px;
+        border-radius: 3px;
+        font-size: 2rem;
+        width: 100%;
+        background: #888d96;
+        outline: none;
+        padding: 3px;
+        text-align: center;
+
+        &:active, &:focus {
+          box-shadow: -3px 3px #565a62;
+        }
+      }
+    }
   }
 }
 
