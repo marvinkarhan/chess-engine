@@ -1,16 +1,19 @@
 <div class="actions" [class.eval-shown]="showEvalBar$ | async">
   <!-- Mute? -->
   <div class="action text">
-    <span *ngIf="isMate$ | async">Das Spiel ist vorbei</span>
-    <div *ngIf="!(isMate$ | async) && (service.engineThinking$ | async)">
-      Die KI ist am Zug
-      <div class="loading-indicator">
-        <div class="loading-slider"></div>
+    <fa-icon class="chess-piece-icon" [icon]="faPawn" [size]="'2x'" [class.white]="(service.sideToMove$ | async) === 'w'"></fa-icon>
+    <div>
+      <span *ngIf="isMate$ | async">Das Spiel ist vorbei</span>
+      <div *ngIf="!(isMate$ | async) && (service.engineThinking$ | async)">
+        Die KI ist am Zug
+        <div class="loading-indicator">
+          <div class="loading-slider"></div>
+        </div>
       </div>
+      <span *ngIf="!(isMate$ | async) && !(service.engineThinking$ | async)"
+        >Sie sind am Zug</span
+      >
     </div>
-    <span *ngIf="!(isMate$ | async) && !(service.engineThinking$ | async)"
-      >Sie sind am Zug</span
-    >
   </div>
 
   <!-- Siel zeit einstellen -->

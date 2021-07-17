@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { faChessBoard, faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faChessBoard, faChessPawn, faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
 import { faHourglass } from '@fortawesome/free-regular-svg-icons';
 import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -15,6 +15,7 @@ export class ToolBoxComponent {
   faNewGame = faSync;
   faTime = faHourglass;
   faBoard = faChessBoard;
+  faPawn = faChessPawn;
   engineTime: number | undefined = 5;
   private MATE_EVALUATION = 2000;
 

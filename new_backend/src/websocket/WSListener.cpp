@@ -42,8 +42,6 @@ oatpp::String makeEngineMove(Board *userBoard) {
   bool gameOver = userBoard->checkmate() || userBoard->stalemate();
   if (!gameOver)
   {
-    int depth = 5;
-    cout << "depth: " << depth << endl;
     auto start = std::chrono::high_resolution_clock::now();
     eval = userBoard->evaluateNextMove();
     auto finish = std::chrono::high_resolution_clock::now();
@@ -51,7 +49,7 @@ oatpp::String makeEngineMove(Board *userBoard) {
     std::cout << "\r\n--- total runtime: " << elapsed.count() << " seconds ---" << std::endl;
     cout << "variation: " << toUciString(userBoard->getPV()[0]) << endl;
     userBoard->makeMove(userBoard->getPV()[0]);
-    cout << "Made move" << endl;
+    cout << "Made move, eval: " << eval << endl;
   }
   auto socketResponse = SocketResponse::createShared();
   socketResponse->fen = userBoard->toFenString().c_str();
@@ -62,6 +60,7 @@ oatpp::String makeEngineMove(Board *userBoard) {
     socketResponse->moves->push_front(value.c_str());
   }
   socketResponse->evaluation = (float)eval / 100;
+  std::cout << "response eval: " << socketResponse->evaluation << std::endl;
   socketResponse->aiMoves = {};
   if (!gameOver)
     for (Move move : userBoard->getPV())
@@ -152,20 +151,6 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
       Board *userBoard = SessionMap[pointerToSession];
 
       socket.sendOneFrameText(makeEngineMove(userBoard));
-
-      auto socketResponse = SocketResponse::createShared();
-      socketResponse->fen = userBoard->toFenString().c_str();
-      socketResponse->moves = {};
-      for (Move move : MoveList<LEGAL_MOVES>(*userBoard, userBoard->activeSide))
-      {
-        const string value = toUciString(move);
-        socketResponse->moves->push_front(value.c_str());
-      }
-      socketResponse->evaluation = 0.0;
-      socketResponse->aiMoves = {""};
-      auto jsonObjectMapper = oatpp::parser::json::mapping::ObjectMapper::createShared();
-      oatpp::String json = jsonObjectMapper->writeToString(socketResponse);
-      socket.sendOneFrameText(json);
     }
   }
   else if (size > 0)

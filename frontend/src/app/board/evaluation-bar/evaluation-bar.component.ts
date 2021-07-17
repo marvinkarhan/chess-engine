@@ -17,10 +17,10 @@ export class EvaluationBarComponent {
   private MATE_EVALUATION = 2000;
 
   constructor(public service: BoardService, private decimalPipe: DecimalPipe) {
-    this.scorePercent$ = this.service.evaluation$.pipe(
-      map((evaluation) => {
+    this.scorePercent$ = combineLatest([this.service.evaluation$, this.service.sideToMove$]).pipe(
+      map(([evaluation, sideToMove]) => {
         if (this.isMate(evaluation)) {
-          if (this.service.sideToMove == Side.white)
+          if (sideToMove == Side.white)
             return evaluation < 0 ? 0 : 100;
           return evaluation > 0 ? 0 : 100;
         }

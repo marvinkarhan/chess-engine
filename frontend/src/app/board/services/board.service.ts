@@ -20,7 +20,8 @@ import { ChessApiService } from './chess-api.service';
 export class BoardService implements OnDestroy {
   fullMoves: number = 0;
   halfMoves: number = 0;
-  sideToMove: Side = Side.white;
+  private _sideToMove$ = new BehaviorSubject<Side>(Side.white);
+  public sideToMove$ = this._sideToMove$.asObservable();
   private _pieces$ = new BehaviorSubject<Board>([]);
   public pieces$ = this._pieces$.asObservable();
   private _evaluation$ = new BehaviorSubject<number>(0.5);
@@ -65,6 +66,7 @@ export class BoardService implements OnDestroy {
   }
 
   swapSide() {
+    this._engineThinking$.next(true);
     this.chessApi.requestSwapBoard();
   }
 
@@ -135,7 +137,7 @@ export class BoardService implements OnDestroy {
     ] = fenString.split(' ');
     this.fullMoves = +fullMoves;
     this.halfMoves = +halfMoves;
-    this.sideToMove = sideToMove as Side;
+    this._sideToMove$.next(sideToMove as Side);
 
     const rows = placement.split('/');
     const pieces: Board = [];
