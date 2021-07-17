@@ -44,6 +44,4 @@ export class BoardComponent {
   toInt(float: number) {
     return float | 0;
   }
-
-
 }

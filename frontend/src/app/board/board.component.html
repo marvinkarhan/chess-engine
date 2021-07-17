@@ -22,17 +22,28 @@
       [position]="{ x: move % 8, y: move / 8 }"
     ></potential-move>
     <div class="ranks">
-      <div class="rank" *ngFor="let i of [8,7,6,5,4,3,2,1]">{{i}}</div>
+      <div
+        class="rank"
+        *ngFor="
+          let i of (boardService.whitePOV$ | async)
+            ? [8, 7, 6, 5, 4, 3, 2, 1]
+            : [1, 2, 3, 4, 5, 6, 7, 8]
+        "
+      >
+        {{ i }}
+      </div>
     </div>
     <div class="files">
-      <div class="file">a</div>
-      <div class="file">b</div>
-      <div class="file">c</div>
-      <div class="file">d</div>
-      <div class="file">e</div>
-      <div class="file">f</div>
-      <div class="file">g</div>
-      <div class="file">h</div>
+      <div
+        class="file"
+        *ngFor="
+          let i of (boardService.whitePOV$ | async)
+            ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+            : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
+        "
+      >
+        {{ i }}
+      </div>
     </div>
   </div>
   <tool-box></tool-box>

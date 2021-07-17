@@ -21,6 +21,8 @@ export class BoardService implements OnDestroy {
   fullMoves: number = 0;
   halfMoves: number = 0;
   private skipOne = false;
+  private _whitePOV$ = new BehaviorSubject<boolean>(true);
+  public whitePOV$ = this._whitePOV$.asObservable();
   private _sideToMove$ = new BehaviorSubject<Side>(Side.white);
   public sideToMove$ = this._sideToMove$.asObservable();
   private _pieces$ = new BehaviorSubject<Board>([]);
@@ -50,8 +52,13 @@ export class BoardService implements OnDestroy {
 
   makeMove(move: Move) {
     const [oldPosition, newPosition, promotion] = move;
-    const oldPositionIndex = oldPosition.x + 8 * oldPosition.y;
-    const newPositionIndex = newPosition.x + 8 * newPosition.y;
+    let oldPositionIndex = oldPosition.x + 8 * oldPosition.y;
+    let newPositionIndex = newPosition.x + 8 * newPosition.y;
+    // reverse pos if in blacks pov
+    if (!this._whitePOV$.value) {
+      oldPositionIndex = 63 - oldPositionIndex;
+      newPositionIndex = 63 - newPositionIndex;
+    }
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
     this.skipOne = true;
@@ -69,7 +76,9 @@ export class BoardService implements OnDestroy {
   }
 
   swapSide() {
+    this._whitePOV$.next(!this._whitePOV$.value);
     this._engineThinking$.next(true);
+    this.populateBoard(this._fen$.value, []);
     this.chessApi.requestNewEngineMove();
   }
 
@@ -96,9 +105,8 @@ export class BoardService implements OnDestroy {
       this.chessApi
         .onNewBoardInformation()!
         .subscribe((boardInformation) => {
-          let pieces = this._loadFENString(boardInformation.fen);
-          this._uciToBoard(pieces, boardInformation.moves);
-          this._pieces$.next(pieces);
+          console.log('skip one:', this.skipOne);
+          this.populateBoard(boardInformation.fen, boardInformation.moves);
           if (!this.skipOne) {
             this._engineThinking$.next(false);
             this._evaluation$.next(boardInformation.evaluation);
@@ -110,6 +118,12 @@ export class BoardService implements OnDestroy {
           console.log('DEBUG BOARDINFO', boardInformation);
         })
     );
+  }
+
+  populateBoard(fen: string, moves: string[]) {
+    let pieces = this._loadFENString(fen);
+    this._uciToBoard(pieces, moves);
+    this._pieces$.next(pieces);
   }
 
   requestNewBoard() {
@@ -126,9 +140,16 @@ export class BoardService implements OnDestroy {
         length - ALGEBRAIC_TO_INDEX[startSquare] - 1;
       let targetSquareIndex: number =
         length - ALGEBRAIC_TO_INDEX[targetSquare] - 1;
-      currentPieces[startSquareIndex]?.possibleTargetSquares.push(
-        targetSquareIndex
-      );
+      // reverse board if it is in blacks pob
+      if (!this._whitePOV$.value) {
+        currentPieces[63 - startSquareIndex]?.possibleTargetSquares.push(
+          63 - targetSquareIndex
+        );
+      } else {
+        currentPieces[startSquareIndex]?.possibleTargetSquares.push(
+          targetSquareIndex
+        );
+      }
       if (currentPieces[startSquareIndex]) {
         currentPieces[startSquareIndex]!.promotion = promotion;
       }
@@ -150,7 +171,7 @@ export class BoardService implements OnDestroy {
     this._sideToMove$.next(sideToMove as Side);
 
     const rows = placement.split('/');
-    const pieces: Board = [];
+    let pieces: Board = [];
     rows.forEach((row, i) => {
       row.split('').forEach((char, j) => {
         // make use of ascii char order
@@ -170,6 +191,9 @@ export class BoardService implements OnDestroy {
         }
       });
     });
+    if (!this._whitePOV$.value) {
+      pieces = pieces.reverse();
+    }
     return pieces;
   }
 }

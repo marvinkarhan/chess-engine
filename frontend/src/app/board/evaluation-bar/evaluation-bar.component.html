@@ -1,11 +1,18 @@
 <div id="evaluation-bar">
   <div class="evaluation-description">
-    <div class="eval bottom" *ngIf="(this.evalString$ | async) as evaluation">
+    <div
+      class="eval bottom"
+      *ngIf="this.evalString$ | async as evaluation"
+      [ngStyle]="{ 'margin-top': (service.whitePOV$ | async) ? 'auto' : 'unset' }"
+    >
       {{ evaluation }}
     </div>
   </div>
   <div
     id="black-bar"
-    [ngStyle]="{ height: (scorePercent$ | async) + '%' }"
+    [ngStyle]="{
+      height: (scorePercent$ | async) + '%',
+      bottom: (service.whitePOV$ | async) ? 'unset' : 0
+    }"
   ></div>
 </div>
