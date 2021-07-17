@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <chrono>
 
 #include "time.h"
 #include "uci.h"
@@ -79,7 +80,7 @@ void uciLoop()
       uciGo(board);
     else if (token == "stop")
     {
-      board.endTime = time(NULL);
+      board.endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
       board.stopSearch = true;
       std::vector<Move> moves = board.getPV();
       std::cout << "bestmove " << toUciString(moves[0]) << std::endl;

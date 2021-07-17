@@ -25,6 +25,14 @@ export class ChessApiService {
     );
   }
 
+  changeTime(time: number) {
+    let request = {
+      emitMessage: ChessApiEmits.CHANGE_TIME,
+      time
+    };
+    this.newSocket?.send(JSON.stringify(request));
+  }
+
   requestNewBoard(fen: string) : void {
     let request = {
       emitMessage: ChessApiEmits.NEW_BOARD,

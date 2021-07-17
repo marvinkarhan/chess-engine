@@ -18,6 +18,7 @@ export class ToolBoxComponent {
   faPawn = faChessPawn;
   engineTime: number | undefined = 5;
   private MATE_EVALUATION = 2000;
+  private fen: string | undefined = undefined;
 
   showEvalBar$ = this.service.aiMoves$.pipe(
     map((aiMoves) => aiMoves?.length > 0 && aiMoves[0] != '')
@@ -44,8 +45,26 @@ export class ToolBoxComponent {
     );
   }
 
+  onKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      (event.target as HTMLElement).blur();
+    }
+  }
+
   fenEntered(fen: string) {
-    console.log(fen);
-    this.service.newBoard(fen);
+    this.fen = fen;
+  }
+
+  emitFen() {
+    if (this.fen)
+      this.service.newBoard(this.fen);
+  }
+
+  changeTime(time: number) {
+    console.log(time);
+    if (time) {
+      this.engineTime = time;
+      this.service.changeTime(time);
+    }
   }
 }

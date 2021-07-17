@@ -77,6 +77,10 @@ export class BoardService implements OnDestroy {
     this.chessApi.requestNewBoard(fen);
   }
 
+  changeTime(time: number) {
+    this.chessApi.changeTime(time);
+  }
+
   private _clearMoves() {
     let currentPieces = this._pieces$.value;
     currentPieces.forEach((piece) => {

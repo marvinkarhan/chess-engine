@@ -64,14 +64,15 @@ int Board::evaluateNextMove()
   //   pvLength[ply] = pvLength[ply + 1];
   //   return 0;
   // }
-  int score = iterativeDeepening(1);
+  int score = iterativeDeepening(thinkingTime);
   return score;
 }
 
-int Board::iterativeDeepening(time_t timeInSeconds /*= LLONG_MAX*/, int maxDepth /*= MAX_DEPTH*/)
+int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/)
 {
-  if (timeInSeconds)
-    endTime = time(NULL) + timeInSeconds;
+  if (timeInSeconds) {
+    endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + ((long long)(timeInSeconds * 1000));
+  }
   int score, currDepth = 1;
   stopSearch = false;
   // init val for aspiration windows
@@ -220,7 +221,7 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   // track time control in interval
   if ((nodeCount & 2047) == 0)
   {
-    stopSearch = time(NULL) > endTime;
+    stopSearch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() > endTime;
   }
 
   nodeCount++;
@@ -335,7 +336,7 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
   // track time control in interval
   if ((nodeCount & 2047) == 0)
   {
-    stopSearch = time(NULL) > endTime;
+    stopSearch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() > endTime;
   }
 
   // check for potential stalemate by repetition

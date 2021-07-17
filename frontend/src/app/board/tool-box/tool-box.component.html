@@ -1,7 +1,12 @@
 <div class="actions" [class.eval-shown]="showEvalBar$ | async">
   <!-- Mute? -->
   <div class="action text">
-    <fa-icon class="chess-piece-icon" [icon]="faPawn" [size]="'2x'" [class.white]="(service.sideToMove$ | async) === 'w'"></fa-icon>
+    <fa-icon
+      class="chess-piece-icon"
+      [icon]="faPawn"
+      [size]="'2x'"
+      [class.white]="(service.sideToMove$ | async) === 'w'"
+    ></fa-icon>
     <div>
       <span *ngIf="isMate$ | async">Das Spiel ist vorbei</span>
       <div *ngIf="!(isMate$ | async) && (service.engineThinking$ | async)">
@@ -36,7 +41,14 @@
   <div class="action input">
     <fa-icon [icon]="faTime" [size]="'2x'"></fa-icon>
     <span class="input-el"
-      ><input type="text" spellcheck="false" [(ngModel)]="engineTime" />s</span
+      ><input
+        type="number"
+        spellcheck="false"
+        [ngModel]="engineTime"
+        (ngModelChange)="changeTime($event)"
+        (keyup)="$event.stopPropagation()"
+        onClick="this.select();"
+      /><span>s</span></span
     >
   </div>
   <div class="action input">
@@ -49,6 +61,9 @@
         [title]="service.fen$ | async"
         [ngModel]="service.fen$ | async"
         (ngModelChange)="fenEntered($event)"
+        onClick="this.select();"
+        (blur)="emitFen()"
+        (keydown)="onKeydown($event)"
       />
     </div>
   </div>

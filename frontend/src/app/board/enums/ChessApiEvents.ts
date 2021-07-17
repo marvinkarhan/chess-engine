@@ -6,8 +6,8 @@ export enum ChessApiEvents {
 }
 export enum ChessApiEmits {
     NEW_BOARD = "new_board",
-    GET_BOARD_MOVES = "get_board_moves",
     MAKE_MOVE = "make_move",
     UNMAKE_MOVE = "unmake_move",
     NEW_ENGINE_MOVE = "new_engine_move",
+    CHANGE_TIME = "change_time",
 }

@@ -159,6 +159,15 @@ void WSListener::readMessage(const WebSocket &socket, v_uint8 opcode, p_char8 da
 
       socket.sendOneFrameText(makeEngineMove(userBoard));
     }
+    else if (strcmp(emitMessage, BOARD_EVENTS_NAMES[BoardEvents::CHANGE_TIME]) == 0)
+    {
+      oatpp::Object<ChangeTimeRequest> request = jsonObjectMapper->readFromString<oatpp::Object<ChangeTimeRequest>>(wholeMessage);
+      cout << "Requested change time: " << request->time << endl;
+      Board *userBoard = SessionMap[pointerToSession];
+
+      userBoard->thinkingTime = request->time;
+      // no need to send a response
+    }
   }
   else if (size > 0)
   { // message frame received

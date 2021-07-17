@@ -23,4 +23,10 @@ class MoveRequest : public oatpp::DTO
   DTO_FIELD(String, move);
 };
 
+class ChangeTimeRequest : public oatpp::DTO
+{
+  DTO_INIT(ChangeTimeRequest, SocketRequest);
+  DTO_FIELD(Float32, time);
+};
+
 #include OATPP_CODEGEN_END(DTO) ///< End DTO codegen section

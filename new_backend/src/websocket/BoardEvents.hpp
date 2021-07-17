@@ -8,6 +8,7 @@ enum BoardEvents
   MAKE_MOVE,
   UNMAKE_MOVE,
   NEW_ENGINE_MOVE,
+  CHANGE_TIME,
 };
-const char* BOARD_EVENTS_NAMES[] = {"new_board", "make_move", "unmake_move", "new_engine_move"};
+const char* BOARD_EVENTS_NAMES[] = {"new_board", "make_move", "unmake_move", "new_engine_move", "change_time"};
 #endif

@@ -101,9 +101,13 @@
       display: flex;
       flex: 1;
       font-size: 2rem;
+      margin: 0 10px;
+
+      span {
+        margin-left: 10px;
+      }
 
       input {
-        margin: 0 10px;
         border-radius: 3px;
         font-size: 2rem;
         width: 100%;

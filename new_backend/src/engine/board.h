@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <limits>
 #include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
@@ -50,7 +51,8 @@ public:
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
   u64 epSquareBB, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves, openingMoves;
-  time_t endTime = LLONG_MAX;
+  float thinkingTime = 5;
+  long long endTime = LLONG_MAX;
   nlohmann::json currentOpeningTable;
   // quadratic pv table
   Move pvTable[MAX_DEPTH][MAX_DEPTH];
@@ -83,7 +85,7 @@ public:
     return piecesByType[piece];
   }
   int negaMax(int depth, int alpha, int beta, bool nullMoveAllowed =true);
-  int iterativeDeepening(time_t timeInSeconds = LLONG_MAX, int maxDepth = MAX_DEPTH);
+  int iterativeDeepening(float timeInSeconds = std::numeric_limits<float>::max(), int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
   int evaluteMobility();
