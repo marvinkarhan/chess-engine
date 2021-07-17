@@ -1,6 +1,5 @@
 <div class="actions" [class.eval-shown]="showEvalBar$ | async">
-  <!-- Mute? -->
-  <div class="action text">
+  <div class="action text status-bar">
     <fa-icon
       class="chess-piece-icon"
       [icon]="faPawn"
@@ -19,6 +18,12 @@
         >Sie sind am Zug</span
       >
     </div>
+    <fa-icon
+      class="mute-icon button"
+      [icon]="audioService.isMuted ? faMute : faSound"
+      [size]="'2x'"
+      (click)="audioService.isMuted = !audioService.isMuted"
+    ></fa-icon>
   </div>
 
   <div class="center">

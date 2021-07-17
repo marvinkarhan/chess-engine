@@ -94,6 +94,26 @@
     border-bottom: 1px solid #888d96;
   }
 
+  .status-bar {
+
+    .chess-piece-icon {
+      position: absolute;
+      left: 0;
+      color: #292B2F;
+
+      &.white {
+        color: #888d96;
+      }
+    }
+
+    .mute-icon {
+      position: absolute;
+      right: 0;
+      box-shadow: none;
+      transform: none;
+    }
+  }
+
   .input {
     align-items: center;
 
@@ -122,16 +142,6 @@
         }
       }
     }
-  }
-}
-
-.chess-piece-icon {
-  position: absolute;
-  left: 0;
-  color: #292B2F;
-
-  &.white {
-    color: #888d96;
   }
 }
 

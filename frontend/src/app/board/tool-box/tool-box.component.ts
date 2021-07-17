@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { faChessBoard, faChessPawn, faRetweet, faSync } from '@fortawesome/free-solid-svg-icons';
+import { Component } from '@angular/core';
+import { faChessBoard, faChessPawn, faRetweet, faSync, faVolumeMute, faVolumeUp } from '@fortawesome/free-solid-svg-icons';
 import { faHourglass } from '@fortawesome/free-regular-svg-icons';
 import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { BoardService } from '../services/board.service';
+import { BoardAudioService } from '../services/board-audio.service';
 
 @Component({
   selector: 'tool-box',
@@ -16,6 +17,8 @@ export class ToolBoxComponent {
   faTime = faHourglass;
   faBoard = faChessBoard;
   faPawn = faChessPawn;
+  faMute = faVolumeMute;
+  faSound = faVolumeUp;
   private MATE_EVALUATION = 2000;
   private fen: string | undefined = undefined;
 
@@ -28,7 +31,7 @@ export class ToolBoxComponent {
     this.service.aiMoves$,
   ]).pipe(map(([evaluation, aiMoves]) => this.isMateScore(evaluation) && aiMoves.length <= 1));
 
-  constructor(public service: BoardService) {}
+  constructor(public service: BoardService, public audioService: BoardAudioService) {}
 
   swapSide() {
     this.service.swapSide();

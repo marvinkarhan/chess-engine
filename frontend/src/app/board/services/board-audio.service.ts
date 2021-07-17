@@ -5,6 +5,8 @@ import { Injectable } from '@angular/core';
 })
 export class BoardAudioService {
 
+  isMuted = false;
+
   audio = new Audio("../../../assets/sounds/Move.ogg");
 
   constructor() {
@@ -12,6 +14,7 @@ export class BoardAudioService {
   }
 
   playMoveSound() {
-    this.audio.play();
+    if (!this.isMuted)
+      this.audio.play();
   }
 }
