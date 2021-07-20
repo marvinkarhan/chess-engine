@@ -4,7 +4,7 @@ set(project_name chess-server) ## rename your project here
 
 project(${project_name})
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O3")
 # set(CMAKE_CXX_FLAGS "-Wall") # additinoal compile warnings
 # set(CMAKE_CXX_FLAGS "-Wextra") # additinoal compile warnings
@@ -79,7 +79,7 @@ add_dependencies(${project_name}-uci-exe ${project_name}-lib)
 
 set_target_properties(${project_name}-lib ${project_name}-exe ${project_name}-test ${project_name}-engine-exe ${project_name}-uci-exe PROPERTIES
 # set_target_properties(${project_name}-lib ${project_name}-engine-exe PROPERTIES
-        CXX_STANDARD 20
+        CXX_STANDARD 17
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
         LINKER_LANGUAGE CXX
