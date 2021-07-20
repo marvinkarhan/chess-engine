@@ -45,7 +45,7 @@ public:
   u64 epSquareBB, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves;
   float thinkingTime = 0.1;
-  long long endTime = LLONG_MAX;
+  long long endTime = std::numeric_limits<long long>::max();
   // quadratic pv table
   Move pvTable[MAX_DEPTH][MAX_DEPTH];
   std::vector<Move> latestPv;
