@@ -10,7 +10,7 @@
 #include <iostream>
 #include "../engine/board.h"
 #include "../engine/constants.h"
-#include "../engine/moveHelper.h"
+#include "../engine/movehelper.h"
 #include <chrono>
 #include <vector>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

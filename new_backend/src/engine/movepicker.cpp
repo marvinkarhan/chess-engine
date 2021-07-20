@@ -1,6 +1,6 @@
 #include <algorithm>
 #include "movepicker.h"
-#include "moveHelper.h"
+#include "movehelper.h"
 #include "board.h"
 #include "move.h"
 

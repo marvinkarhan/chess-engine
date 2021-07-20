@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include "board.h"
-#include "moveHelper.h"
+#include "movehelper.h"
 #include "environment.h"
 #include "movepicker.h"
 

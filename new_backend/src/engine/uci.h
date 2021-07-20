@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "board.h"
-#include "moveHelper.h"
+#include "movehelper.h"
 
 
 void uciGo(Board &board);
