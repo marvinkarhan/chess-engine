@@ -18,14 +18,10 @@
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
   initHashTableSize(256);
-  openingFinished = false;
   fullMoves = 0;
-  openingMoves = 10;
   state = nullptr;
   stopSearch = false;
   parseFenString(fen);
-  std::ifstream fileStream(environment::__OPENING_JSON__);
-  fileStream >> currentOpeningTable;
 }
 
 Board::~Board()
@@ -42,26 +38,6 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
 
 int Board::evaluateNextMove()
 {
-  // if (fullMoves * 2 < openingMoves && (lastMove.empty() || tableContainsKey(lastMove, currentOpeningTable)) && !openingFinished)
-  // {
-  //   json newJson;
-  //   // Chose side 
-  //   if(!lastMove.empty())
-  //     newJson = currentOpeningTable[lastMove];
-  //   else
-  //     newJson = currentOpeningTable;
-  //   string nextMove = getRandomMove(newJson);
-  //   int move = uciToMove(nextMove, *this);
-  //   currentOpeningTable = currentOpeningTable[lastMove][nextMove];
-  //   cout << "OPENING TABLE: " << toUciString(move) << endl;
-  //   // add move to pv table
-  //   pvLength[ply] = 0;
-  //   pvTable[ply][ply] = move;
-  //   for (int next_ply = ply + 1; next_ply < pvLength[ply + 1]; next_ply++)
-  //     pvTable[ply][next_ply] = pvTable[ply + 1][next_ply];
-  //   pvLength[ply] = pvLength[ply + 1];
-  //   return 0;
-  // }
   int score = iterativeDeepening(thinkingTime);
   return score;
 }
@@ -125,34 +101,9 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
   return latestScore;
 }
 
-bool Board::tableContainsKey(string moveKey, json openingTable)
-{
-  for (auto &[key, val] : openingTable.items())
-  {
-    if (moveKey == key)
-      return true;
-  }
-  return false;
-}
-
-string Board::getRandomMove(json openingTable)
-{
-  // Seeding. Turn it off if you want the same random moves on startup.
-  srand(time(0));
-  int randomKeyNumber = rand() % openingTable.size();
-  int i = 0;
-  for (auto &[key, val] : openingTable.items())
-  {
-    if (i == randomKeyNumber)
-      return key;
-    i++;
-  }
-}
-
 void Board::resetBoard()
 {
   stopSearch = false;
-  openingFinished = false;
   std::vector<Move> latestPv;
   for (int i = 0; i < 7; i++)
     piecesByType[i] = BB(0);

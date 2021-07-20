@@ -7,10 +7,8 @@
 #include <algorithm>
 #include <vector>
 #include <limits>
-#include "../vendor/include/nlohmann/json.hpp"
 
 using namespace std;
-using namespace nlohmann;
 
 // stores partial information about a board usefull for unmake move
 struct StoredBoard
@@ -38,22 +36,16 @@ struct HashEntry
 
 class Board
 {
-
-private:
-  bool tableContainsKey(string moveKey, json openingTable);
-  string getRandomMove(json openingTable);
-
 public:
   // 6 diffrent Piece types + one for all pieces
   BB piecesByType[7];
   BB piecesBySide[2];
   Piece piecePos[64];
-  bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, openingFinished, stopSearch;
+  bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, stopSearch;
   u64 epSquareBB, nodeCount, hashTableHits = 0;
-  int fullMoves, halfMoves, openingMoves;
+  int fullMoves, halfMoves;
   float thinkingTime = 0.1;
   long long endTime = LLONG_MAX;
-  nlohmann::json currentOpeningTable;
   // quadratic pv table
   Move pvTable[MAX_DEPTH][MAX_DEPTH];
   std::vector<Move> latestPv;
