@@ -29,7 +29,6 @@ add_library(${project_name}-lib
 
 ## link libs
 
-find_package(nlohmann_json      3.2.0 REQUIRED PATHS src/vendor/)
 find_package(oatpp              1.2.5 REQUIRED PATHS src/vendor/)
 find_package(oatpp-websocket    1.2.5 REQUIRED  PATHS src/vendor/)
 
@@ -37,7 +36,6 @@ target_link_libraries(${project_name}-lib
         PUBLIC oatpp::oatpp
         PUBLIC oatpp::oatpp-test
         PUBLIC oatpp::oatpp-websocket
-        PRIVATE nlohmann_json::nlohmann_json
 )
 
 ## add executables

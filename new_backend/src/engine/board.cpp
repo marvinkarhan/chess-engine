@@ -9,14 +9,12 @@
 #include <bitset>
 #include <map>
 #include <algorithm>
-#include "../vendor/include/nlohmann/json.hpp"
 
 #include "board.h"
 #include "moveHelper.h"
 #include "environment.h"
 #include "movepicker.h"
 
-using namespace nlohmann;
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
   initHashTableSize(256);
@@ -380,45 +378,45 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
     depth++;
   // prune only if not in check
   // (don't know if causes bugs)
-  // if (!kingChecked)
-  // {
-  //   int staticEvaluation = evaluate(); // for pruning purposes
-  //   // null move pruning
-  //   // prove that any move is better than no move
-  //   if (nullMoveAllowed)
-  //   {
-  //     if (ply > 0 && depth > 2 && staticEvaluation >= beta)
-  //     {
-  //       makeNullMove();
-  //       int nullScore = -negaMax(depth - 3, -beta, 1 - beta, false);
+  if (!kingChecked)
+  {
+    int staticEvaluation = evaluate(); // for pruning purposes
+    // null move pruning
+    // prove that any move is better than no move
+    if (nullMoveAllowed)
+    {
+      if (ply > 0 && depth > 2 && staticEvaluation >= beta)
+      {
+        makeNullMove();
+        int nullScore = -negaMax(depth - 3, -beta, 1 - beta, false);
         
-  //       if (stopSearch)
-  //         return 0;
+        if (stopSearch)
+          return 0;
 
-  //       if (nullScore >= beta)
-  //       {
-  //         unmakeNullMove();
-  //         return beta;
-  //       }
-  //       else // mate thread extension
-  //       {
-  //         if (negaMax(depth - 3, CHECKMATE_VALUE / 2 - 1, CHECKMATE_VALUE / 2, false) > CHECKMATE_VALUE / 2)
-  //           depth++;
-  //         unmakeNullMove();
-  //       }
+        if (nullScore >= beta)
+        {
+          unmakeNullMove();
+          return beta;
+        }
+        else // mate thread extension
+        {
+          if (negaMax(depth - 3, CHECKMATE_VALUE / 2 - 1, CHECKMATE_VALUE / 2, false) > CHECKMATE_VALUE / 2)
+            depth++;
+          unmakeNullMove();
+        }
 
 
-  //       // if (nullScore >= beta)
-  //       // {
-  //       //   // verification search
-  //       //   int s = negaMax(depth - 3, beta - 1, beta, false);
-  //       //   // if still ok
-  //       //   if (s >= beta)
-  //       //     return beta;
-  //       // }
-  //     }
-  //   }
-  // }
+        if (nullScore >= beta)
+        {
+          // verification search
+          int s = negaMax(depth - 3, beta - 1, beta, false);
+          // if still ok
+          if (s >= beta)
+            return beta;
+        }
+      }
+    }
+  }
 
   nodeCount++;
   int moveCounter = 0;
