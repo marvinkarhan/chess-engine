@@ -25,7 +25,7 @@ public:
    */
   OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, serverConnectionProvider)
   ([]
-   { return oatpp::network::tcp::server::ConnectionProvider::createShared({"0.0.0.0", 80, oatpp::network::Address::IP_4}); }());
+   { return oatpp::network::tcp::server::ConnectionProvider::createShared({"18.193.119.118", 80, oatpp::network::Address::IP_4}); }());
 
   /**
    *  Create Router component
