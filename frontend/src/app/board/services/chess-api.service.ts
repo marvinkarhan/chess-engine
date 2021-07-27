@@ -10,8 +10,10 @@ import { BoardInformation } from '../interfaces/BoardInformation';
 export class ChessApiService {
 
   newSocket: WebSocket;
+  readonly serverIP = '18.192.157.96';
+
   constructor() {
-    this.newSocket = new WebSocket("ws://localhost:8000/ws")
+    this.newSocket = new WebSocket(`ws://${this.serverIP}:80/ws`);
   }
 
   connect() {
