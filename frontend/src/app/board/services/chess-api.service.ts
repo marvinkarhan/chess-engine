@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { fromEvent, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 import { ChessApiEmits } from '../enums/ChessApiEvents';
 import { BoardInformation } from '../interfaces/BoardInformation';
 
@@ -10,10 +11,9 @@ import { BoardInformation } from '../interfaces/BoardInformation';
 export class ChessApiService {
 
   newSocket: WebSocket;
-  readonly serverIP = '18.192.157.96';
 
   constructor() {
-    this.newSocket = new WebSocket(`wss://${this.serverIP}:80/wss`);
+    this.newSocket = new WebSocket(`${environment.socketServerURI}:80/wss`);
   }
 
   connect() {
