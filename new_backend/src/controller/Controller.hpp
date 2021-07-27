@@ -38,9 +38,6 @@ public:
         "</head>"
         "<body>"
         "<p>Hello Multithreaded WebSocket Server!</p>"
-        "<p>"
-        "<code>websocket endpoint is: localhost:8000/ws</code>"
-        "</p>"
         "</body>"
         "</html>";
 
