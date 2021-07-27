@@ -7,7 +7,7 @@ export class BoardAudioService {
 
   isMuted = false;
 
-  audio = new Audio("../../../assets/sounds/Move.ogg");
+  audio = new Audio("./assets/sounds/Move.ogg");
 
   constructor() {
     this.audio.load();
