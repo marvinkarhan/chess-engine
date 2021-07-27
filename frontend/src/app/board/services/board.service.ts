@@ -113,7 +113,6 @@ export class BoardService implements OnDestroy {
       this.chessApi
         .onNewBoardInformation()!
         .subscribe((boardInformation) => {
-          console.log('skip one:', this.skipOne);
           this.populateBoard(boardInformation.fen, boardInformation.moves);
           if (!this.skipOne) {
             this._engineThinking$.next(false);
@@ -123,7 +122,7 @@ export class BoardService implements OnDestroy {
             this._boardAudio.playMoveSound();
           }
           this.skipOne = false;
-          console.log('DEBUG BOARDINFO', boardInformation);
+          // console.log('DEBUG BOARDINFO', boardInformation);
         })
     );
   }

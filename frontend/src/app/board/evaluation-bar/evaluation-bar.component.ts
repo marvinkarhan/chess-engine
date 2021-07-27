@@ -19,7 +19,6 @@ export class EvaluationBarComponent {
   constructor(public service: BoardService, private decimalPipe: DecimalPipe) {
     this.scorePercent$ = combineLatest([this.service.evaluation$, this.service.whitePOV$]).pipe(
       map(([evaluation, whitePOV]) => {
-        console.log(evaluation, whitePOV)
         if (!whitePOV) {
           evaluation = evaluation * -1;
         }
