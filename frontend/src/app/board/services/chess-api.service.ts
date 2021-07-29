@@ -13,8 +13,7 @@ export class ChessApiService {
   newSocket: WebSocket;
 
   constructor() {
-    this.newSocket = new WebSocket(`wss://${environment.socketServerURI}/wss`);
-    console.log(this.newSocket);
+    this.newSocket = new WebSocket(`ws://${environment.socketServerURI}/ws`);
   }
 
   connect() {

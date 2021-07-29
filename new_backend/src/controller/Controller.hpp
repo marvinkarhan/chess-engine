@@ -48,13 +48,6 @@ public:
   {
     return oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), websocketConnectionHandler);
   };
-
-  ENDPOINT("GET", "wss", wss, REQUEST(std::shared_ptr<IncomingRequest>, request))
-  {
-    return oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), websocketConnectionHandler);
-  };
-
-  // TODO Insert Your endpoints here !!!
 };
 
 #include OATPP_CODEGEN_END(ApiController) //<-- codegen end
