@@ -23,7 +23,7 @@ import { BoardAudioService } from '../services/board-audio.service';
 export class PieceComponent implements AfterViewInit {
   @Input() pieceProperties!: Piece;
   @Input() position!: Position;
-  @Input() boardWidth = 800;
+  @Input() boardWidth!: number;
   @Output() onDragStart = new EventEmitter<number[]>();
   @Output() onDragStop = new EventEmitter<void>();
   @Output() onMove = new EventEmitter<Move>();
@@ -100,7 +100,7 @@ export class PieceComponent implements AfterViewInit {
 
   private updatePiece() {
     let matrix = this.getMatrix();
-    let [newX, newY] = [+matrix[4] / 100, +matrix[5] / 100];
+    let [newX, newY] = [(+matrix[4] / 100) * (800 / this.boardWidth), (+matrix[5] / 100) * (800 / this.boardWidth)];
     let promotion = this.pieceProperties.promotion ? this.pieceProperties.type[0] === 'w' ? 'Q' : 'q' : '';
     this.boardAudioService.playMoveSound();
     this.onMove.emit([this.position, { x: newX, y: newY }, promotion]);
@@ -116,7 +116,7 @@ export class PieceComponent implements AfterViewInit {
 
   private checkBounds() {
     const matrix = this.getMatrix();
-    let [newX, newY] = [+matrix[4] / 100, +matrix[5] / 100];
+    let [newX, newY] = [(+matrix[4] / 100) * (800 / this.boardWidth) , (+matrix[5] / 100) * (800 / this.boardWidth)];
     const newPositionNumber = newX + newY * 8;
     let found = this.pieceProperties.possibleTargetSquares.find(
       (positionNumber: number) => {

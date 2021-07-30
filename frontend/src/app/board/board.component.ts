@@ -1,4 +1,4 @@
-import { Component, HostListener, Input, OnInit } from '@angular/core';
+import { AfterViewChecked, AfterViewInit, Component, ElementRef, HostListener, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { Side } from './enums/Side';
@@ -14,8 +14,9 @@ const START_POS_FEN: string =
   templateUrl: './board.component.html',
   styleUrls: ['./board.component.scss'],
 })
-export class BoardComponent {
-  @Input() boardWidth = 800;
+export class BoardComponent implements OnInit, AfterViewInit {
+  boardWidth = 800;
+  @ViewChild('board') private _boardRef!: ElementRef<HTMLDivElement>;
 
   pieces: Board = [];
   potentialMoves: number[] = [];
@@ -28,6 +29,16 @@ export class BoardComponent {
   }
 
   constructor(public boardService: BoardService) {
+
+  }
+
+  ngAfterViewInit() {
+
+    let boardWidth = parseInt(getComputedStyle(this._boardRef.nativeElement).width, 10);
+    this.boardWidth = boardWidth;
+  }
+
+  ngOnInit() {
     this.boardService.requestNewBoard();
   }
 
