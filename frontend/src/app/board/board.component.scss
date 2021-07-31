@@ -1,9 +1,9 @@
 @function generate-shadows($size) {
   $val: 0 0px 0px transparent;
   @for $i from 1 through $size {
-      $alpha: ($size - $i) / 40;
-      $i: $i * 8;
-      $val: #{$val}, rgba(240, 46, 170, $alpha) -#{$i}px #{$i}px;
+    $alpha: ($size - $i) / 40;
+    $i: $i * 8;
+    $val: #{$val}, rgba(240, 46, 170, $alpha) -#{$i}px #{$i}px;
   }
   @return $val;
 }
@@ -18,11 +18,13 @@
 #board {
   background-size: 100%;
   user-select: none;
-  background-image: url('../../assets/chess_board.png');
+  background-image: url("../../assets/chess_board.png");
   background-repeat: no-repeat;
   position: relative;
   border-radius: 3px;
-  animation: rippling-shadow 2s ease-in-out infinite alternate;
+  width: 800px;
+  height: 800px;
+  /** animation: rippling-shadow 2s ease-in-out infinite alternate; */
 }
 .ranks {
   display: flex;
@@ -52,7 +54,7 @@
   padding-left: 4px;
   font-size: 1.2rem;
   font-weight: 600;
-  color: rgba(0,0,0,0.4);
+  color: rgba(0, 0, 0, 0.4);
   width: 100%;
   box-sizing: border-box;
 
@@ -68,7 +70,31 @@
 @keyframes rippling-shadow {
   @for $i from 0 through 100 {
     @if $i % 10 == 0 {
-      #{$i}% { @include futuristic-shadow($i / 10 + 5) }
+      #{$i}% {
+        @include futuristic-shadow($i / 10 + 5);
+      }
     }
   }
 }
+
+
+@media screen and (max-width: 1200px) {
+  #board {
+    width: 400px;
+    height: 400px;
+  }
+  .files, .ranks {
+    font-size: 0.6rem;
+  }
+}
+
+@media screen and (max-height: 600px) {
+  #board {
+    width: 400px;
+    height: 400px;
+  }
+  .files, .ranks {
+    font-size: 0.6rem;
+  }
+}
+

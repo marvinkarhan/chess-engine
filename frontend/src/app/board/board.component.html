@@ -1,8 +1,7 @@
 <div class="board-wrapper">
   <div
+    #board
     id="board"
-    [style.width]="boardWidth + 'px'"
-    [style.height]="boardWidth + 'px'"
   >
     <ng-container
       *ngFor="let piece of boardService.pieces$ | async; index as i"
