@@ -3,50 +3,56 @@
     #board
     id="board"
     [style.width]="boardWidth + 'px'"
-    [style.height]="boardWidth + 'px'"
+    [style.height]="(boardWidth - reservedSpace) + 'px'"
     [style.fontSize]="fontSize + 'rem'"
   >
-    <ng-container
-      *ngFor="let piece of boardService.pieces$ | async; index as i"
-    >
-      <piece
-        *ngIf="piece"
-        [position]="{ x: i % 8, y: toInt(i / 8) }"
-        [pieceProperties]="piece"
-        [boardWidth]="boardWidth"
-        (onDragStart)="showMoves($event)"
-        (onDragStop)="clearMoves()"
-        (onMove)="onMove($event)"
-      ></piece>
-    </ng-container>
-    <potential-move
-      *ngFor="let move of potentialMoves"
-      [position]="{ x: move % 8, y: move / 8 }"
-    ></potential-move>
-    <div class="ranks">
-      <div
-        class="rank"
-        *ngFor="
-          let i of (boardService.whitePOV$ | async)
-            ? [8, 7, 6, 5, 4, 3, 2, 1]
-            : [1, 2, 3, 4, 5, 6, 7, 8]
-        "
+    <div class="inner-board-wrapper"
+    [style.width]="(boardWidth - reservedSpace) + 'px'"
+    [style.height]="(boardWidth - reservedSpace)  + 'px'">
+      <ng-container
+        *ngFor="let piece of boardService.pieces$ | async; index as i"
       >
-        {{ i }}
+        <piece
+          *ngIf="piece"
+          [position]="{ x: i % 8, y: toInt(i / 8) }"
+          [pieceProperties]="piece"
+          [boardWidth]="(boardWidth - reservedSpace)"
+          (onDragStart)="showMoves($event)"
+          (onDragStop)="clearMoves()"
+          (onMove)="onMove($event)"
+        ></piece>
+      </ng-container>
+      <potential-move
+        *ngFor="let move of potentialMoves"
+        [position]="{ x: move % 8, y: move / 8 }"
+      ></potential-move>
+      <div class="ranks">
+        <div
+          class="rank"
+          *ngFor="
+            let i of (boardService.whitePOV$ | async)
+              ? [8, 7, 6, 5, 4, 3, 2, 1]
+              : [1, 2, 3, 4, 5, 6, 7, 8]
+          "
+        >
+          {{ i }}
+        </div>
+      </div>
+      <div class="files">
+        <div
+          class="file"
+          *ngFor="
+            let i of (boardService.whitePOV$ | async)
+              ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+              : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
+          "
+        >
+          {{ i }}
+        </div>
       </div>
     </div>
-    <div class="files">
-      <div
-        class="file"
-        *ngFor="
-          let i of (boardService.whitePOV$ | async)
-            ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-            : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
-        "
-      >
-        {{ i }}
-      </div>
-    </div>
+    <!-- for phone layout -->
+    <evaluation-bar></evaluation-bar>
   </div>
-  <!-- <tool-box></tool-box> -->
+  <tool-box></tool-box>
 </div>

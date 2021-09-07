@@ -1,20 +1,21 @@
 :host {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
-  /** background-image: url('../assets/futuristic_bg2.jpg'); */
-  background-repeat: no-repeat;
-  background-size: cover;
+  height: 100%;
+  // background-image: url('../assets/futuristic_bg2.jpg');
+  // background-repeat: no-repeat;
+  // background-size: cover;
   z-index: -1;
 }
 
+board {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 0.5em 0;
   text-align: center;
 }
 
@@ -22,3 +23,15 @@
   color: #FFF;
   font-size: 12px;
 }
+
+
+@media screen and (max-width: 800px) {
+  :host {
+    justify-content: initial;
+  }
+
+  board {
+    align-items: initial;
+  }
+}
+

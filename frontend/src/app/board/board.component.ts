@@ -16,10 +16,13 @@ const START_POS_FEN: string =
 })
 export class BoardComponent implements OnInit, AfterViewInit {
   boardWidth = 800;
+  reservedSpace = 0;
   fontSize = 12;
 
   pieces: Board = [];
   potentialMoves: number[] = [];
+
+  private toolboxSize = 340;
 
   @HostListener('document:keyup', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
@@ -43,11 +46,15 @@ export class BoardComponent implements OnInit, AfterViewInit {
   }
 
   private calcBoardDim(window: Window): void {
-    const windowDim = Math.min(window.innerWidth, window.innerHeight);
-    this.boardWidth = windowDim * 0.8;
+    // the tool box is only shown on width > 1040 so include it in the calculation in that case
+    const width = window.innerWidth > 800 ? window.innerWidth - 340 : window.innerWidth;
+    const availableSpace = Math.min(width, window.innerHeight);
+    const boardSize = window.innerWidth <= 800 ? 1 : 0.8;
+    // reserve space for eval bar on width <= 800
+    this.reservedSpace = (window.innerWidth <= 800 ? 50 : 0)
+    this.boardWidth = availableSpace * boardSize;
     // normalize the value to get the font size
     this.fontSize = (this.boardWidth - 200) / (800 - 200) + 0.2;
-    console.log('window resized: ', window.innerWidth, this.boardWidth)
   }
 
   showMoves(moves: number[]) {

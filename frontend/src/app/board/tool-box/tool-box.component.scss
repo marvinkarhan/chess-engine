@@ -1,5 +1,5 @@
 :host {
-  margin: 0 20px;
+  margin: 0 0 0 20px;
   display: flex;
   overflow: hidden;
 }
@@ -155,11 +155,20 @@
 
 @media screen and (max-width: 800px) {
   :host {
-    display: none;
+    margin: 0;
   }
-}
-@media screen and (max-height: 600px) {
-  :host {
+
+  .actions {
+    border-radius: 0px;
+    width: 100%;
+
+    .action {
+      margin-left: 5%;
+      margin-right: 5%;
+    }
+  }
+
+  .evaluation-bar {
     display: none;
   }
 }

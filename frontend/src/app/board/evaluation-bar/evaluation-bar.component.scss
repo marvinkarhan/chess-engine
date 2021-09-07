@@ -37,3 +37,10 @@
   transition: height 1s;
   transition-delay: 0.1s;
 }
+
+@media screen and (max-width: 800px) {
+  #evaluation-bar {
+    box-shadow: none;
+    border-radius: 0px;
+  }
+}
