@@ -140,7 +140,7 @@ export class PieceComponent implements AfterViewInit {
 
   private getXY(): { x: number, y: number } {
     const matrix = this.getMatrix();
-    return {x: Math.floor(+matrix[4] / (this.boardWidth / 8)), y: Math.floor(+matrix[5] / (this.boardWidth / 8))};
+    return {x: Math.round(+matrix[4] / (this.boardWidth / 8)), y: Math.round(+matrix[5] / (this.boardWidth / 8))};
   }
 
   private getMatrix() {
