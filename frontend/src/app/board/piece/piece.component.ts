@@ -121,11 +121,6 @@ export class PieceComponent implements AfterViewInit {
     return found != undefined;
   }
 
-  private getXY(): { x: number, y: number } {
-    const matrix = this.getMatrix();
-    return {x: Math.floor(+matrix[4] / 100), y: Math.floor(+matrix[5] / 100)};
-  }
-
   private centerOnCell() {
     const matrix = this.getMatrix();
     this.setTranslate(
@@ -141,6 +136,11 @@ export class PieceComponent implements AfterViewInit {
     let yDiff = event.offsetY - this.dimensions / 2;
     const matrix = this.getMatrix();
     this.setTranslate(+matrix[4] + xDiff, +matrix[5] + yDiff);
+  }
+
+  private getXY(): { x: number, y: number } {
+    const matrix = this.getMatrix();
+    return {x: Math.floor(+matrix[4] / (this.boardWidth / 8)), y: Math.floor(+matrix[5] / (this.boardWidth / 8))};
   }
 
   private getMatrix() {
