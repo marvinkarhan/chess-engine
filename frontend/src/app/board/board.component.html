@@ -2,6 +2,9 @@
   <div
     #board
     id="board"
+    [style.width]="boardWidth + 'px'"
+    [style.height]="boardWidth + 'px'"
+    [style.fontSize]="fontSize + 'rem'"
   >
     <ng-container
       *ngFor="let piece of boardService.pieces$ | async; index as i"
@@ -45,5 +48,5 @@
       </div>
     </div>
   </div>
-  <tool-box></tool-box>
+  <!-- <tool-box></tool-box> -->
 </div>

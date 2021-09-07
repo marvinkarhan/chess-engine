@@ -154,18 +154,12 @@
 }
 
 @media screen and (max-width: 800px) {
-  .actions {
-    display: none;
-  }
-  .evaluation-bar {
+  :host {
     display: none;
   }
 }
 @media screen and (max-height: 600px) {
-  .actions {
-    display: none;
-  }
-  .evaluation-bar {
+  :host {
     display: none;
   }
 }

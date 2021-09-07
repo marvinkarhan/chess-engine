@@ -22,16 +22,14 @@
   background-repeat: no-repeat;
   position: relative;
   border-radius: 3px;
-  width: 800px;
-  height: 800px;
   /** animation: rippling-shadow 2s ease-in-out infinite alternate; */
 }
+
 .ranks {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding-left: 4px;
-  font-size: 1.2rem;
   font-weight: 600;
 
   :nth-child(odd) {
@@ -50,13 +48,15 @@
 .files {
   display: flex;
   margin-top: -2.8%;
-  gap: 11.2%;
-  padding-left: 4px;
-  font-size: 1.2rem;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.4);
   width: 100%;
   box-sizing: border-box;
+
+  div {
+    padding-left: 2px;
+    flex: 1;
+  }
 
   :nth-child(odd) {
     color: #f0d9b5;
@@ -76,25 +76,3 @@
     }
   }
 }
-
-
-@media screen and (max-width: 1200px) {
-  #board {
-    width: 400px;
-    height: 400px;
-  }
-  .files, .ranks {
-    font-size: 0.6rem;
-  }
-}
-
-@media screen and (max-height: 600px) {
-  #board {
-    width: 400px;
-    height: 400px;
-  }
-  .files, .ranks {
-    font-size: 0.6rem;
-  }
-}
-

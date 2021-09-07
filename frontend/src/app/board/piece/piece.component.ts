@@ -85,7 +85,6 @@ export class PieceComponent implements AfterViewInit {
         fromEvent<MouseEvent>(document, 'mouseup').pipe(take(1))
       ),
       tap(() => {
-        // TODO: check if move as legal
         this.resetStyle();
         if (!this.checkBounds()) {
           this.setTranslate(this.position.x * 100, this.position.y * 100, '%');
@@ -99,13 +98,12 @@ export class PieceComponent implements AfterViewInit {
   }
 
   private updatePiece() {
-    let matrix = this.getMatrix();
-    let [newX, newY] = [(+matrix[4] / 100) * (800 / this.boardWidth), (+matrix[5] / 100) * (800 / this.boardWidth)];
+    const pos = this.getXY();
     let promotion = this.pieceProperties.promotion ? this.pieceProperties.type[0] === 'w' ? 'Q' : 'q' : '';
     this.boardAudioService.playMoveSound();
-    this.onMove.emit([this.position, { x: newX, y: newY }, promotion]);
-    this.position.y = newY;
-    this.position.x = newX;
+    this.onMove.emit([this.position, pos, promotion]);
+    this.position.x = pos.x;
+    this.position.y = pos.y;
   }
 
   private resetStyle() {
@@ -115,15 +113,17 @@ export class PieceComponent implements AfterViewInit {
   }
 
   private checkBounds() {
-    const matrix = this.getMatrix();
-    let [newX, newY] = [(+matrix[4] / 100) * (800 / this.boardWidth) , (+matrix[5] / 100) * (800 / this.boardWidth)];
-    const newPositionNumber = newX + newY * 8;
+    const pos = this.getXY();
+    const newPositionNumber = pos.x + pos.y * 8;
     let found = this.pieceProperties.possibleTargetSquares.find(
-      (positionNumber: number) => {
-        return positionNumber === newPositionNumber
-      }
+      (positionNumber) => positionNumber === newPositionNumber
     );
     return found != undefined;
+  }
+
+  private getXY(): { x: number, y: number } {
+    const matrix = this.getMatrix();
+    return {x: Math.floor(+matrix[4] / 100), y: Math.floor(+matrix[5] / 100)};
   }
 
   private centerOnCell() {

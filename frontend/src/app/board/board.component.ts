@@ -1,6 +1,6 @@
 import { AfterViewChecked, AfterViewInit, Component, ElementRef, HostListener, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
-import { Observable } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { fromEvent, Observable } from 'rxjs';
+import { debounceTime, take } from 'rxjs/operators';
 import { Side } from './enums/Side';
 import { Board, Move, Piece, PieceTypes } from './interfaces/Piece';
 import { BoardService } from './services/board.service';
@@ -16,7 +16,7 @@ const START_POS_FEN: string =
 })
 export class BoardComponent implements OnInit, AfterViewInit {
   boardWidth = 800;
-  @ViewChild('board') private _boardRef!: ElementRef<HTMLDivElement>;
+  fontSize = 12;
 
   pieces: Board = [];
   potentialMoves: number[] = [];
@@ -28,18 +28,26 @@ export class BoardComponent implements OnInit, AfterViewInit {
     }
   }
 
-  constructor(public boardService: BoardService) {
-
-  }
+  constructor(public boardService: BoardService) {}
 
   ngAfterViewInit() {
-
-    let boardWidth = parseInt(getComputedStyle(this._boardRef.nativeElement).width, 10);
-    this.boardWidth = boardWidth;
+    this.calcBoardDim(window);
   }
 
   ngOnInit() {
+    fromEvent(window, 'resize').subscribe((e) => {
+      const window = e.target as Window;
+      this.calcBoardDim(window);
+    });
     this.boardService.requestNewBoard();
+  }
+
+  private calcBoardDim(window: Window): void {
+    const windowDim = Math.min(window.innerWidth, window.innerHeight);
+    this.boardWidth = windowDim * 0.8;
+    // normalize the value to get the font size
+    this.fontSize = (this.boardWidth - 200) / (800 - 200) + 0.2;
+    console.log('window resized: ', window.innerWidth, this.boardWidth)
   }
 
   showMoves(moves: number[]) {
