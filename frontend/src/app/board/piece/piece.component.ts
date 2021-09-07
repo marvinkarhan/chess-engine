@@ -10,7 +10,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { fromEvent } from 'rxjs';
+import { fromEvent, merge } from 'rxjs';
 import { filter, tap, takeUntil, take, switchMap } from 'rxjs/operators';
 import { Move, Piece, Position } from '../interfaces/Piece';
 import { BoardAudioService } from '../services/board-audio.service';
@@ -48,7 +48,7 @@ export class PieceComponent implements AfterViewInit {
   initDragAndDrop() {
     this.pieceEl.style.cursor = 'grab';
 
-    let grabEvent = fromEvent<MouseEvent>(this.pieceEl, 'mousedown').pipe(
+    let grabEvent = fromEvent<PointerEvent>(this.pieceEl, 'pointerdown').pipe(
       tap((event) => {
         this.onDragStart.emit(this.pieceProperties.possibleTargetSquares);
         this.centerElFromEventOnCursor(event);
@@ -60,17 +60,17 @@ export class PieceComponent implements AfterViewInit {
           // The transform positions
           left: +matrix[4],
           top: +matrix[5],
-          // Get the current mouse position
+          // Get the current pointer position
           x: event.clientX,
           y: event.clientY,
         };
-        // listen for mouse movement
-        fromEvent<MouseEvent>(document, 'mousemove')
+        // listen for pointer movement
+        fromEvent<PointerEvent>(document, 'pointermove')
           .pipe(
-            // terminate when mouse is let go
-            takeUntil(fromEvent<MouseEvent>(document, 'mouseup').pipe(take(1))),
+            // terminate when pointer is let go
+            takeUntil(fromEvent<PointerEvent>(document, 'pointerup').pipe(take(1))),
             tap((event) => {
-              // How far the mouse has been moved
+              // How far the pointer has been moved
               const dx = event.clientX - pos.x;
               const dy = event.clientY - pos.y;
 
@@ -81,8 +81,8 @@ export class PieceComponent implements AfterViewInit {
           .subscribe();
       }),
       switchMap(() =>
-        // wait until mouse is releases
-        fromEvent<MouseEvent>(document, 'mouseup').pipe(take(1))
+        // wait until pointer is releases
+        fromEvent<PointerEvent>(document, 'pointerup').pipe(take(1))
       ),
       tap(() => {
         this.resetStyle();
@@ -131,7 +131,7 @@ export class PieceComponent implements AfterViewInit {
     );
   }
 
-  private centerElFromEventOnCursor(event: MouseEvent) {
+  private centerElFromEventOnCursor(event: PointerEvent) {
     let xDiff = event.offsetX - this.dimensions / 2;
     let yDiff = event.offsetY - this.dimensions / 2;
     const matrix = this.getMatrix();
