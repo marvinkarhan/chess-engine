@@ -1,10 +1,7 @@
-import { AfterViewChecked, AfterViewInit, Component, ElementRef, HostListener, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
-import { fromEvent, Observable } from 'rxjs';
-import { debounceTime, take } from 'rxjs/operators';
-import { Side } from './enums/Side';
-import { Board, Move, Piece, PieceTypes } from './interfaces/Piece';
+import { AfterViewInit, Component, HostListener, OnInit } from '@angular/core';
+import { fromEvent } from 'rxjs';
+import { Board, Move } from './interfaces/Piece';
 import { BoardService } from './services/board.service';
-import { ChessApiService } from './services/chess-api.service';
 
 const START_POS_FEN: string =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -14,7 +11,7 @@ const START_POS_FEN: string =
   templateUrl: './board.component.html',
   styleUrls: ['./board.component.scss'],
 })
-export class BoardComponent implements OnInit, AfterViewInit {
+export class BoardComponent implements OnInit {
   boardWidth = 800;
   reservedSpace = 0;
   fontSize = 12;
@@ -31,9 +28,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
     }
   }
 
-  constructor(public boardService: BoardService) {}
-
-  ngAfterViewInit() {
+  constructor(public boardService: BoardService) {
     this.calcBoardDim(window);
   }
 
