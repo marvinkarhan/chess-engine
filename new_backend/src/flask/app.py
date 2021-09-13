@@ -14,7 +14,7 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 
 cwd = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 fileName = 'chess-server-uci-exe.exe' if platform.system() == 'Windows' else 'chess-server-uci-exe'
-uciEnginePath = os.path.join(cwd, './../../build/chess-server-uci-exe.exe')
+uciEnginePath = os.path.join(cwd, f'./../../build/{fileName}')
 
 
 @socketio.on('connect')
