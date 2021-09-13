@@ -3,8 +3,7 @@
 Debug
 *.sln
 *.vcxproj*
-backend/__pycache__
-backend/build
+*__pycache__*
 *.pyd
 build
 utility/build
