@@ -4,9 +4,10 @@ import {
   forkJoin,
   merge,
   Observable,
+  Subject,
   Subscription,
 } from 'rxjs';
-import { map, startWith, switchMap, tap } from 'rxjs/operators';
+import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { ALGEBRAIC_TO_INDEX } from '../constants/BoardConstants';
 import { Side } from '../enums/Side';
 import { BoardInformation } from '../interfaces/BoardInformation';
@@ -22,6 +23,7 @@ export class BoardService implements OnDestroy {
   halfMoves: number = 0;
   engineTime: number | undefined = 0.1;
   private skipOne = false;
+  private skipStateUpdate = false;
   private _whitePOV$ = new BehaviorSubject<boolean>(true);
   public whitePOV$ = this._whitePOV$.asObservable();
   private _sideToMove$ = new BehaviorSubject<Side>(Side.white);
@@ -29,16 +31,19 @@ export class BoardService implements OnDestroy {
   private _pieces$ = new BehaviorSubject<Board>([]);
   public pieces$ = this._pieces$.asObservable();
   private _evaluation$ = new BehaviorSubject<number>(0.5);
-  public evaluation$ = this._evaluation$.asObservable();
+  public evaluation$ = this._evaluation$.asObservable().pipe(filter((x) => !!x));
   private _aiMoves$ = new BehaviorSubject<string[]>([]);
-  public aiMoves$ = this._aiMoves$.asObservable();
+  public aiMoves$ = this._aiMoves$.asObservable().pipe(filter((x) => !!x));
   private _engineThinking$ = new BehaviorSubject<boolean>(false);
   public engineThinking$ = this._engineThinking$.asObservable();
   private _fen$ = new BehaviorSubject<string>('');
   public fen$ = this._fen$.asObservable();
   private _subs$ = new Subscription();
+  private boardState: BoardInformation | undefined;
+  private localBoardUpdate$ = new Subject<BoardInformation>();
 
-  private START_POS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  private START_POS_FEN =
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   constructor(
     private chessApi: ChessApiService,
@@ -63,8 +68,9 @@ export class BoardService implements OnDestroy {
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
     this.skipOne = true;
-    this.chessApi.requestMakeMove(uciMove);
-    this.chessApi.requestNewEngineMove();
+    this.chessApi.requestMakeMove(uciMove, () =>
+      this.chessApi.requestNewEngineMove()
+    );
     this._engineThinking$.next(true);
     this._clearMoves();
     // let pieces = this._pieces$.value;
@@ -73,7 +79,20 @@ export class BoardService implements OnDestroy {
   }
 
   unmakeMove() {
-    this.chessApi.requestUnmakeMove();
+    if (!this.boardState?.prev) return;
+    const curr = this.boardState;
+    this.boardState = this.boardState.prev;
+    this.boardState.next = curr;
+    this.skipStateUpdate = true;
+    this.localBoardUpdate$.next(this.boardState);
+  }
+
+  remakeMove() {
+    if (!this.boardState?.next) return;
+    const curr = this.boardState;
+    this.boardState = this.boardState.next;
+    this.skipStateUpdate = true;
+    this.localBoardUpdate$.next(this.boardState);
   }
 
   swapSide(newEngineMove = true) {
@@ -88,7 +107,6 @@ export class BoardService implements OnDestroy {
   newBoard(fen = this.START_POS_FEN) {
     this.chessApi.requestNewBoard(fen);
     // change time again for the new board
-    this.changeTime(this.engineTime || 0.1);
     if (!this._whitePOV$.value) {
       this.swapSide(false);
     }
@@ -110,21 +128,33 @@ export class BoardService implements OnDestroy {
 
   private _setupBoardInformationListener(): void {
     this._subs$.add(
-      this.chessApi
-        .onNewBoardInformation()!
-        .subscribe((boardInformation) => {
-          this.populateBoard(boardInformation.fen, boardInformation.moves);
-          if (!this.skipOne) {
-            this._engineThinking$.next(false);
-            this._evaluation$.next(boardInformation.evaluation);
-            this._aiMoves$.next(boardInformation.aiMoves);
-            this._fen$.next(boardInformation.fen);
-            this._boardAudio.playMoveSound();
-          }
-          this.skipOne = false;
-          // console.log('DEBUG BOARDINFO', boardInformation);
-        })
+      merge(
+        this.chessApi.onNewBoardInformation$(),
+        this.localBoardUpdate$,
+      ).subscribe((boardInformation) => {
+        if (!this.skipStateUpdate)
+          this.updateBoardState(boardInformation);
+        this.populateBoard(boardInformation.fen, boardInformation.moves);
+        if (!this.skipOne) {
+          this._engineThinking$.next(false);
+          this._evaluation$.next(boardInformation.evaluation);
+          this._aiMoves$.next(boardInformation.aiMoves);
+          this._fen$.next(boardInformation.fen);
+          this._boardAudio.playMoveSound();
+        }
+        this.skipStateUpdate = false;
+        this.skipOne = false;
+      })
     );
+  }
+
+  private updateBoardState(boardInfo: BoardInformation) {
+    if (!this.boardState) {
+      this.boardState = boardInfo;
+    } else {
+      boardInfo.prev = this.boardState;
+      this.boardState = boardInfo;
+    }
   }
 
   populateBoard(fen: string, moves: string[]) {
@@ -134,7 +164,7 @@ export class BoardService implements OnDestroy {
   }
 
   requestNewBoard() {
-    this.chessApi.connect().subscribe(()=>this.chessApi.requestNewBoard(this.START_POS_FEN));
+    this.chessApi.requestNewBoard(this.START_POS_FEN);
   }
 
   private _uciToBoard(currentPieces: Board, uciMoves: string[]) {

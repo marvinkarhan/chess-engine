@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
   // testNegaMax(board, 7);
 
   // testZobrist();
-  benchmarkNegaMax(7, 50);
+  // benchmarkNegaMax(7, 50);
 
   // std::cout << "fen: " << board.toFenString() << std::endl;
   // std::cout << "eval: " << std::to_string(board.evaluate()) << std::endl;

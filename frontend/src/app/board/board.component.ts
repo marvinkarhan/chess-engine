@@ -19,12 +19,12 @@ export class BoardComponent implements OnInit {
   pieces: Board = [];
   potentialMoves: number[] = [];
 
-  private toolboxSize = 340;
-
   @HostListener('document:keyup', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     if (event.key === "ArrowLeft") {
       this.boardService.unmakeMove();
+    } else if (event.key === "ArrowRight") {
+      this.boardService.remakeMove();
     }
   }
 

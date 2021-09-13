@@ -36,9 +36,11 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
   hashTable = new HashEntry[hashTableSize];
 }
 
-int Board::evaluateNextMove()
+int Board::evaluateNextMove(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/)
 {
-  int score = iterativeDeepening(thinkingTime);
+  if (!timeInSeconds)
+   timeInSeconds = thinkingTime;
+  int score = iterativeDeepening(timeInSeconds, maxDepth);
   return score;
 }
 
@@ -85,8 +87,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       alpha = score - ASPIRATION_WINDOW_VALUE;
       beta = score + ASPIRATION_WINDOW_VALUE;
       latestScore = score;
-      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " pv"
-                << " score cp " << latestScore;
+      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " score cp " << latestScore << " pv";
       for (Move move : pv)
       {
         std::cout << " " << toUciString(move);
@@ -96,8 +97,10 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
     }
   }
   stopSearch = true;
-  // signal we made out final decision
-  std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
+  if (pv[0] != NONE_MOVE) {
+    // signal we made out final decision if there are moves left to make
+    std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
+  }
   return latestScore;
 }
 

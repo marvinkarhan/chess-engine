@@ -24,6 +24,7 @@
     "@fortawesome/free-regular-svg-icons": "^5.15.3",
     "@fortawesome/free-solid-svg-icons": "^5.15.3",
     "rxjs": "~6.6.0",
+    "socket.io-client": "^4.2.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.11.3"
   },
