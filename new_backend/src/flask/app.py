@@ -6,13 +6,14 @@ from pexpect import popen_spawn, exceptions
 import os
 import signal
 import re
-import time
+import platform
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 cwd = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+fileName = 'chess-server-uci-exe.exe' if platform.system() == 'Windows' else 'chess-server-uci-exe'
 uciEnginePath = os.path.join(cwd, './../../build/chess-server-uci-exe.exe')
 
 

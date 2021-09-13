@@ -1,12 +1,12 @@
 #!/bin/bash
 echo "Installing Flask"
-pip install flask
+pip3 install flask
 echo "Installing Flask-Socket-IO"
-pip install flask-socketio
+pip3 install flask-socketio
 echo "Installing Eventlet"
-pip install eventlet
+pip3 install eventlet==0.30.2
 echo "Installing Gunicorn"
-pip install gunicorn
+pip3 install gunicorn
 
 # run
 gunicorn -k eventlet -w 1 --reload app:app
