@@ -20,7 +20,6 @@ export class ChessApiService {
       { transports: ['websocket', 'polling'] }
     );
     this.socket.on('board_info', (boardInfo) => {
-      console.log('boardInfo :', boardInfo);
       this.boardInfo$.next(boardInfo);
     });
   }
