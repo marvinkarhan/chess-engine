@@ -29,7 +29,7 @@ def connect():
 def disconnect():
     uciEngine: popen_spawn.PopenSpawn = session['uciEngine']
     uciEngine.sendline('stop')
-    uciEngine.kill(signal.SIG_DFL)
+    uciEngine.kill(signal.SIGTERM)
     print('Closed connection')
 
 
