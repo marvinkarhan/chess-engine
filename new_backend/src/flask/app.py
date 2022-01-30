@@ -13,8 +13,8 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 cwd = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-fileName = 'chess-server-uci-exe.exe' if platform.system() == 'Windows' else 'chess-server-uci-exe'
-uciEnginePath = os.path.join(cwd, f'./../../build/{fileName}')
+fileName = 'chess-server-uci-exe.exe' if platform.system() == 'Windows' else 'chess-server-uci'
+uciEnginePath = os.path.join(cwd, f'{fileName}')
 
 
 @socketio.on('connect')
