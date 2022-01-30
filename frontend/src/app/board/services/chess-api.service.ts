@@ -16,8 +16,7 @@ export class ChessApiService {
 
   constructor() {
     this.socket = io(
-      `${environment.socketProtocol}://${environment.socketServerURI}`,
-      { transports: ['websocket', 'polling'] }
+      `${environment.socketProtocol}://${environment.socketServerURI}`
     );
     this.socket.on('board_info', (boardInfo) => {
       this.boardInfo$.next(boardInfo);
