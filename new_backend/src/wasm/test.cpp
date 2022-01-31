@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <emscripten/emscripten.h>
-#include "../new_backend/src/engine/movepicker.h"
-#include "../new_backend/src/engine/constants.h"
-#include "../new_backend/src/engine//move.h"
-#include "../new_backend/src/engine/board.h"
-#include "../new_backend/src/engine/movehelper.h"
+#include "../engine/movepicker.h"
+#include "../engine/constants.h"
+#include "../engine//move.h"
+#include "../engine/board.h"
+#include "../engine/movehelper.h"
 
 int main() {
   initConstants();

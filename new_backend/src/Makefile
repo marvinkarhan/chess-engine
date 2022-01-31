@@ -5,36 +5,57 @@ CC = g++
 
 # BUILD_PATHS
 BUILD_PATH = build
-
-UCI_EXE_NAME = uci-engine
 BUILD_TMP_PATH = $(BUILD_PATH)/tmp
 BUILD_BIN_PATH = $(BUILD_PATH)/bin
+
+UCI_EXE_NAME = uci-engine
 UCI_SRC_FILE = ./MainUCI.cpp
 UCI_OBJ_FILE = $(BUILD_TMP_PATH)/MainUCI.o
 
-ENGINE_FOLDER = ./engine/
+MAIN_EXE_NAME = main-engine
+MAIN_SRC_FILE = ./MainEngine.cpp
+MAIN_OBJ_FILE = $(BUILD_TMP_PATH)/MainEngine.o
+
+ENGINE_FOLDER = ./engine
 # Match all src file from the engine folder
 ENGINE_SRC_FILES = $(wildcard $(ENGINE_FOLDER)/*.cpp)
 # changed the .cpp ending to .o for every file
 OBJ_FILES = $(patsubst $(ENGINE_FOLDER)/%.cpp,$(BUILD_TMP_PATH)/%.o,$(ENGINE_SRC_FILES)) \
 
-.PHONY: clean uci-engine
-uci-engine: clean $(OBJ_FILES) $(UCI_OBJ_FILE)
-	@echo Compile and link uci engine
+all: build uci-engine main-engine wasm-engine clean
+
+uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
+	@echo Link uci engine
 	$(CC) $(CXXFLAGS) $(OBJ_FILES) $(UCI_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(UCI_EXE_NAME)
 
-clean:
-	rm -rf $(BUILD_PATH)
+main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
+	@echo Main uci engine
+	$(CC) $(CXXFLAGS) $(OBJ_FILES) $(MAIN_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(MAIN_EXE_NAME)
+
+wasm-engine:
+	@echo Compile wasm
+	emcc $(CXXFLAGS) -o wasm/test.html wasm/test.cpp $(ENGINE_SRC_FILES) -s ALLOW_MEMORY_GROWTH=1 --shell-file wasm/shell_minimal.html
+
+build:
+	@echo Build directories
 	mkdir $(BUILD_PATH)
 	mkdir $(BUILD_TMP_PATH)
 	mkdir $(BUILD_BIN_PATH)
+
+clean:
+	@echo Cleanup
+	rm -rf $(BUILD_TMP_PATH)
 
 $(UCI_OBJ_FILE): $(UCI_SRC_FILE)
 	@echo Compile uci engine main
 	$(CC) $(CXXFLAGS) -c $< -o $@ 
 
+$(MAIN_OBJ_FILE): $(MAIN_SRC_FILE)
+	@echo Compile uci engine main
+	$(CC) $(CXXFLAGS) -c $< -o $@ 
+
 # Compile every engine src into the the build engine folder for multiple use
-$(BUILD_TMP_PATH)/%.o: $(ENGINE_FOLDER)%.cpp
+$(BUILD_TMP_PATH)/%.o: $(ENGINE_FOLDER)/%.cpp
 	@echo Compile engine sources
 	$(CC) $(CXXFLAGS) -c $< -o $@ 
 
