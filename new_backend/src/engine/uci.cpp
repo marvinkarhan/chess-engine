@@ -8,7 +8,14 @@
 #include "uci.h"
 #include "move.h"
 
-void uciGo(Board &board, std::istringstream &ss)
+// implement First Use Idiom
+Board& getBoard()
+{
+  static Board* ans = new Board();
+  return *ans;
+}
+
+void uciGo(std::istringstream &ss)
 {
   std::string token;
   int depth = 64;
@@ -32,11 +39,11 @@ void uciGo(Board &board, std::istringstream &ss)
       ss >> movetime;
     // TODO: infinite
   }
-  std::cout << "movetime: " << (float) movetime / 100 << std::endl;
-  board.evaluateNextMove((float) movetime / 100, depth);
+  std::cout << "movetime: " << (float)movetime / 100 << std::endl;
+  getBoard().evaluateNextMove((float)movetime / 100, depth);
 }
 
-void uciPosition(Board &board, std::istringstream &ss)
+void uciPosition(std::istringstream &ss)
 {
   Move move;
   std::string token, fen;
@@ -58,19 +65,19 @@ void uciPosition(Board &board, std::istringstream &ss)
     return; // no valid command given
 
   // parse fen
-  board.parseFenString(fen);
+  getBoard().parseFenString(fen);
 
   // parse moves if there are moves
-  while (ss >> token && (move = uciToMove(token, board)) != 0)
+  while (ss >> token && (move = uciToMove(token, getBoard())) != 0)
   {
-    board.makeMove(move);
+    getBoard().makeMove(move);
   }
 }
 
-void uciLegalMoves(Board &board)
+void uciLegalMoves()
 {
   std::cout << "legalmoves ";
-  for (Move move : MoveList<LEGAL_MOVES>(board, board.activeSide))
+  for (Move move : MoveList<LEGAL_MOVES>(getBoard(), getBoard().activeSide))
   {
     const string value = toUciString(move);
     std::cout << value.c_str() << " ";
@@ -78,31 +85,79 @@ void uciLegalMoves(Board &board)
   std::cout << std::endl;
 }
 
-void uciMove(Board &board, std::istringstream &ss)
+void uciMove(std::istringstream &ss)
 {
   Move move;
   std::string token;
 
   // parse moves if there are moves
-  while (ss >> token && (move = uciToMove(token, board)) != 0)
+  while (ss >> token && (move = uciToMove(token, getBoard())) != 0)
   {
-    board.makeMove(move);
+    getBoard().makeMove(move);
   }
 }
 
-void uciUnmakeMove(Board &board)
+void uciUnmakeMove()
 {
-  if (board.state->move)
+  if (getBoard().state->move)
   {
-    board.unmakeMove(board.state->move);
+    getBoard().unmakeMove(getBoard().state->move);
   }
   std::cout << "unmademove" << std::endl;
+}
+
+std::string uciProcessCommand(std::string command)
+{
+  std::string token;
+  // convert command line to stream to process
+  std::istringstream ss(command);
+  // fill token
+  ss >> skipws >> token;
+
+  // commands
+  if (token == "uci")
+  {
+    // general info about the engine (and options currently there are none)
+    std::cout << "id name NoPy++" << std::endl;
+    std::cout << "uciok" << std::endl;
+  }
+  else if (token == "isready")
+    std::cout << "readyok" << std::endl;
+  else if (token == "ucinewgame")
+    getBoard().parseFenString(START_POS_FEN);
+  else if (token == "position")
+    uciPosition(ss);
+  else if (token == "go")
+    uciGo(ss);
+  else if (token == "stop")
+  {
+    getBoard().endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    getBoard().stopSearch = true;
+    std::vector<Move> moves = getBoard().getPV();
+    std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
+  }
+  // following is part of the UCI format but not jet implemented by NoPy++
+  // else if (token == "setoption")
+  // else if (token == "ponderhit")
+  // else if (token == "register")
+  // some custom commands
+  else if (token == "print")
+    getBoard().prettyPrint();
+  else if (token == "fen")
+    std::cout << "fen " << getBoard().toFenString() << std::endl;
+  else if (token == "legalmoves")
+    uciLegalMoves();
+  else if (token == "move")
+    uciMove(ss);
+  else if (token == "unmakemove")
+    uciUnmakeMove();
+
+  return token;
 }
 
 void uciLoop()
 {
   std::cout << "uciLoop starting" << std::endl;
-  Board board;
   std::string command, token;
 
   do
@@ -110,50 +165,8 @@ void uciLoop()
     // getline or quit on EOF
     if (!getline(cin, command))
       command = "quit";
-
-    // convert command line to stream to process
-    std::istringstream ss(command);
-    // clear and then fill token
-    token.clear();
-    ss >> skipws >> token;
-
-    // commands
-    if (token == "uci")
-    {
-      // general info about the engine (and options currently there are none)
-      std::cout << "id name NoPy++" << std::endl;
-      std::cout << "uciok" << std::endl;
-    }
-    else if (token == "isready")
-      std::cout << "readyok" << std::endl;
-    else if (token == "ucinewgame")
-      board.parseFenString(START_POS_FEN);
-    else if (token == "position")
-      uciPosition(board, ss);
-    else if (token == "go")
-      uciGo(board, ss);
-    else if (token == "stop")
-    {
-      board.endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-      board.stopSearch = true;
-      std::vector<Move> moves = board.getPV();
-      std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
-    }
-    // following is part of the UCI format but not jet implemented by NoPy++
-    // else if (token == "setoption")
-    // else if (token == "ponderhit")
-    // else if (token == "register")
-    // some custom commands
-    else if (token == "print")
-      board.prettyPrint();
-    else if (token == "fen")
-      std::cout << "fen " << board.toFenString() << std::endl;
-    else if (token == "legalmoves")
-      uciLegalMoves(board);
-    else if (token == "move")
-      uciMove(board, ss);
-    else if (token == "unmakemove")
-      uciUnmakeMove(board);
+    // process instructions and get command in case the user quits
+    token = uciProcessCommand(command);
   } while (token != "quit");
   std::cout << "uciLoop finished" << std::endl;
 }

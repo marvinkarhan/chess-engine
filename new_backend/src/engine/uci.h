@@ -1,11 +1,12 @@
 #include <sstream>
+#include <string>
 #include "board.h"
 #include "movehelper.h"
 
-
-void uciGo(Board &board, std::istringstream &ss);
-void uciPosition(Board &board, std::istringstream &ss);
-void uciLegalMoves(Board &board);
-void uciMove(Board &board, std::istringstream &ss);
-void uciUnmakeMove(Board &board);
+void uciGo(std::istringstream &ss);
+void uciPosition(std::istringstream &ss);
+void uciLegalMoves();
+void uciMove(std::istringstream &ss);
+void uciUnmakeMove();
+std::string uciProcessCommand(std::string command);
 void uciLoop();
