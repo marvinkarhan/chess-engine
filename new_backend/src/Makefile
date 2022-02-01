@@ -1,12 +1,22 @@
+ifeq ($(OS),Windows_NT)
+	RM_DIR_CMD = rmdir /q /s
+	FixPath = $(subst /,\,$1)
+	WIN_IF =  if exist $(BUILD_PATH)
+else
+	RM_DIR_CMD = rm -rf
+	FixPath = $1
+endif
+
+BUILD_PATH = build
+BUILD_TMP_PATH = $(call FixPath,$(BUILD_PATH)/tmp)
+BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
+
 # Compiler settings
 CPP_STANDARD = 17
 CXXFLAGS = -std=c++$(CPP_STANDARD) -O3
 CC = g++
 
 # BUILD_PATHS
-BUILD_PATH = build
-BUILD_TMP_PATH = $(BUILD_PATH)/tmp
-BUILD_BIN_PATH = $(BUILD_PATH)/bin
 
 UCI_EXE_NAME = uci-engine
 UCI_SRC_FILE = ./MainUCI.cpp
@@ -22,7 +32,7 @@ ENGINE_SRC_FILES = $(wildcard $(ENGINE_FOLDER)/*.cpp)
 # changed the .cpp ending to .o for every file
 OBJ_FILES = $(patsubst $(ENGINE_FOLDER)/%.cpp,$(BUILD_TMP_PATH)/%.o,$(ENGINE_SRC_FILES)) \
 
-all: build uci-engine main-engine wasm-engine clean
+all: build-step uci-engine main-engine wasm-engine clean
 
 uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
 	@echo Link uci engine
@@ -34,17 +44,15 @@ main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
 
 wasm-engine:
 	@echo Compile wasm
-	emcc $(CXXFLAGS) -o wasm/test.html wasm/test.cpp $(ENGINE_SRC_FILES) -s ALLOW_MEMORY_GROWTH=1 --shell-file wasm/shell_minimal.html
+	emcc $(CXXFLAGS) wasm/test.cpp $(ENGINE_SRC_FILES) -o $(BUILD_BIN_PATH)/test.html -s ALLOW_MEMORY_GROWTH=1 --shell-file wasm/shell_minimal.html
 
-build:
+build-step:
 	@echo Build directories
-	mkdir $(BUILD_PATH)
-	mkdir $(BUILD_TMP_PATH)
-	mkdir $(BUILD_BIN_PATH)
-
+	$(WIN_IF) $(RM_DIR_CMD) $(BUILD_PATH)
+	mkdir $(BUILD_PATH) $(BUILD_TMP_PATH) $(BUILD_BIN_PATH)
 clean:
 	@echo Cleanup
-	rm -rf $(BUILD_TMP_PATH)
+	$(RM_DIR_CMD) $(BUILD_TMP_PATH)
 
 $(UCI_OBJ_FILE): $(UCI_SRC_FILE)
 	@echo Compile uci engine main
