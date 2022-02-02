@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <emscripten/emscripten.h>
-#include "../engine/movepicker.h"
 #include "../engine/constants.h"
-#include "../engine//move.h"
 #include "../engine/board.h"
-#include "../engine/movehelper.h"
+#include "../engine/uci.h"
 
 int main() {
   initConstants();
@@ -13,6 +11,8 @@ int main() {
   // Board board(KIWI_PETE_POS_FEN);
   Board board;
   board.prettyPrint();
+  uciProcessCommand("go");
+  printf("HALLO WELT!\n");
   return 0;
 }
 
@@ -20,8 +20,12 @@ int main() {
 extern "C" {
 #endif
 
-EMSCRIPTEN_KEEPALIVE void myFunction(int argc, char ** argv) {
-    printf("MyFunction Called\n");
+void processCommand(char* command) {
+  uciProcessCommand(command);
+}
+
+void testCommand() {
+  printf("Hallo\n");
 }
 
 #ifdef __cplusplus
