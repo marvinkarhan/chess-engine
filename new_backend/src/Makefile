@@ -44,7 +44,7 @@ main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
 
 wasm-engine:
 	@echo Compile wasm
-	emcc $(CXXFLAGS) wasm/test.cpp $(ENGINE_SRC_FILES) -o $(BUILD_BIN_PATH)/wasm-engine.js -s EXPORTED_FUNCTIONS='["_main","_processCommand","_testCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
+	emcc $(CXXFLAGS) wasm/test.cpp $(ENGINE_SRC_FILES) -o $(BUILD_BIN_PATH)/wasm-engine.js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
 
 build-step:
 	@echo Build directories

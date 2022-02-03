@@ -1,23 +1,86 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { BoardInformation } from '../interfaces/BoardInformation';
+
+interface BoardState {
+  engineTime: number;
+}
+
+interface ChessEngine {
+  processCommand: (command: string) => void;
+  cwrap: (
+    funcName: string,
+    returnType: null | any,
+    parameters: any[]
+  ) => (...x: any[]) => any;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class WasmEngineService {
-  private module: any;
-
-  private readonly moduleArgs = {
-    print: (value: string) => {
-      console.log(value);
-    },
+  private engineWorker: Worker;
+  private boardState: BoardState = {
+    engineTime: 20,
   };
+
+  public boardInfo$ = new BehaviorSubject<BoardInformation>({});
+
   constructor() {
-    this.loadWasm().then(() => {
-      // this.module.cwrap('processCommand', null, ['string'])('fen')
-    });
+    this.engineWorker = new Worker('./wasm-engine.worker.ts', { type: 'module' });
+    this.engineWorker.onmessage = ({ data }) => this.processEngineResponse(data);
+    this.engineWorker.postMessage('init');
   }
 
-  async loadWasm() {
-    this.module = await (window as any)['Module'](this.moduleArgs);
+
+  processEngineResponse(res: string) {
+    let currentBoardInfo = this.boardInfo$.value;
+    if (res.match(/.*bestmove.*/)) {
+      // get top engine move
+      const move = res.replace('bestmove ', '');
+      this.makeMove(move);
+    } else if (res.match(/fen.*/))  {
+      // get fen
+      currentBoardInfo.fen = res.replace('fen ', '');
+    } else if (res.match(/info.*/)) {
+      // get evaluation
+      const evaluationMatch = res.match(/cp -?\d*/);
+      if (evaluationMatch && evaluationMatch[0])
+        currentBoardInfo.evaluation = +evaluationMatch[0].replace('cp ', '') / 100;
+      // get aiMoves
+      const aiMovesMatch = res.match(/pv (\S{4}(\s|$))+/);
+      if (aiMovesMatch && aiMovesMatch[0])
+        currentBoardInfo.aiMoves = aiMovesMatch[0].replace('pv ', '').split(' ');
+      } else if (res.match(/legalmoves.*/)) {
+        currentBoardInfo.moves = res.replace('legalmoves ', '').split(' ');
+      }
+    this.boardInfo$.next(currentBoardInfo);
+  }
+
+  callEngine(command: string) {
+    this.engineWorker.postMessage(command);
+  }
+
+  changeTime(time: number): void {
+    this.boardState.engineTime = time * 100;
+  }
+
+  newBoard(fen: string) {
+    this.callEngine(`position fen ${fen}`);
+    this.getBoardInfo();
+  }
+
+  makeMove(uciMove: string) {
+    this.callEngine(`move ${uciMove}`);
+    this.getBoardInfo();
+  }
+
+  newEngineMove() {
+    this.callEngine(`go movetime ${this.boardState.engineTime}`);
+  }
+
+  private getBoardInfo() {
+    this.callEngine('fen');
+    this.callEngine('legalmoves');
   }
 }

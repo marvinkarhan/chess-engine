@@ -2,6 +2,7 @@ import { AfterViewInit, Component, HostListener, OnInit } from '@angular/core';
 import { fromEvent } from 'rxjs';
 import { Board, Move } from './interfaces/Piece';
 import { BoardService } from './services/board.service';
+import { WasmEngineService } from './services/wasm-engine.service';
 
 const START_POS_FEN: string =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';

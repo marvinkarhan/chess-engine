@@ -1,19 +1,15 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import {
-  BehaviorSubject,
-  forkJoin,
-  merge,
-  Observable,
-  Subject,
-  Subscription,
+  BehaviorSubject, merge, Subject,
+  Subscription
 } from 'rxjs';
-import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 import { ALGEBRAIC_TO_INDEX } from '../constants/BoardConstants';
 import { Side } from '../enums/Side';
 import { BoardInformation } from '../interfaces/BoardInformation';
-import { Board, Move, Piece, PieceTypes } from '../interfaces/Piece';
+import { Board, Move, PieceTypes } from '../interfaces/Piece';
 import { BoardAudioService } from './board-audio.service';
-import { ChessApiService } from './chess-api.service';
+import { WasmEngineService } from './wasm-engine.service';
 
 @Injectable({
   providedIn: 'root',
@@ -46,8 +42,8 @@ export class BoardService implements OnDestroy {
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   constructor(
-    private chessApi: ChessApiService,
-    private _boardAudio: BoardAudioService
+    private _boardAudio: BoardAudioService,
+    private _wasmEngineService: WasmEngineService
   ) {
     this._setupBoardInformationListener();
   }
@@ -68,9 +64,8 @@ export class BoardService implements OnDestroy {
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
     this.skipOne = true;
-    this.chessApi.requestMakeMove(uciMove, () =>
-      this.chessApi.requestNewEngineMove()
-    );
+    this._wasmEngineService.makeMove(uciMove);
+    this._wasmEngineService.newEngineMove();
     this._engineThinking$.next(true);
     this._clearMoves();
     // let pieces = this._pieces$.value;
@@ -100,12 +95,12 @@ export class BoardService implements OnDestroy {
     this.populateBoard(this._fen$.value, []);
     if (newEngineMove) {
       this._engineThinking$.next(true);
-      this.chessApi.requestNewEngineMove();
+      this._wasmEngineService.newEngineMove();
     }
   }
 
   newBoard(fen = this.START_POS_FEN) {
-    this.chessApi.requestNewBoard(fen);
+    this._wasmEngineService.newBoard(fen);
     // change time again for the new board
     if (!this._whitePOV$.value) {
       this.swapSide(false);
@@ -113,7 +108,7 @@ export class BoardService implements OnDestroy {
   }
 
   changeTime(time: number) {
-    this.chessApi.changeTime(time);
+    this._wasmEngineService.changeTime(time);
   }
 
   private _clearMoves() {
@@ -129,17 +124,21 @@ export class BoardService implements OnDestroy {
   private _setupBoardInformationListener(): void {
     this._subs$.add(
       merge(
-        this.chessApi.onNewBoardInformation$(),
+        this._wasmEngineService.boardInfo$,
         this.localBoardUpdate$,
       ).subscribe((boardInformation) => {
         if (!this.skipStateUpdate)
           this.updateBoardState(boardInformation);
-        this.populateBoard(boardInformation.fen, boardInformation.moves);
+        if (boardInformation.fen && boardInformation.moves)
+          this.populateBoard(boardInformation.fen, boardInformation.moves);
         if (!this.skipOne) {
           this._engineThinking$.next(false);
-          this._evaluation$.next(boardInformation.evaluation);
-          this._aiMoves$.next(boardInformation.aiMoves);
-          this._fen$.next(boardInformation.fen);
+          if (boardInformation.evaluation)
+            this._evaluation$.next(boardInformation.evaluation);
+          if (boardInformation.aiMoves)
+            this._aiMoves$.next(boardInformation.aiMoves);
+          if (boardInformation.fen)
+            this._fen$.next(boardInformation.fen);
           this._boardAudio.playMoveSound();
         }
         this.skipStateUpdate = false;
@@ -164,7 +163,7 @@ export class BoardService implements OnDestroy {
   }
 
   requestNewBoard() {
-    this.chessApi.requestNewBoard(this.START_POS_FEN);
+    this._wasmEngineService.newBoard(this.START_POS_FEN);
   }
 
   private _uciToBoard(currentPieces: Board, uciMoves: string[]) {
