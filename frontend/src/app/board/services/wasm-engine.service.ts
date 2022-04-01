@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, combineLatest, Subject, zip } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import { BoardInformation } from '../interfaces/BoardInformation';
 
 interface BoardState {
@@ -24,37 +25,51 @@ export class WasmEngineService {
     engineTime: 20,
   };
 
-  public boardInfo$ = new BehaviorSubject<BoardInformation>({});
+  private _evaluation$ = new BehaviorSubject<number>(0.5);
+  public evaluation$ = this._evaluation$.asObservable();
+  private _aiMoves$ = new Subject<string[]>();
+  public aiMoves$ = this._aiMoves$.asObservable();
+  private _fen$ = new Subject<string>();
+  private _moves$ = new Subject<string[]>();
+  public boardInfo$ = zip(this._fen$, this._moves$).pipe(
+    map(
+      ([fen, moves]): BoardInformation => ({
+        fen,
+        moves,
+      })
+    )
+  );
+  // private _engineMove
 
   constructor() {
-    this.engineWorker = new Worker('./wasm-engine.worker.ts', { type: 'module' });
-    this.engineWorker.onmessage = ({ data }) => this.processEngineResponse(data);
+    this.engineWorker = new Worker('./wasm-engine.worker.ts', {
+      type: 'module',
+    });
+    this.engineWorker.onmessage = ({ data }) =>
+      this.processEngineResponse(data);
     this.engineWorker.postMessage('init');
   }
 
-
   processEngineResponse(res: string) {
-    let currentBoardInfo = this.boardInfo$.value;
     if (res.match(/.*bestmove.*/)) {
       // get top engine move
       const move = res.replace('bestmove ', '');
       this.makeMove(move);
-    } else if (res.match(/fen.*/))  {
+    } else if (res.match(/fen.*/)) {
       // get fen
-      currentBoardInfo.fen = res.replace('fen ', '');
+      this._fen$.next(res.replace('fen ', ''));
     } else if (res.match(/info.*/)) {
       // get evaluation
       const evaluationMatch = res.match(/cp -?\d*/);
       if (evaluationMatch && evaluationMatch[0])
-        currentBoardInfo.evaluation = +evaluationMatch[0].replace('cp ', '') / 100;
+        this._evaluation$.next(+evaluationMatch[0].replace('cp ', '') / 100);
       // get aiMoves
       const aiMovesMatch = res.match(/pv (\S{4}(\s|$))+/);
       if (aiMovesMatch && aiMovesMatch[0])
-        currentBoardInfo.aiMoves = aiMovesMatch[0].replace('pv ', '').split(' ');
-      } else if (res.match(/legalmoves.*/)) {
-        currentBoardInfo.moves = res.replace('legalmoves ', '').split(' ');
-      }
-    this.boardInfo$.next(currentBoardInfo);
+        this._aiMoves$.next(aiMovesMatch[0].replace('pv ', '').split(' '));
+    } else if (res.match(/legalmoves.*/)) {
+      this._moves$.next(res.replace('legalmoves ', '').split(' '));
+    }
   }
 
   callEngine(command: string) {

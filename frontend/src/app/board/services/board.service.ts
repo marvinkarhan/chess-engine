@@ -1,9 +1,12 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import {
-  BehaviorSubject, merge, Subject,
-  Subscription
+  BehaviorSubject,
+  combineLatest,
+  merge,
+  Subject,
+  Subscription,
 } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { filter, map, pluck, startWith } from 'rxjs/operators';
 import { ALGEBRAIC_TO_INDEX } from '../constants/BoardConstants';
 import { Side } from '../enums/Side';
 import { BoardInformation } from '../interfaces/BoardInformation';
@@ -18,25 +21,20 @@ export class BoardService implements OnDestroy {
   fullMoves: number = 0;
   halfMoves: number = 0;
   engineTime: number | undefined = 0.1;
-  private skipOne = false;
-  private skipStateUpdate = false;
+  private skipPlayingSound = false;
   private _whitePOV$ = new BehaviorSubject<boolean>(true);
   public whitePOV$ = this._whitePOV$.asObservable();
   private _sideToMove$ = new BehaviorSubject<Side>(Side.white);
   public sideToMove$ = this._sideToMove$.asObservable();
   private _pieces$ = new BehaviorSubject<Board>([]);
   public pieces$ = this._pieces$.asObservable();
-  private _evaluation$ = new BehaviorSubject<number>(0.5);
-  public evaluation$ = this._evaluation$.asObservable().pipe(filter((x) => !!x));
-  private _aiMoves$ = new BehaviorSubject<string[]>([]);
-  public aiMoves$ = this._aiMoves$.asObservable().pipe(filter((x) => !!x));
+  public evaluation$ = this._wasmEngineService.evaluation$;
+  public aiMoves$ = this._wasmEngineService.aiMoves$;
+  public fen$ = this._wasmEngineService.boardInfo$.pipe(pluck('fen'));
   private _engineThinking$ = new BehaviorSubject<boolean>(false);
   public engineThinking$ = this._engineThinking$.asObservable();
-  private _fen$ = new BehaviorSubject<string>('');
-  public fen$ = this._fen$.asObservable();
+  private _swapSides$ = new Subject<void>();
   private _subs$ = new Subscription();
-  private boardState: BoardInformation | undefined;
-  private localBoardUpdate$ = new Subject<BoardInformation>();
 
   private START_POS_FEN =
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -63,7 +61,7 @@ export class BoardService implements OnDestroy {
     }
     const positions = Object.keys(ALGEBRAIC_TO_INDEX);
     const uciMove = `${positions[oldPositionIndex]}${positions[newPositionIndex]}${promotion}`;
-    this.skipOne = true;
+    this.skipPlayingSound = true;
     this._wasmEngineService.makeMove(uciMove);
     this._wasmEngineService.newEngineMove();
     this._engineThinking$.next(true);
@@ -74,25 +72,26 @@ export class BoardService implements OnDestroy {
   }
 
   unmakeMove() {
-    if (!this.boardState?.prev) return;
-    const curr = this.boardState;
-    this.boardState = this.boardState.prev;
-    this.boardState.next = curr;
-    this.skipStateUpdate = true;
-    this.localBoardUpdate$.next(this.boardState);
+    // if (!this.boardState?.prev) return;
+    // const curr = this.boardState;
+    // this.boardState = this.boardState.prev;
+    // this.boardState.next = curr;
+    // this.skipStateUpdate = true;
+    // this.localBoardUpdate$.next(this.boardState);
   }
 
   remakeMove() {
-    if (!this.boardState?.next) return;
-    const curr = this.boardState;
-    this.boardState = this.boardState.next;
-    this.skipStateUpdate = true;
-    this.localBoardUpdate$.next(this.boardState);
+    // if (!this.boardState?.next) return;
+    // const curr = this.boardState;
+    // this.boardState = this.boardState.next;
+    // this.skipStateUpdate = true;
+    // this.localBoardUpdate$.next(this.boardState);
   }
 
   swapSide(newEngineMove = true) {
     this._whitePOV$.next(!this._whitePOV$.value);
-    this.populateBoard(this._fen$.value, []);
+    this.skipPlayingSound = true;
+    this._swapSides$.next();
     if (newEngineMove) {
       this._engineThinking$.next(true);
       this._wasmEngineService.newEngineMove();
@@ -123,37 +122,27 @@ export class BoardService implements OnDestroy {
 
   private _setupBoardInformationListener(): void {
     this._subs$.add(
-      merge(
+      combineLatest([
         this._wasmEngineService.boardInfo$,
-        this.localBoardUpdate$,
-      ).subscribe((boardInformation) => {
-        if (!this.skipStateUpdate)
-          this.updateBoardState(boardInformation);
-        if (boardInformation.fen && boardInformation.moves)
-          this.populateBoard(boardInformation.fen, boardInformation.moves);
-        if (!this.skipOne) {
+        this._swapSides$.pipe(startWith(undefined)),
+      ]).subscribe(([boardInformation]) => {
+        this.populateBoard(boardInformation.fen, boardInformation.moves);
+        if (!this.skipPlayingSound) {
           this._engineThinking$.next(false);
-          if (boardInformation.evaluation)
-            this._evaluation$.next(boardInformation.evaluation);
-          if (boardInformation.aiMoves)
-            this._aiMoves$.next(boardInformation.aiMoves);
-          if (boardInformation.fen)
-            this._fen$.next(boardInformation.fen);
           this._boardAudio.playMoveSound();
         }
-        this.skipStateUpdate = false;
-        this.skipOne = false;
+        this.skipPlayingSound = false;
       })
     );
   }
 
   private updateBoardState(boardInfo: BoardInformation) {
-    if (!this.boardState) {
-      this.boardState = boardInfo;
-    } else {
-      boardInfo.prev = this.boardState;
-      this.boardState = boardInfo;
-    }
+    // if (!this.boardState) {
+    //   this.boardState = boardInfo;
+    // } else {
+    //   boardInfo.prev = this.boardState;
+    //   this.boardState = boardInfo;
+    // }
   }
 
   populateBoard(fen: string, moves: string[]) {
