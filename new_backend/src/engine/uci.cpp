@@ -19,7 +19,7 @@ void uciGo(std::istringstream &ss)
 {
   std::string token;
   int depth = 64;
-  int movetime = 0; // in ms
+  int movetime = 0, wtime = 0, btime = 0; // in ms
 
   // collect options
   while (ss >> token)
@@ -27,7 +27,11 @@ void uciGo(std::istringstream &ss)
     // TODO: searchmoves
     // TODO: ponder
     // TODO: wtime
+    if (token == "wtime")
+      ss >> wtime;
     // TODO: btime
+    if (token == "btime")
+      ss >> btime;
     // TODO: winc
     // TODO: binc
     // TODO: movestogo
@@ -39,8 +43,7 @@ void uciGo(std::istringstream &ss)
       ss >> movetime;
     // TODO: infinite
   }
-  std::cout << "movetime: " << (float)movetime / 100 << std::endl;
-  getBoard().evaluateNextMove((float)movetime / 100, depth);
+  getBoard().evaluateNextMove((float)movetime / 1000, (float)wtime / 1000, (float)btime / 1000, depth);
 }
 
 void uciPosition(std::istringstream &ss)

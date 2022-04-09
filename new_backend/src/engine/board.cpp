@@ -36,17 +36,26 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
   hashTable = new HashEntry[hashTableSize];
 }
 
-int Board::evaluateNextMove(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/)
+int Board::evaluateNextMove(float movetime /*= 0*/, float wtime /*= 0*/, float btime /*= 0*/, int maxDepth /*= MAX_DEPTH*/)
 {
-  if (!timeInSeconds)
-   timeInSeconds = thinkingTime;
-  int score = iterativeDeepening(timeInSeconds, maxDepth);
+  if (!movetime)
+  {
+    float owntime = activeSide ? wtime : btime;
+    if (owntime)
+      movetime = owntime / MOVES_TO_GO;
+    else
+      movetime = thinkingTime;
+  }
+  if (movetime > TIME_BUFFER)
+    movetime -= TIME_BUFFER;
+  int score = iterativeDeepening(movetime, maxDepth);
   return score;
 }
 
 int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/)
 {
-  if (timeInSeconds) {
+  if (timeInSeconds)
+  {
     endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + ((long long)(timeInSeconds * 1000));
   }
   int score, currDepth = 1;
@@ -64,9 +73,11 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
     {
       pv = getPV();
       // if checkmate was found quit
-      if (score <= CHECKMATE_VALUE) {
+      if (score <= CHECKMATE_VALUE)
+      {
         // position is already mate
-        if (pv[0] == NONE_MOVE) {
+        if (pv[0] == NONE_MOVE)
+        {
           std::cout << "info depth 0 score mate 0" << std::endl;
           std::cout << "bestmove (none)" << std::endl;
         }
@@ -97,7 +108,8 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
     }
   }
   stopSearch = true;
-  if (pv[0] != NONE_MOVE) {
+  if (pv[0] != NONE_MOVE)
+  {
     // signal we made out final decision if there are moves left to make
     std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
   }
@@ -107,6 +119,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
 void Board::resetBoard()
 {
   stopSearch = false;
+  latestScore = 0;
   std::vector<Move> latestPv;
   for (int i = 0; i < 7; i++)
     piecesByType[i] = BB(0);
@@ -343,7 +356,7 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
   //     {
   //       makeNullMove();
   //       int nullScore = -negaMax(depth - 3, -beta, 1 - beta, false);
-        
+
   //       if (stopSearch)
   //         return 0;
 
@@ -358,7 +371,6 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
   //           depth++;
   //         unmakeNullMove();
   //       }
-
 
   //       if (nullScore >= beta)
   //       {
@@ -673,7 +685,7 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 }
 
 std::vector<Move> Board::getPV()
-{  
+{
   std::vector<Move> moves;
   if (stopSearch || (pvLength[0] == 0) && !latestPv.empty())
   {
@@ -1022,7 +1034,8 @@ bool Board::stalemate()
 bool Board::checkmate()
 {
   BB kingAttackersBB = kingAttackers();
-  if (kingAttackersBB) {
+  if (kingAttackersBB)
+  {
     MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, EVASIONS);
     return moveIterator.size() == 0;
   }

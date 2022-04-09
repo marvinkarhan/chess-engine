@@ -81,7 +81,7 @@ public:
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
   int evaluteMobility();
-  int evaluateNextMove(float timeInSeconds = std::numeric_limits<float>::max(), int maxDepth = MAX_DEPTH);
+  int evaluateNextMove(float movetime = 0, float wtime = 0, float btime = 0, int maxDepth = MAX_DEPTH);
   Board(FenString fen = START_POS_FEN);
   ~Board();
   void initHashTableSize(int sizeInMB = 32);
