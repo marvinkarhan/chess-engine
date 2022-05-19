@@ -1,12 +1,10 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import {
   BehaviorSubject,
-  combineLatest,
-  merge,
-  Subject,
-  Subscription,
+  combineLatest, Subject,
+  Subscription
 } from 'rxjs';
-import { filter, map, pluck, startWith } from 'rxjs/operators';
+import { pluck, startWith } from 'rxjs/operators';
 import { ALGEBRAIC_TO_INDEX } from '../constants/BoardConstants';
 import { Side } from '../enums/Side';
 import { BoardInformation } from '../interfaces/BoardInformation';
@@ -66,9 +64,6 @@ export class BoardService implements OnDestroy {
     this._wasmEngineService.newEngineMove();
     this._engineThinking$.next(true);
     this._clearMoves();
-    // let pieces = this._pieces$.value;
-    // pieces[newPositionIndex] = pieces[oldPositionIndex];
-    // pieces[oldPositionIndex] = undefined;
   }
 
   unmakeMove() {

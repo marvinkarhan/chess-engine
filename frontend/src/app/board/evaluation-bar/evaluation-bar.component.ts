@@ -2,7 +2,6 @@ import { DecimalPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { combineLatest, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Side } from '../enums/Side';
 import { BoardService } from '../services/board.service';
 
 @Component({

@@ -1,17 +1,11 @@
 import {
-  AfterViewInit,
-  asNativeElements,
-  Component,
+  AfterViewInit, Component,
   ElementRef,
-  EventEmitter,
-  HostListener,
-  Input,
-  OnInit,
-  Output,
-  ViewChild,
+  EventEmitter, Input, Output,
+  ViewChild
 } from '@angular/core';
-import { fromEvent, merge } from 'rxjs';
-import { filter, tap, takeUntil, take, switchMap } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
+import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { Move, Piece, Position } from '../interfaces/Piece';
 import { BoardAudioService } from '../services/board-audio.service';
 

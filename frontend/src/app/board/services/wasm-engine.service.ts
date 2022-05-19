@@ -7,15 +7,6 @@ interface BoardState {
   engineTime: number;
 }
 
-interface ChessEngine {
-  processCommand: (command: string) => void;
-  cwrap: (
-    funcName: string,
-    returnType: null | any,
-    parameters: any[]
-  ) => (...x: any[]) => any;
-}
-
 @Injectable({
   providedIn: 'root',
 })
