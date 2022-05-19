@@ -38,7 +38,7 @@
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "baseHref": "https://marvinkarhan.github.io/chess-engine/",
+              "baseHref": "./",
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,

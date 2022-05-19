@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, combineLatest, Subject, zip } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { BehaviorSubject, Subject, zip } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { BoardInformation } from '../interfaces/BoardInformation';
 
 interface BoardState {
@@ -39,7 +39,6 @@ export class WasmEngineService {
       })
     )
   );
-  // private _engineMove
 
   constructor() {
     this.engineWorker = new Worker('./wasm-engine.worker.ts', {
