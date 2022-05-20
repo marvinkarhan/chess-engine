@@ -34,6 +34,9 @@ OBJ_FILES = $(patsubst $(ENGINE_FOLDER)/%.cpp,$(BUILD_TMP_PATH)/%.o,$(ENGINE_SRC
 
 all: build-step uci-engine main-engine wasm-engine clean
 
+debug: CXXFLAGS += -g
+debug: build-step uci-engine clean
+
 uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
 	@echo Link uci engine
 	$(CC) $(CXXFLAGS) $(OBJ_FILES) $(UCI_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(UCI_EXE_NAME)

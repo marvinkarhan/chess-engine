@@ -9,6 +9,7 @@
 #include <bitset>
 #include <map>
 #include <algorithm>
+#include <string.h>
 
 #include "board.h"
 #include "movehelper.h"
@@ -17,7 +18,7 @@
 
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
-  initHashTableSize(256);
+  initHashTableSize(DEFAULT_HASH_TABLE_SIZE);
   fullMoves = 0;
   state = nullptr;
   stopSearch = false;
@@ -68,7 +69,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
   {
     nodeCount = 0;
     score = negaMax(currDepth, alpha, beta);
-    // only print info if search wasent stopped during search
+    // only print info if search wasn't stopped during search
     if (!stopSearch)
     {
       pv = getPV();
@@ -119,27 +120,31 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
 void Board::resetBoard()
 {
   stopSearch = false;
-  latestScore = 0;
-  std::vector<Move> latestPv;
-  for (int i = 0; i < 7; i++)
-    piecesByType[i] = BB(0);
-  for (int i = 0; i < 2; i++)
-    piecesBySide[i] = BB(0);
-  for (int i = 0; i < 64; i++)
-    piecePos[i] = NO_PIECE;
+  memset(piecesByType, 0, sizeof piecesByType);
+  memset(piecesBySide, 0, sizeof piecesBySide);
+  memset(piecePos, 0, sizeof piecePos);
 
-  castleWhiteKingSide = false;
-  castleWhiteQueenSide = false;
-  castleBlackKingSide = false;
-  castleBlackQueenSide = false;
-  delete state;
-
-  // 0: black, 1: white
+  latestPv.clear();
   activeSide = true;
+  stopSearch = false;
   fullMoves = 0;
+  latestScore = 0;
   halfMoves = 0;
+  fullMoves = 0;
+  nodeCount = 0;
+  hashTableHits = 0;
+  epSquareBB = 0;
+  pieceValues = 0;
+  pieceSquareValues = 0;
 
-  epSquareBB = BB(0);
+  // keep following data to increase speed
+  // delete[] hashTable;
+  // initHashTableSize(hashTableSize * sizeof(HashEntry) / 1000000);
+  // memset(pvTable, 0, sizeof pvTable);
+  // memset(pvLength, 0, sizeof pvLength);
+  // memset(killerMoves, 0, sizeof killerMoves);
+  // delete (state);
+  // state = nullptr;
 }
 
 void Board::printBitboard(BB bb)
@@ -273,12 +278,12 @@ int Board::evaluate()
     score += NO_PAWNS;
   if (!(pieces(0, PAWN)))
     score -= NO_PAWNS;
-  score += evaluteMobility();
+  score += evaluateMobility();
 
   return score * sideMultiplier;
 }
 
-int Board::evaluteMobility()
+int Board::evaluateMobility()
 {
   int score = 0;
   score += popCount(pieceMoves(PAWN, 1)) * 7;
@@ -505,7 +510,7 @@ void Board::parseFenString(FenString fen)
   u64 hashValue = 0ULL;
   BB placementSquare = 63;
   std::istringstream ss(fen);
-  ss >> std::noskipws; // don't default on skiping white space
+  ss >> std::noskipws; // don't default on skipping white space
   // placement
   while ((ss >> character) && !isspace(character))
   {
@@ -595,13 +600,13 @@ BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /
 BB Board::pieceMoves(PieceType type, bool activeSide)
 {
   BB attackFields = BB(0);
-  BB firendlies = piecesBySide[activeSide];
+  BB friendlies = piecesBySide[activeSide];
   switch (type)
   {
   case PAWN:
   {
     BB pawns = pieces(activeSide, PAWN);
-    attackFields = pawn_attacks(pawns, activeSide, firendlies) & piecesBySide[!activeSide];
+    attackFields = pawn_attacks(pawns, activeSide, friendlies) & piecesBySide[!activeSide];
     if (activeSide)
     {
       BB oneUP = move(pawns, UP) & ~piecesByType[ALL_PIECES];
@@ -621,7 +626,7 @@ BB Board::pieceMoves(PieceType type, bool activeSide)
   case BISHOP:
   {
     BB bishops = pieces(activeSide, BISHOP);
-    return bishop_moves(bishops, ~piecesByType[ALL_PIECES], firendlies);
+    return bishop_moves(bishops, ~piecesByType[ALL_PIECES], friendlies);
   }
   case KNIGHT:
   {
@@ -630,26 +635,26 @@ BB Board::pieceMoves(PieceType type, bool activeSide)
     while (knights)
     {
       KnightSquare = pop_lsb(knights);
-      attackFields |= KNIGHT_MOVE_BBS[KnightSquare] & ~firendlies;
+      attackFields |= KNIGHT_MOVE_BBS[KnightSquare] & ~friendlies;
     }
     return attackFields;
   }
   case ROOK:
   {
     BB rooks = pieces(activeSide, ROOK);
-    return rook_moves(rooks, ~piecesByType[ALL_PIECES], firendlies);
+    return rook_moves(rooks, ~piecesByType[ALL_PIECES], friendlies);
   }
   case QUEEN:
   {
     BB queens = pieces(activeSide, QUEEN);
-    return queen_moves(queens, ~piecesByType[ALL_PIECES], firendlies);
+    return queen_moves(queens, ~piecesByType[ALL_PIECES], friendlies);
   }
   case KING:
   {
     BB king = pieces(activeSide, KING);
     int kingSquare = 0;
     kingSquare = pop_lsb(king);
-    BB kingMoves = KING_MOVES_BBS[kingSquare] & ~firendlies;
+    BB kingMoves = KING_MOVES_BBS[kingSquare] & ~friendlies;
     int kingMoveSquare = 0;
     BB realKingMoves = BB(0);
     while (kingMoves)
@@ -950,7 +955,7 @@ bool Board::moveIsLegal(const Move checkedMove, bool activeSide, BB blockersBB, 
   return (!blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)];
 }
 
-// used for hash move validation to avoid making moves generated by hash collistion of diffrent positions but same hash keys
+// used for hash move validation to avoid making moves generated by hash collision of different positions but same hash keys
 bool Board::moveIsPseudoLegal(const Move checkedMove)
 {
   int originSq = originSquare(checkedMove);
@@ -1076,7 +1081,7 @@ std::string Board::divide(int depth)
   return resultsString;
 }
 
-void Board::store(Piece captuedPiece /*= NO_PIECE*/)
+void Board::store(Piece capturedPiece /*= NO_PIECE*/)
 {
   StoredBoard *stored = new StoredBoard();
   stored->castleWhiteKingSide = castleWhiteKingSide;
@@ -1086,7 +1091,7 @@ void Board::store(Piece captuedPiece /*= NO_PIECE*/)
   stored->epSquareBB = epSquareBB;
   stored->fullMoves = fullMoves;
   stored->halfMoves = halfMoves;
-  stored->capturedPiece = captuedPiece;
+  stored->capturedPiece = capturedPiece;
   stored->repetition = NO_REPETITION;
   stored->oldBoard = std::move(state);
   state = std::move(stored);
@@ -1281,7 +1286,7 @@ bool Board::makeMove(const Move &newMove)
   // update key to reflect actual value
   state->hashValue = hashValue;
   // calculate repetitions
-  // a halfMove counts up reversable moves so we can use it for repetition counting
+  // a halfMove counts up reversible moves so we can use it for repetition counting
   // can only be repetition if atleast 4 half moves where made
   if (halfMoves >= 4)
   {

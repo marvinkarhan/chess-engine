@@ -11,8 +11,8 @@
 // implement First Use Idiom
 Board& getBoard()
 {
-  static Board* ans = new Board();
-  return *ans;
+  static Board ans;
+  return ans;
 }
 
 void uciGo(std::istringstream &ss)

@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// stores partial information about a board usefull for unmake move
+// stores partial information about a board useful for unmake move
 struct StoredBoard
 {
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide;
@@ -37,7 +37,7 @@ struct HashEntry
 class Board
 {
 public:
-  // 6 diffrent Piece types + one for all pieces
+  // 6 different Piece types + one for all pieces
   BB piecesByType[7];
   BB piecesBySide[2];
   Piece piecePos[64];
@@ -80,7 +80,7 @@ public:
   int iterativeDeepening(float timeInSeconds = std::numeric_limits<float>::max(), int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
-  int evaluteMobility();
+  int evaluateMobility();
   int evaluateNextMove(float movetime = 0, float wtime = 0, float btime = 0, int maxDepth = MAX_DEPTH);
   Board(FenString fen = START_POS_FEN);
   ~Board();
@@ -117,7 +117,7 @@ public:
   auto getMovesTree(int depth);
   u64 perft(int depth);
   std::string divide(int depth);
-  void store(Piece captuedPiece = NO_PIECE);
+  void store(Piece capturedPiece = NO_PIECE);
   void restore();
   int probeHash(int depth, int alpha, int beta, Move *bestMove);
   void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
