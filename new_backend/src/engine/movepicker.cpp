@@ -139,12 +139,13 @@ bool MovePicker::see(Move move)
       occupiedBB ^= SQUARE_BBS[originSq];
 
       // add discovered attackers if needed
-      if (SQUARE_BBS[originSq] & mayXRay)
-        if (SQUARE_BBS[originSq] & board.pieces(PAWN) || SQUARE_BBS[originSq] & board.pieces(BISHOP) || SQUARE_BBS[originSq] & board.pieces(QUEEN))
+      if (SQUARE_BBS[originSq] & mayXRay) {
+        if (SQUARE_BBS[originSq] & board.pieces(PAWN) || SQUARE_BBS[originSq] & board.pieces(BISHOP) || SQUARE_BBS[originSq] & board.pieces(QUEEN)) {
           attackersDefendersBB |= (bishop_moves(SQUARE_BBS[targetSq], ~occupiedBB, BB(0)) & occupiedBB) & (board.pieces(!side, BISHOP) | board.pieces(!side, QUEEN));
-        else if (SQUARE_BBS[originSq] & board.pieces(ROOK) || SQUARE_BBS[originSq] & board.pieces(QUEEN))
+        } else if (SQUARE_BBS[originSq] & board.pieces(ROOK) || SQUARE_BBS[originSq] & board.pieces(QUEEN)) {
           attackersDefendersBB |= (rook_moves(SQUARE_BBS[targetSq], ~occupiedBB, BB(0)) & occupiedBB) & (board.pieces(!side, ROOK) | board.pieces(!side, QUEEN));
-      // select next piece in least to most valuable order
+        }
+      }      // select next piece in least to most valuable order
       if ((bb = attackersDefendersBB & board.pieces(side, PAWN)))
         originSq = pop_lsb(bb);
       else if ((bb = attackersDefendersBB & board.pieces(side, KNIGHT)))
@@ -164,7 +165,7 @@ bool MovePicker::see(Move move)
   catch (...)
   {
   }
-  // propage result up
+  // propagate result up
   while (--d)
     gain[d - 1] = -std::max(-gain[d - 1], gain[d]);
   return bool(gain[0] >= 0);
