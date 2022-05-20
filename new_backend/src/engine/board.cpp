@@ -10,6 +10,7 @@
 #include <map>
 #include <algorithm>
 #include <string.h>
+#include <cmath>
 
 #include "board.h"
 #include "movehelper.h"
@@ -74,7 +75,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
     {
       pv = getPV();
       // if checkmate was found quit
-      if (score <= CHECKMATE_VALUE)
+      if (score <= CHECKMATE_VALUE || score >= -CHECKMATE_VALUE)
       {
         // position is already mate
         if (pv[0] == NONE_MOVE)
@@ -99,7 +100,9 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       alpha = score - ASPIRATION_WINDOW_VALUE;
       beta = score + ASPIRATION_WINDOW_VALUE;
       latestScore = score;
-      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " score cp " << latestScore << " pv";
+      std::cout << "info depth " << currDepth << " nodes " << nodeCount;
+      printScore(latestScore, pv);
+      std::cout << " pv";
       for (Move move : pv)
       {
         std::cout << " " << toUciString(move);
@@ -109,12 +112,23 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
     }
   }
   stopSearch = true;
-  if (pv[0] != NONE_MOVE)
-  {
+  if (pv.size() > 0 && pv.at(0) != NONE_MOVE)
     // signal we made out final decision if there are moves left to make
     std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
-  }
+  else
+    std::cout << "bestmove (none)" << std::endl;
+
   return latestScore;
+}
+
+void Board::printScore(int score, std::vector<Move> &pv) {
+  std::cout << " score";
+  // check if its mate
+  if (score < CHECKMATE_VALUE || score > -CHECKMATE_VALUE) {
+    std::cout << " mate " << std::ceil((( pv.size() - 1) / 2));
+  } else {
+    std::cout << " cp " << score;
+  }
 }
 
 void Board::resetBoard()
@@ -1011,7 +1025,7 @@ bool Board::hasRepetitions()
 {
   StoredBoard *stateP = state;
   int bound = halfMoves;
-  while (bound-- >= 4)
+  while (bound-- >= 4 && stateP)
   {
     if (stateP->repetition)
       return true;

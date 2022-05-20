@@ -50,7 +50,7 @@ export class EvaluationBarComponent {
   mateIn(evaluation: number, aiMoves: string[]): number {
     let mateIn = 0;
     // mate for enemy
-    if (evaluation < -this.MATE_EVALUATION || evaluation > this.MATE_EVALUATION) {
+    if (this.isMate(evaluation)) {
       mateIn = Math.ceil((aiMoves.length - 1) / 2);
     }
     return mateIn;

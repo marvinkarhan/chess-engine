@@ -89,6 +89,7 @@ public:
   void resetBoard();
   void printBitboard(BB bb);
   void prettyPrint();
+  void printScore(int score, std::vector<Move> &pv);
   FenString toFenString();
   void printEveryPiece();
   BB allPiecesBB();
