@@ -139,6 +139,10 @@ void Board::resetBoard()
   memset(piecePos, 0, sizeof piecePos);
 
   latestPv.clear();
+  castleWhiteKingSide = false;
+  castleWhiteQueenSide = false;
+  castleBlackKingSide = false;
+  castleBlackQueenSide = false;
   activeSide = true;
   stopSearch = false;
   fullMoves = 0;
