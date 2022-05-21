@@ -125,7 +125,7 @@ void Board::printScore(int score, std::vector<Move> &pv) {
   std::cout << " score";
   // check if its mate
   if (score < CHECKMATE_VALUE || score > -CHECKMATE_VALUE) {
-    std::cout << " mate " << std::ceil((( pv.size() - 1) / 2));
+    std::cout << " mate " << std::ceil((( pv.size() - 1) / 2)) + 1;
   } else {
     std::cout << " cp " << score;
   }
