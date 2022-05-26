@@ -29,7 +29,7 @@ export class ToolBoxComponent {
   isMate$ = combineLatest([
     this.service.evaluation$,
     this.service.aiMoves$,
-  ]).pipe(map(([evaluation, aiMoves]) => this.isMateScore(evaluation) && aiMoves.length <= 1));
+  ]).pipe(map(([evaluation, aiMoves]) => evaluation.mateIn && aiMoves.length <= 1));
 
   constructor(public service: BoardService, public audioService: BoardAudioService) {}
 
@@ -39,12 +39,6 @@ export class ToolBoxComponent {
 
   newBoard() {
     this.service.newBoard();
-  }
-
-  isMateScore(evaluation: number): boolean {
-    return (
-      evaluation < -this.MATE_EVALUATION || evaluation > this.MATE_EVALUATION
-    );
   }
 
   onKeydown(event: KeyboardEvent) {

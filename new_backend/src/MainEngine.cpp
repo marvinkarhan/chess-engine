@@ -302,7 +302,6 @@ int main(int argc, char *argv[])
   // std::cout << "Hash table size: " << board.hashTableSize << std::endl;
   // std::cout << "Hash table fill: " << board.countHashTableSize() << std::endl;
   // std::cout << "Hash table fill: " << (float)board.countHashTableSize() / board.hashTableSize * 100 << "%" << std::endl;
-  // std::cout << "Hash table overwrites: " << board.overwrites << std::endl;
   // std::cout << "Hash table hits: " << board.hashTableHits << std::endl;
 
   // testZobrist();

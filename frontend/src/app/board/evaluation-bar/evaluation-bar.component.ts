@@ -13,47 +13,31 @@ import { BoardService } from '../services/board.service';
 export class EvaluationBarComponent {
   public scorePercent$: Observable<number>;
   public evalString$: Observable<string>;
-  private MATE_EVALUATION = 2000;
 
   constructor(public service: BoardService, private decimalPipe: DecimalPipe) {
     this.scorePercent$ = combineLatest([this.service.evaluation$, this.service.whitePOV$]).pipe(
       map(([evaluation, whitePOV]) => {
         if (!whitePOV) {
-          evaluation = evaluation * -1;
+          evaluation.score = (evaluation.score || 0.5) * -1;
         }
-        if (this.isMate(evaluation)) {
-          if (whitePOV)
-            return evaluation < 0 ? 0 : 100;
-          return evaluation > 0 ? 0 : 100;
+        if (evaluation.mateIn) {
+          return evaluation.mateIn > 0 ? 0 : 100;
         }
-        return this.log(evaluation);
+        return this.log(evaluation.score || 0.5);
       })
     );
 
-    this.evalString$ = combineLatest([this.service.evaluation$, this.service.aiMoves$, this.service.whitePOV$]).pipe(
-      map(([evaluation, aiMoves, whitePOV]) => {
-        if (this.isMate(evaluation)) {
-          return 'M' + this.mateIn(evaluation, aiMoves);
+    this.evalString$ = combineLatest([this.service.evaluation$, this.service.whitePOV$]).pipe(
+      map(([evaluation, whitePOV]) => {
+        if (evaluation.mateIn) {
+          return 'M' + Math.abs(evaluation.mateIn);
         }
         if (whitePOV) {
-          evaluation = evaluation * -1;
+          evaluation.score = (evaluation.score || 0.5) * -1;
         }
-        return this.decimalPipe.transform(evaluation, '1.0-2') || '';
+        return this.decimalPipe.transform(evaluation.score, '1.0-2') || '';
       })
     );
-  }
-
-  isMate(evaluation: number): boolean {
-    return evaluation < -this.MATE_EVALUATION || evaluation > this.MATE_EVALUATION;
-  }
-
-  mateIn(evaluation: number, aiMoves: string[]): number {
-    let mateIn = 0;
-    // mate for enemy
-    if (this.isMate(evaluation)) {
-      mateIn = Math.ceil((aiMoves.length - 1) / 2);
-    }
-    return mateIn;
   }
 
   log(evaluation: number): number {

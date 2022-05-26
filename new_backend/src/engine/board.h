@@ -62,8 +62,6 @@ public:
   StoredBoard *state;
   int hashTableSize;
   HashEntry *hashTable;
-  int calls;
-  int overwrites;
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
     return piecesBySide[activeSide] & piecesByType[pt];
@@ -90,6 +88,7 @@ public:
   void printBitboard(BB bb);
   void prettyPrint();
   void printScore(int score, std::vector<Move> &pv);
+  void printHashTable(); 
   FenString toFenString();
   void printEveryPiece();
   BB allPiecesBB();

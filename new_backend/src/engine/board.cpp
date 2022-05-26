@@ -58,6 +58,8 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
 {
   if (timeInSeconds)
   {
+    // search for atleast 200ms
+    timeInSeconds = std::max(0.2f, timeInSeconds);
     endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + ((long long)(timeInSeconds * 1000));
   }
   int score, currDepth = 1;
@@ -121,12 +123,16 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
   return latestScore;
 }
 
-void Board::printScore(int score, std::vector<Move> &pv) {
+void Board::printScore(int score, std::vector<Move> &pv)
+{
   std::cout << " score";
   // check if its mate
-  if (score < CHECKMATE_VALUE || score > -CHECKMATE_VALUE) {
-    std::cout << " mate " << std::ceil((( pv.size() - 1) / 2)) + 1;
-  } else {
+  if (score < CHECKMATE_VALUE || score > -CHECKMATE_VALUE)
+  {
+    std::cout << " mate " << (std::ceil(((pv.size() - 1) / 2)) + 1) * (activeSide ? 1 : -1);
+  }
+  else
+  {
     std::cout << " cp " << score;
   }
 }
@@ -202,6 +208,16 @@ void Board::prettyPrint()
   }
   std::cout << "   " + lineSeperator << std::endl;
   std::cout << "     A   B   C   D   E   F   G   H" << std::endl;
+}
+
+void Board::printHashTable()
+{
+  HashEntry *entry = probeHash();
+  std::cout << "Best move:  " << entry->bestMove << "\n"
+            << "Depth:      " << entry->depth << "\n"
+            << "Flag:       " << entry->flag << "\n"
+            << "Key:        " << entry->key << "\n"
+            << "Score:      " << entry->score << std::endl;
 }
 
 int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
@@ -1134,10 +1150,6 @@ void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
   if (entry->depth > depth)
   {
     return;
-  }
-  if (entry->key && entry->key != state->hashValue)
-  {
-    overwrites++;
   }
   entry->key = state->hashValue;
   entry->depth = depth;

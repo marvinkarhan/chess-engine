@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject, zip } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { BoardInformation } from '../interfaces/BoardInformation';
+import { Evaluation } from '../interfaces/Evaluation';
 
 interface BoardState {
   engineTime: number;
@@ -16,7 +17,9 @@ export class WasmEngineService {
     engineTime: 20,
   };
 
-  private _evaluation$ = new BehaviorSubject<number>(0.5);
+  private _evaluation$ = new BehaviorSubject<Evaluation>({
+    score: 0.5,
+  });
   public evaluation$ = this._evaluation$.asObservable();
   private _aiMoves$ = new Subject<string[]>();
   public aiMoves$ = this._aiMoves$.asObservable();
@@ -41,6 +44,7 @@ export class WasmEngineService {
   }
 
   processEngineResponse(res: string) {
+    console.log(res);
     if (res.match(/.*bestmove.*/)) {
       // get top engine move
       const move = res.replace('bestmove ', '');
@@ -50,9 +54,17 @@ export class WasmEngineService {
       this._fen$.next(res.replace('fen ', ''));
     } else if (res.match(/info.*/)) {
       // get evaluation
-      const evaluationMatch = res.match(/cp -?\d*/);
+      let evaluationMatch = res.match(/cp -?\d*/);
       if (evaluationMatch && evaluationMatch[0])
-        this._evaluation$.next(+evaluationMatch[0].replace('cp ', '') / 100);
+        this._evaluation$.next({
+          score: +evaluationMatch[0].replace('cp ', '') / 100,
+        });
+      // get evaluation on mate
+      evaluationMatch = res.match(/mate -?\d*/);
+      if (evaluationMatch && evaluationMatch[0])
+        this._evaluation$.next({
+          mateIn: +evaluationMatch[0].replace('mate ', ''),
+        });
       // get aiMoves
       const aiMovesMatch = res.match(/pv (\S{4}(\s|$))+/);
       if (aiMovesMatch && aiMovesMatch[0])
