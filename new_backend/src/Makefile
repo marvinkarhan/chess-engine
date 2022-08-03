@@ -1,12 +1,10 @@
 ifeq ($(OS),Windows_NT)
-	RM_DIR_CMD = rmdir /q /s
 	FixPath = $(subst /,\,$1)
-	WIN_IF =  if exist $(BUILD_PATH)
 else
-	RM_DIR_CMD = rm -rf
 	FixPath = $1
 endif
 
+RM_DIR_CMD = rm -rf
 BUILD_PATH = build
 BUILD_TMP_PATH = $(call FixPath,$(BUILD_PATH)/tmp)
 BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
@@ -51,7 +49,7 @@ wasm-engine:
 
 build-step:
 	@echo Build directories
-	$(WIN_IF) $(RM_DIR_CMD) $(BUILD_PATH)
+	$(RM_DIR_CMD) $(BUILD_PATH)
 	mkdir $(BUILD_PATH) $(BUILD_TMP_PATH) $(BUILD_BIN_PATH)
 clean:
 	@echo Cleanup
