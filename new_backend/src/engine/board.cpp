@@ -16,6 +16,9 @@
 #include "movehelper.h"
 #include "environment.h"
 #include "movepicker.h"
+#include "nnue/init.h"
+
+#define USE_NNUE true
 
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
@@ -24,6 +27,8 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
   state = nullptr;
   stopSearch = false;
   parseFenString(fen);
+
+  NNUE::init();
 }
 
 Board::~Board()
@@ -80,10 +85,11 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       if (score <= CHECKMATE_VALUE || score >= -CHECKMATE_VALUE)
       {
         // position is already mate
-        if (pv[0] == NONE_MOVE)
+        if (pv[0] == NONE_MOVE || pvLength[0] == 0)
         {
           std::cout << "info depth 0 score mate 0" << std::endl;
           std::cout << "bestmove (none)" << std::endl;
+          return 0;
         }
         stopSearch = true;
       }
@@ -296,6 +302,11 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 
 int Board::evaluate()
 {
+  int sideMultiplier = activeSide ? 1 : -1;
+  if (USE_NNUE)
+  {
+    return NNUE::evaluate(*this) * sideMultiplier;
+  }
   int score = 0;
   score += pieceValues;
   score += pieceSquareValues;
@@ -1199,6 +1210,11 @@ bool Board::makeMove(const Move &newMove)
   u64 hashValue = state->hashValue;
 
   store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
+
+  state->accumulator.computed_accumulation = false;
+  auto& dirtyPiece = state->dirtyPiece;
+  dirtyPiece.dirty_num = 1;
+
   state->move = newMove;
   // DEBUG
   // if (originPiece == NO_PIECE)
@@ -1217,8 +1233,22 @@ bool Board::makeMove(const Move &newMove)
     deletePiece(targetSquare(newMove));
     hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[targetPiece] + targetSquare(newMove)];
     capture = true;
-  }
 
+    if (USE_NNUE) {
+      dirtyPiece.dirty_num = 2;
+      // add removed piece
+      dirtyPiece.piece[1] = targetPiece;
+      dirtyPiece.from[1] = toNNUESquare(targetSquare(newMove));
+      dirtyPiece.to[1] = NONE_SQUARE;
+    }
+   }
+
+  if (USE_NNUE) {
+    // add removed piece
+    dirtyPiece.piece[0] = originPiece;
+    dirtyPiece.from[0] = toNNUESquare(originSquare(newMove));
+    dirtyPiece.to[0] = toNNUESquare(targetSquare(newMove));
+  }
   // update bitboards to represent change
   updatePiece(originSquare(newMove), targetSquare(newMove));
   hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + originSquare(newMove)] | ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + targetSquare(newMove)];
@@ -1236,6 +1266,14 @@ bool Board::makeMove(const Move &newMove)
       // add promoted piece
       createPiece(makePiece(activeSide, promotion(newMove)), targetSquare(newMove));
       hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[makePiece(activeSide, promotion(newMove))] + targetSquare(newMove)];
+
+      if (USE_NNUE) {
+        dirtyPiece.to[0] = NONE_SQUARE;
+        dirtyPiece.piece[dirtyPiece.dirty_num] = makePiece(activeSide, promotion(newMove));
+        dirtyPiece.from[dirtyPiece.dirty_num] = NONE_SQUARE;
+        dirtyPiece.to[dirtyPiece.dirty_num] = toNNUESquare(targetSquare(newMove));
+        dirtyPiece.dirty_num++;
+      }
     }
     // en passant move
     if (moveType(newMove) == EN_PASSANT)
@@ -1313,6 +1351,12 @@ bool Board::makeMove(const Move &newMove)
         rookTargetSquare = rookSquare - 3;
         updatePiece(rookSquare, rookTargetSquare);
         hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
+      }
+      if (USE_NNUE) {
+        dirtyPiece.dirty_num = 2;
+        dirtyPiece.piece[1] = makePiece(activeSide, ROOK);
+        dirtyPiece.from[1] = toNNUESquare(rookSquare);
+        dirtyPiece.to[1] = toNNUESquare(rookTargetSquare);
       }
     }
   }

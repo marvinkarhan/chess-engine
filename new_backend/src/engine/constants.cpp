@@ -1,7 +1,9 @@
-#include "constants.h"
-#include "movehelper.h"
 #include <vector>
 #include <bitset>
+
+#include "constants.h"
+#include "movehelper.h"
+
 
 std::string SQUARE_TO_ALGEBRAIC[64] = {
     "h1",

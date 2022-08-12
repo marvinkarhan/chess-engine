@@ -1,14 +1,21 @@
 #pragma once
-#include "constants.h"
-#include "move.h"
-#include "time.h"
+
 #include <iostream>
 #include <string>
 #include <algorithm>
 #include <vector>
 #include <limits>
 
+#include "constants.h"
+#include "move.h"
+#include "time.h"
+#include "nnue/accumulator.h"
+
 using namespace std;
+
+namespace NNUE {
+  struct Accumulator;
+}
 
 // stores partial information about a board useful for unmake move
 struct StoredBoard
@@ -22,6 +29,10 @@ struct StoredBoard
   RepetitionType repetition;
 
   StoredBoard *oldBoard; // board state before store
+
+  // used for nnue
+  NNUE::Accumulator accumulator;
+  DirtyPiece dirtyPiece;
 };
 
 // information stored in the TT Hash Table
