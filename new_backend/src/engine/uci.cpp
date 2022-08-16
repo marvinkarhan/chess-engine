@@ -109,6 +109,10 @@ void uciUnmakeMove()
   std::cout << "unmademove" << std::endl;
 }
 
+void evaluate() {
+  std::cout << "NNUE eval: " << getBoard().evaluate() << ", Classic eval: " << getBoard().evaluate(false) << std::endl;
+}
+
 std::string uciProcessCommand(std::string command)
 {
   std::string token;
@@ -154,6 +158,8 @@ std::string uciProcessCommand(std::string command)
     uciMove(ss);
   else if (token == "unmakemove")
     uciUnmakeMove();
+  else if (token == "eval")
+    evaluate();
 
   return token;
 }

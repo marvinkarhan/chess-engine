@@ -11,6 +11,8 @@
 #include "time.h"
 #include "nnue/accumulator.h"
 
+#define USE_NNUE true
+
 using namespace std;
 
 namespace NNUE {
@@ -88,7 +90,7 @@ public:
   int negaMax(int depth, int alpha, int beta, bool nullMoveAllowed =true);
   int iterativeDeepening(float timeInSeconds = std::numeric_limits<float>::max(), int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
-  int evaluate();
+  int evaluate(bool useNNUE = USE_NNUE);
   int evaluateMobility();
   int evaluateNextMove(float movetime = 0, float wtime = 0, float btime = 0, int maxDepth = MAX_DEPTH);
   Board(FenString fen = START_POS_FEN);

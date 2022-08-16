@@ -26,7 +26,7 @@ namespace NNUE
   void HalfKP<AssociatedKing>::AppendActiveIndices(
       Board &board, bool perspective, IndexList *active)
   {
-    Square ksq = orient(perspective, toNNUESquare(63 - bitScanForward(board.pieces(perspective, KING))));
+    Square ksq = orient(perspective, toNNUESquare(bitScanForward(board.pieces(perspective, KING))));
     BB bb = board.pieces(ALL_PIECES) & ~board.pieces(KING);
     while (bb)
     {
@@ -42,7 +42,7 @@ namespace NNUE
       IndexList *removed, IndexList *added)
   {
 
-    Square ksq = orient(perspective, Square(bitScanForward(board.pieces(perspective, KING))));
+    Square ksq = orient(perspective, toNNUESquare(bitScanForward(board.pieces(perspective, KING))));
     const auto &dp = board.state->dirtyPiece;
     for (int i = 0; i < dp.dirty_num; ++i)
     {
