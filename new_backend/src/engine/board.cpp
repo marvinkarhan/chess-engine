@@ -18,7 +18,6 @@
 #include "movepicker.h"
 #include "nnue/init.h"
 
-#define USE_NNUE true
 
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
@@ -85,7 +84,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       if (score <= CHECKMATE_VALUE || score >= -CHECKMATE_VALUE)
       {
         // position is already mate
-        if (pv[0] == NONE_MOVE || pvLength[0] == 0)
+        if (pv[0] == NONE_MOVE || MoveList<LEGAL_MOVES>(*this, activeSide, ALL).size() == 0)
         {
           std::cout << "info depth 0 score mate 0" << std::endl;
           std::cout << "bestmove (none)" << std::endl;
@@ -135,7 +134,7 @@ void Board::printScore(int score, std::vector<Move> &pv)
   // check if its mate
   if (score < CHECKMATE_VALUE || score > -CHECKMATE_VALUE)
   {
-    std::cout << " mate " << (std::ceil(((pv.size() - 1) / 2)) + 1) * (activeSide ? 1 : -1);
+    std::cout << " mate " << (std::ceil(((pv.size() - 1) / 2)) + 1) * (activeSide ? -1 : 1);
   }
   else
   {
@@ -300,10 +299,10 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   return alpha;
 }
 
-int Board::evaluate()
+int Board::evaluate(bool useNNUE /*= USE_NNUE*/)
 {
   int sideMultiplier = activeSide ? 1 : -1;
-  if (USE_NNUE)
+  if (useNNUE && USE_NNUE)
   {
     return NNUE::evaluate(*this) * sideMultiplier;
   }
@@ -1212,7 +1211,7 @@ bool Board::makeMove(const Move &newMove)
   store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
 
   state->accumulator.computed_accumulation = false;
-  auto& dirtyPiece = state->dirtyPiece;
+  auto &dirtyPiece = state->dirtyPiece;
   dirtyPiece.dirty_num = 1;
 
   state->move = newMove;
@@ -1234,16 +1233,18 @@ bool Board::makeMove(const Move &newMove)
     hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[targetPiece] + targetSquare(newMove)];
     capture = true;
 
-    if (USE_NNUE) {
+    if (USE_NNUE)
+    {
       dirtyPiece.dirty_num = 2;
       // add removed piece
       dirtyPiece.piece[1] = targetPiece;
       dirtyPiece.from[1] = toNNUESquare(targetSquare(newMove));
       dirtyPiece.to[1] = NONE_SQUARE;
     }
-   }
+  }
 
-  if (USE_NNUE) {
+  if (USE_NNUE)
+  {
     // add removed piece
     dirtyPiece.piece[0] = originPiece;
     dirtyPiece.from[0] = toNNUESquare(originSquare(newMove));
@@ -1267,7 +1268,8 @@ bool Board::makeMove(const Move &newMove)
       createPiece(makePiece(activeSide, promotion(newMove)), targetSquare(newMove));
       hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[makePiece(activeSide, promotion(newMove))] + targetSquare(newMove)];
 
-      if (USE_NNUE) {
+      if (USE_NNUE)
+      {
         dirtyPiece.to[0] = NONE_SQUARE;
         dirtyPiece.piece[dirtyPiece.dirty_num] = makePiece(activeSide, promotion(newMove));
         dirtyPiece.from[dirtyPiece.dirty_num] = NONE_SQUARE;
@@ -1352,7 +1354,8 @@ bool Board::makeMove(const Move &newMove)
         updatePiece(rookSquare, rookTargetSquare);
         hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
       }
-      if (USE_NNUE) {
+      if (USE_NNUE)
+      {
         dirtyPiece.dirty_num = 2;
         dirtyPiece.piece[1] = makePiece(activeSide, ROOK);
         dirtyPiece.from[1] = toNNUESquare(rookSquare);

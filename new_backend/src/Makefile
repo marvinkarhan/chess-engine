@@ -49,11 +49,11 @@ ifeq ($(SIMD), no)
 	neon = no
 endif
 
-ifeq ($(see), yes)
+ifeq ($(sse), yes)
 	CXXFLAGS += -msse
 endif
 
-ifeq ($(see2), yes)
+ifeq ($(sse2), yes)
 	CXXFLAGS += -DUSE_SSE2
 	CXXFLAGS += -msse2
 endif
@@ -109,7 +109,7 @@ all: build-step uci-engine main-engine clean
 # all: build-step uci-engine main-engine wasm-engine clean
 
 debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O1 -g
-debug: build-step uci-engine clean
+debug: build-step uci-engine main-engine clean
 
 uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
 	@echo Link uci engine
@@ -125,7 +125,7 @@ main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
 
 build-step:
 	@echo Build directories
-	@echo $(SIMD)
+	@echo $(sse2)
 	$(RM_DIR_CMD) $(BUILD_PATH)
 	mkdir $(BUILD_PATH) $(BUILD_TMP_PATH) $(BUILD_TMP_PATH)/nnue $(BUILD_BIN_PATH)
 

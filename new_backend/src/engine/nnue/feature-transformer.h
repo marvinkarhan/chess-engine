@@ -171,7 +171,6 @@ namespace NNUE
     // Calculate cumulative value without using difference calculation
     void RefreshAccumulator(Board &board) const
     {
-
       auto &accumulator = board.state->accumulator;
       std::uint32_t i = 0;
       IndexList active_indices[2];
@@ -240,7 +239,6 @@ namespace NNUE
     // Calculate cumulative value using difference calculation
     void UpdateAccumulator(Board &board) const
     {
-
       const auto prev_accumulator = board.state->oldBoard->accumulator;
       auto &accumulator = board.state->accumulator;
       std::uint32_t i = 0;
