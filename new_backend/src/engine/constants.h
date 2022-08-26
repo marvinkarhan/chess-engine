@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <math.h>
 
 typedef uint64_t BB;
 typedef uint64_t u64;
@@ -65,18 +66,18 @@ enum Piece : int
 };
 
 const Piece PIECE_ENUMERATED[] = {
-    BLACK_PAWN,
-    BLACK_KNIGHT,
-    BLACK_BISHOP,
-    BLACK_ROOK,
-    BLACK_QUEEN,
-    BLACK_KING,
-    WHITE_PAWN,
-    WHITE_KNIGHT,
-    WHITE_BISHOP,
-    WHITE_ROOK,
-    WHITE_QUEEN,
-    WHITE_KING,
+  BLACK_PAWN,
+  BLACK_KNIGHT,
+  BLACK_BISHOP,
+  BLACK_ROOK,
+  BLACK_QUEEN,
+  BLACK_KING,
+  WHITE_PAWN,
+  WHITE_KNIGHT,
+  WHITE_BISHOP,
+  WHITE_ROOK,
+  WHITE_QUEEN,
+  WHITE_KING,
 };
 
 const std::string CharIndexToPiece(" pnbrqk  PNBRQK");
@@ -363,12 +364,14 @@ enum Square : int
   NONE_SQUARE
 };
 
-constexpr Square toNNUESquare(int s) {
-  return Square(63 - s);
+constexpr Square toNNUESquare(int s)
+{
+  return Square((7 - (s % 8)) + floor(s / 8) * 8);
 };
 
 // Keep track of what a move changes on the board (used by NNUE)
-struct DirtyPiece {
+struct DirtyPiece
+{
 
   // Number of changed pieces
   int dirty_num;
@@ -400,7 +403,7 @@ extern BB LINE_BBS[64][64];
 // to save space only use a 8 bit int
 extern uint8_t STATIC_POP_COUNT_16[1 << 16];
 
-//ZOBRIST STUFF
+// ZOBRIST STUFF
 extern u64 ZOBRIST_TABLE[781];
 const int ZOBRIST_ARRAY_LENGTH = 781;
 const u64 ZOBRIST_SEED = 13;

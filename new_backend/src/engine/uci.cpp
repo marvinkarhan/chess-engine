@@ -7,11 +7,12 @@
 #include "time.h"
 #include "uci.h"
 #include "move.h"
+#include "nnue/halfkp.h"
 
 // implement First Use Idiom
-Board& getBoard()
+Board &getBoard()
 {
-  static Board* ans = new Board();
+  static Board *ans = new Board();
   return *ans;
 }
 
@@ -109,8 +110,31 @@ void uciUnmakeMove()
   std::cout << "unmademove" << std::endl;
 }
 
-void evaluate() {
-  std::cout << "NNUE eval: " << getBoard().evaluate() << ", Classic eval: " << getBoard().evaluate(false) << std::endl;
+void setOption(std::istringstream &ss)
+{
+  std::string token, id, value;
+
+  ss >> token;
+  // parse special case
+  if (token == "name")
+    while (ss >> token && token != "value")
+      id += token + " ";
+  else
+  {
+    std::cout << "Not an option" << std::endl;
+    return;
+  }
+  while (ss >> token)
+    value += token + " ";
+  // remove suffixed spaces
+  id.erase(id.find_last_not_of(' ')+1);
+  value.erase(value.find_last_not_of(' ')+1);
+
+  if (id == "nnue" && (value == "true" || value == "false")) {
+      getBoard().useNNUE = value == "true";
+      std::cout << "Using NNUE: " << value << std::endl;
+  } else
+    std::cout << "Not an option" << std::endl;
 }
 
 std::string uciProcessCommand(std::string command)
@@ -144,7 +168,8 @@ std::string uciProcessCommand(std::string command)
     std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
   }
   // following is part of the UCI format but not jet implemented by NoPy++
-  // else if (token == "setoption")
+  else if (token == "setoption")
+    setOption(ss);
   // else if (token == "ponderhit")
   // else if (token == "register")
   // some custom commands
@@ -158,8 +183,6 @@ std::string uciProcessCommand(std::string command)
     uciMove(ss);
   else if (token == "unmakemove")
     uciUnmakeMove();
-  else if (token == "eval")
-    evaluate();
 
   return token;
 }
