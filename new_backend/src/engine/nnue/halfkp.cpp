@@ -10,7 +10,7 @@ namespace NNUE
   // Orient a square according to perspective (rotates by 180 for black)
   inline Square orient(bool perspective, Square s)
   {
-    return Square(int(s) ^ (bool(perspective) * 63));
+    return Square(int(s) ^ (!bool(perspective) * 63));
   }
 
   // Find the index of the feature quantity from the king position and PieceSquare

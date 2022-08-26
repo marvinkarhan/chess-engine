@@ -18,6 +18,9 @@
 #include "movepicker.h"
 #include "nnue/init.h"
 
+int64_t timeNow() {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
 
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
@@ -60,11 +63,12 @@ int Board::evaluateNextMove(float movetime /*= 0*/, float wtime /*= 0*/, float b
 
 int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/)
 {
+  int64_t startTime = timeNow();
   if (timeInSeconds)
   {
     // search for atleast 200ms
     timeInSeconds = std::max(0.2f, timeInSeconds);
-    endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() + ((long long)(timeInSeconds * 1000));
+    endTime = startTime + ((long long)(timeInSeconds * 1000));
   }
   int score, currDepth = 1;
   stopSearch = false;
@@ -107,7 +111,8 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       alpha = score - ASPIRATION_WINDOW_VALUE;
       beta = score + ASPIRATION_WINDOW_VALUE;
       latestScore = score;
-      std::cout << "info depth " << currDepth << " nodes " << nodeCount;
+      auto timePassed = timeNow() - startTime + 1;
+      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " nps " << nodeCount * 1000 / timePassed;
       printScore(latestScore, pv);
       std::cout << " pv";
       for (Move move : pv)
@@ -161,6 +166,8 @@ void Board::resetBoard()
   halfMoves = 0;
   fullMoves = 0;
   nodeCount = 0;
+  classicEvals = 0;
+  nnueEvals = 0;
   hashTableHits = 0;
   epSquareBB = 0;
   pieceValues = 0;
@@ -299,16 +306,19 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   return alpha;
 }
 
-int Board::evaluate(bool useNNUE /*= USE_NNUE*/)
+int Board::evaluate()
 {
-  int sideMultiplier = activeSide ? 1 : -1;
-  if (useNNUE && USE_NNUE)
-  {
-    return NNUE::evaluate(*this) * sideMultiplier;
-  }
   int score = 0;
   score += pieceValues;
   score += pieceSquareValues;
+  // only use NNUE when the score does not exceeds a set piece range
+  // because NNUE does not work well in positions with large piece imbalances
+  if (useNNUE && score < 200)
+  {
+    nnueEvals++;
+    return NNUE::evaluate(*this);
+  }
+  classicEvals++;
   // Bishop pair bonus
   if (pop_last_bb(pieces(1, BISHOP)))
     score += BISHOP_PAIR;

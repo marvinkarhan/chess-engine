@@ -55,6 +55,7 @@ public:
   BB piecesBySide[2];
   Piece piecePos[64];
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, stopSearch;
+  bool useNNUE = USE_NNUE;
   u64 epSquareBB, nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves;
   float thinkingTime = 0.1;
@@ -65,6 +66,7 @@ public:
   int pvLength[MAX_DEPTH];
   int ply = 0;
   int latestScore = 0;
+  int classicEvals, nnueEvals = 0;
   // indexed by [piece][targetSquare] (#15 because king = 14)
   // int historyHeuristicTable[15][64] = {0};
   // killer moves
@@ -90,7 +92,7 @@ public:
   int negaMax(int depth, int alpha, int beta, bool nullMoveAllowed =true);
   int iterativeDeepening(float timeInSeconds = std::numeric_limits<float>::max(), int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
-  int evaluate(bool useNNUE = USE_NNUE);
+  int evaluate();
   int evaluateMobility();
   int evaluateNextMove(float movetime = 0, float wtime = 0, float btime = 0, int maxDepth = MAX_DEPTH);
   Board(FenString fen = START_POS_FEN);

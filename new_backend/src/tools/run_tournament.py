@@ -4,7 +4,8 @@ from typing import List
 
 DEFAULT_ENGINE_SAVE = '../build/bin/uci-engine'
 CLASSIC_ENGINE = '../../../../saved_engines/wsl/classic'
-STOCKFISH_WITH_MY_NET = './engines/stockfish_my_net'
+STOCKFISH_WITH_MY_NET = './engines/stockfish_mse_55_epoch'
+OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
 
 # using cutechess (cli): https://github.com/cutechess/cutechess
 
@@ -30,8 +31,11 @@ class Tournament:
       f'./cutechess-cli/cutechess-cli -each proto=uci tc={self.tc} '
       f'{"".join([e.to_string() for e in self.engines])} '
       f'-event {"_vs_".join(["_".join(e.name.split()) for e in self.engines])} '
-      f'-games {self.games} '
+      f'-games 2 '
+      f'-rounds {self.games} '
       f'-pgnout tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn '
+      f'-openings file={OPENING_BOOK_EPD} format=epd -repeat '
+      f'-concurrency 8'
       # f'-draw movenumber=40 movecount=8 score=10 '
     )
     print(cmd)
@@ -39,7 +43,7 @@ class Tournament:
 
 def main():
   engines = [Engine(CLASSIC_ENGINE, name='CLASSIC'), Engine(name='NNUE')]
-  tournament = Tournament(engines, 2, 360, 0)
+  tournament = Tournament(engines, 1, 60, 1)
   tournament.start()
 
 if __name__ == '__main__':

@@ -95,7 +95,7 @@ namespace NNUE
     feature_transformer->Transform(board, transformed_features);
     alignas(kCacheLineSize) char buffer[Network::kBufferSize];
     const auto output = network->Propagate(transformed_features, buffer);
-
-    return output[0] / FV_SCALE / NNUE_PAWN_VALUE;
+    // std::cout << "fen: " << board.toFenString() << " output: " << output[0] << " scaled: " << output[0] / FV_SCALE / NNUE_PAWN_VALUE << " new scaling:" << output[0] / FV_SCALE << std::endl;
+    return output[0] / FV_SCALE;
   }
 } // namespace NNUE
