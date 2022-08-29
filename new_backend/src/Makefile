@@ -78,6 +78,11 @@ ifeq ($(avx512), yes)
 	CXXFLAGS += -mavx512f -mavx512bw
 endif
 
+ifeq ($(vnni256), yes)
+	CXXFLAGS += -DUSE_VNNI
+	CXXFLAGS += -mavx512f -mavx512bw -mavx512vnni -mavx512dq -mavx512vl -mprefer-vector-width=256
+endif
+
 ifeq ($(vnni512), yes)
 	CXXFLAGS += -DUSE_VNNI
 	CXXFLAGS += -mavx512vnni -mavx512dq -mavx512vl
