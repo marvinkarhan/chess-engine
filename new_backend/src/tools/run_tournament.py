@@ -8,6 +8,7 @@ STOCKFISH_WITH_MY_NET = './engines/stockfish_mse_55_epoch'
 OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
 NNUE_CENTROPY_111_EPOCH = './engines/centropy_111_epoch'
 STOCKFISH = './engines/stockfish_11_x64'
+QS_CHECKS = './engines/withQSChecks'
 
 # using cutechess (cli): https://github.com/cutechess/cutechess
 
@@ -26,9 +27,9 @@ class Engine:
     return string
 
 class Tournament:
-  def __init__(self, engines: List[Engine], games: int, time: int, increment: int):
+  def __init__(self, engines: List[Engine], rounds: int, time: int, increment = 0):
     self.engines = engines
-    self.games = games
+    self.rounds = rounds
     self.tc = f'{time}+{increment}' if increment else f'{time}'
    
   def start(self):
@@ -37,7 +38,7 @@ class Tournament:
       f'{"".join([e.to_string() for e in self.engines])} '
       f'-event {"_vs_".join(["_".join(e.name.split()) for e in self.engines])} '
       f'-games 2 '
-      f'-rounds {self.games} '
+      f'-rounds {self.rounds} '
       f'-pgnout tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn '
       f'-openings file={OPENING_BOOK_EPD} format=epd -repeat '
       f'-concurrency 6'
@@ -47,8 +48,8 @@ class Tournament:
     os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(CLASSIC_ENGINE, name='HCE')]
-  tournament = Tournament(engines, 500, 60, 1)
+  engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='WITH_QS_CHECKS')]
+  tournament = Tournament(engines, 6, 60)
   tournament.start()
 
 if __name__ == '__main__':
