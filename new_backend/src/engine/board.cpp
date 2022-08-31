@@ -303,7 +303,7 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   if (kingChecked && moveCounter == 0)
     return CHECKMATE_VALUE + ply;
 
-  return alpha;
+  return bestScore;
 }
 
 int Board::evaluate()
