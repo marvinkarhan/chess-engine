@@ -174,28 +174,8 @@ public:
   void makeNullMove();
   void unmakeNullMove();
   /* for debugging */
-  void printStateHistory()
-  {
-    StoredBoard *currState = state;
-    int total = 0;
-    while (currState)
-    {
-      currState = currState->oldBoard;
-      total++;
-    }
-    std::cout << "Current states stored in history: " << std::to_string(total) << std::endl;
-  }
-  int getStateHistory()
-  {
-    StoredBoard *currState = state;
-    int total = 0;
-    while (currState)
-    {
-      currState = currState->oldBoard;
-      total++;
-    }
-    return total;
-  }
+  void printStateHistory();
+  int getStateHistory();
 };
 
 template <MoveGenType moveType>
