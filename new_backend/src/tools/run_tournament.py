@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import List
 
 DEFAULT_ENGINE_SAVE = '../build/bin/uci-engine'
-CLASSIC_ENGINE = '../../../../saved_engines/wsl/classic'
+CLASSIC_ENGINE = './engines/classic'
+CLASSIC_OLD = './engines/classic_old'
 STOCKFISH_WITH_MY_NET = './engines/stockfish_mse_55_epoch'
 OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
 NNUE_CENTROPY_111_EPOCH = './engines/centropy_111_epoch'
@@ -48,8 +49,8 @@ class Tournament:
     os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='WITH_QS_CHECKS')]
-  tournament = Tournament(engines, 12, 60)
+  engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='QS_CHECKS')]
+  tournament = Tournament(engines, 12, 60, 1)
   tournament.start()
 
 if __name__ == '__main__':
