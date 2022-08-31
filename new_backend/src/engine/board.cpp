@@ -230,7 +230,7 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 
   nodeCount++;
 
-  int score;
+  int score, bestScore;
   // HashEntryFlag hashFlag = UPPER_BOUND;
   Move bestMove = NONE_MOVE;
   // HashEntry *entry = probeHash();
@@ -252,13 +252,20 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   if (partialStalemate())
     return STALEMATE_VALUE;
 
-  int standPat = evaluate();
-  if (standPat >= beta)
-    return beta;
-  if (alpha < standPat)
-    alpha = standPat;
+  // only do standPat when king is not attacked
+  bool kingChecked = isKingAttacked();
+  if (kingChecked) {
+    bestScore = MIN_ALPHA;
+  } else {
+    bestScore = evaluate();
+    if (bestScore >= beta)
+      return beta;
+    if (bestScore > alpha)
+      alpha = bestScore;
+  }
 
-  MovePicker movePicker(*this, bestMove, true);
+  int moveCounter = 0;
+  MovePicker movePicker(*this, bestMove, !kingChecked);
   Move move;
   while ((move = movePicker.nextMove()) != NONE_MOVE)
   {
@@ -270,25 +277,25 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
     if (stopSearch)
       return 0;
 
-    if (score >= beta)
-    {
-      // storeHash(depth, beta, move, LOWER_BOUND);
-      return beta;
-    }
-    if (score > alpha)
-    {
-      // bestMove = move;
-      // hashFlag = EXACT;
-      alpha = score;
+    moveCounter++;
+
+    if (score > bestScore) {
+      bestScore = score;
+      if (score > alpha) {
+        alpha = score;
+        if (score >= beta)
+          break;
+      }
     }
   }
-  // storeHash(depth, alpha, bestMove, hashFlag);
+  if (kingChecked && moveCounter == 0)
+    return CHECKMATE_VALUE + ply;
+
   return alpha;
 }
 
 int Board::evaluate()
 {
-  int sideMultiplier = activeSide ? 1 : -1;
   int score = 0;
   score += pieceValues;
   score += pieceSquareValues;
@@ -314,6 +321,7 @@ int Board::evaluate()
     score -= NO_PAWNS;
   score += evaluateMobility();
 
+  int sideMultiplier = activeSide ? 1 : -1;
   return score * sideMultiplier;
 }
 
@@ -463,12 +471,10 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
       pvLength[ply] = pvLength[ply + 1];
     }
   }
-  if (moveCounter == 0) // stalemate
-  {
-    if (isKingAttacked()) // checkmate
-      return CHECKMATE_VALUE - depth;
-    return 0;
-  }
+  if (moveCounter == 0)
+    // checkmate or stalemate
+    return isKingAttacked() ? CHECKMATE_VALUE - depth : 0;
+
   storeHash(depth, alpha, bestMove, hashFlag);
   return alpha;
 }
@@ -1170,6 +1176,11 @@ void Board::zobristToggleCastle(u64 &hashValue)
     hashValue ^= ZOBRIST_TABLE[CASTLE_BLACK_QUEEN_SIDE];
 }
 
+constexpr HashEntry *Board::probeHash()
+{
+  return &hashTable[state->hashValue % hashTableSize];
+}
+
 bool Board::makeMove(const Move &newMove)
 {
   if (newMove == NONE_MOVE)
@@ -1190,19 +1201,19 @@ bool Board::makeMove(const Move &newMove)
   store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
   state->move = newMove;
   // DEBUG
-  if (originPiece == NO_PIECE)
-  {
-    prettyPrint();
-    std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
-    return false;
-  }
+  // if (originPiece == NO_PIECE)
+  // {
+  //   prettyPrint();
+  //   std::cout << "move was illegal (no piece on origin square): " << toUciString(newMove) << std::endl;
+  //   return false;
+  // }
 
   // target piece only exists on capture
   if (targetPiece)
   {
     // DEBUG
-    if (in_between(originSquare(newMove), targetSquare(newMove)) & piecesByType[ALL_PIECES])
-      std::cout << "capture thru friendly piece" << std::endl;
+    // if (in_between(originSquare(newMove), targetSquare(newMove)) & piecesByType[ALL_PIECES])
+    //   std::cout << "capture thru friendly piece" << std::endl;
     deletePiece(targetSquare(newMove));
     hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[targetPiece] + targetSquare(newMove)];
     capture = true;
@@ -1283,20 +1294,24 @@ bool Board::makeMove(const Move &newMove)
     // check if king move was castle
     if (moveType(newMove) == CASTLING)
     {
+      int rookSquare;
+      int rookTargetSquare;
       // castle king side
       if (targetSquare(newMove) == originSquare(newMove) - 2)
       {
         // get rook & move rook
-        int rookSquare = activeSide ? 0 : 56;
-        updatePiece(rookSquare, rookSquare + 2);
+        rookSquare = activeSide ? 0 : 56;
+        rookTargetSquare = rookSquare + 2;
+        updatePiece(rookSquare, rookTargetSquare);
         hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
       }
       // castle queen side
       else
       {
         // get rook & move rook
-        int rookSquare = activeSide ? 7 : 63;
-        updatePiece(rookSquare, rookSquare - 3);
+        rookSquare = activeSide ? 7 : 63;
+        rookTargetSquare = rookSquare - 3;
+        updatePiece(rookSquare, rookTargetSquare);
         hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
       }
     }
@@ -1334,20 +1349,21 @@ bool Board::makeMove(const Move &newMove)
       }
     }
   }
+  // DEBUG
   // unmake move if it was illegal
-  if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))
-  {
-    std::cout << "move was illegal (king attacked): " << toUciString(newMove) << ", Piece: " << CharIndexToPiece[originPiece] << ", Side: " << !activeSide << std::endl;
-    std::cout << "side to move: " << activeSide << std::endl;
-    printBitboard(attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]));
-    prettyPrint();
-    printStateHistory();
-    unmakeMove(newMove);
-    std::cout << "side to move: " << activeSide << std::endl;
-    std::cout << "fen (after unmake): " << toFenString() << std::endl;
-    throw;
-    return false;
-  }
+  // if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))
+  // {
+  //   std::cout << "move was illegal (king attacked): " << toUciString(newMove) << ", Piece: " << CharIndexToPiece[originPiece] << ", Side: " << !activeSide << std::endl;
+  //   std::cout << "side to move: " << activeSide << std::endl;
+  //   printBitboard(attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]));
+  //   prettyPrint();
+  //   printStateHistory();
+  //   unmakeMove(newMove);
+  //   std::cout << "side to move: " << activeSide << std::endl;
+  //   std::cout << "fen (after unmake): " << toFenString() << std::endl;
+  //   throw;
+  //   return false;
+  // }
   return true;
 }
 
@@ -1401,6 +1417,7 @@ void Board::unmakeMove(const Move &oldMove)
   }
   restore();
 }
+
 // changes side without moving anything
 void Board::makeNullMove()
 {
@@ -1423,4 +1440,27 @@ void Board::unmakeNullMove()
 {
   restore();
   activeSide = !activeSide;
+}
+
+void Board::printStateHistory()
+{
+  StoredBoard *currState = state;
+  int total = 0;
+  while (currState)
+  {
+    currState = currState->oldBoard;
+    total++;
+  }
+  std::cout << "Current states stored in history: " << std::to_string(total) << std::endl;
+}
+int Board::getStateHistory()
+{
+  StoredBoard *currState = state;
+  int total = 0;
+  while (currState)
+  {
+    currState = currState->oldBoard;
+    total++;
+  }
+  return total;
 }

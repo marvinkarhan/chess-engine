@@ -123,10 +123,7 @@ public:
   void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
   void zobristToggleCastle(u64 &hashValue);
   // to simplify updating piece positions
-  constexpr HashEntry *probeHash()
-  {
-    return &hashTable[state->hashValue % hashTableSize];
-  }
+  constexpr HashEntry *probeHash();
 
   int countHashTableSize()
   {
