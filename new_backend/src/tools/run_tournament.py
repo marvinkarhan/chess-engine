@@ -40,7 +40,7 @@ class Tournament:
       f'-games 2 '
       f'-rounds {self.rounds} '
       f'-pgnout tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn '
-      f'-openings file={OPENING_BOOK_EPD} format=epd -repeat '
+      f'-openings file={OPENING_BOOK_EPD} format=epd order=random -repeat '
       f'-concurrency 6'
       # f'-draw movenumber=40 movecount=8 score=10 '
     )
@@ -49,7 +49,7 @@ class Tournament:
 
 def main():
   engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='WITH_QS_CHECKS')]
-  tournament = Tournament(engines, 6, 60)
+  tournament = Tournament(engines, 12, 60)
   tournament.start()
 
 if __name__ == '__main__':
