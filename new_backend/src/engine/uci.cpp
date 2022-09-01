@@ -8,6 +8,7 @@
 #include "uci.h"
 #include "move.h"
 #include "nnue/halfkp.h"
+#include "nnue/init.h"
 
 // implement First Use Idiom
 Board &getBoard()
@@ -133,8 +134,15 @@ void setOption(std::istringstream &ss)
   if (id == "nnue" && (value == "true" || value == "false")) {
       getBoard().useNNUE = value == "true";
       std::cout << "Using NNUE: " << value << std::endl;
+  } else if (id == "nnueFile" && value.length() > 0) {
+    NNUE::loadFile(value);
   } else
     std::cout << "Not an option" << std::endl;
+}
+
+void printOptions() {
+  std::cout << "option name nnue type check default true" << std::endl;
+  std::cout << "option name nnueFile type string default <empty>" << std::endl;
 }
 
 std::string uciProcessCommand(std::string command)
@@ -150,6 +158,7 @@ std::string uciProcessCommand(std::string command)
   {
     // general info about the engine (and options currently there are none)
     std::cout << "id name NoPy++" << std::endl;
+    printOptions();
     std::cout << "uciok" << std::endl;
   }
   else if (token == "isready")
@@ -191,6 +200,7 @@ void uciLoop()
 {
   std::cout << "uciLoop starting" << std::endl;
   std::string command, token;
+  getBoard();
 
   do
   {

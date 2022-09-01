@@ -9,7 +9,8 @@
 namespace NNUE
 {
   void init();
+  void loadFile(std::string fileName);
   
-  bool loadWeights(std::string name, std::istream &stream);
+  bool loadWeights(std::istream &stream);
   int evaluate(Board &board);
 } // namespace NNUE
