@@ -10,6 +10,7 @@ OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
 NNUE_CENTROPY_111_EPOCH = './engines/centropy_111_epoch'
 STOCKFISH = './engines/stockfish_11_x64'
 QS_CHECKS = './engines/withQSChecks'
+MAVERICK ='./engines/maverick-10-lin32-ja_2500'
 
 # using cutechess (cli): https://github.com/cutechess/cutechess
 
@@ -49,7 +50,7 @@ class Tournament:
     os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='QS_CHECKS')]
+  engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='HYBRID')]
   tournament = Tournament(engines, 12, 60, 1)
   tournament.start()
 

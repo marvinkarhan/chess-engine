@@ -66,7 +66,6 @@ public:
   int pvLength[MAX_DEPTH];
   int ply = 0;
   int latestScore = 0;
-  int classicEvals, nnueEvals = 0;
   // indexed by [piece][targetSquare] (#15 because king = 14)
   // int historyHeuristicTable[15][64] = {0};
   // killer moves

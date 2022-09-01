@@ -166,8 +166,6 @@ void Board::resetBoard()
   halfMoves = 0;
   fullMoves = 0;
   nodeCount = 0;
-  classicEvals = 0;
-  nnueEvals = 0;
   hashTableHits = 0;
   epSquareBB = 0;
   pieceValues = 0;
@@ -308,17 +306,13 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
 
 int Board::evaluate()
 {
+  if (useNNUE)
+  {
+    return NNUE::evaluate(*this);
+  }
   int score = 0;
   score += pieceValues;
   score += pieceSquareValues;
-  // only use NNUE when the score does not exceeds a set piece range
-  // because NNUE does not work well in positions with large piece imbalances
-  if (useNNUE && score < 200)
-  {
-    nnueEvals++;
-    return NNUE::evaluate(*this);
-  }
-  classicEvals++;
   // Bishop pair bonus
   if (pop_last_bb(pieces(1, BISHOP)))
     score += BISHOP_PAIR;
