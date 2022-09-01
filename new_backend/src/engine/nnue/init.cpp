@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 
 #include "../incbin/incbin.h"
 #include "init.h"
@@ -27,7 +28,6 @@ namespace NNUE
 
   AlignedPtr<FeatureTransformer> feature_transformer;
   AlignedPtr<Network> network;
-  std::string fileName;
 
   void init()
   {
@@ -45,9 +45,19 @@ namespace NNUE
                         size_t(gBinNNUESize));
 
     istream stream(&buffer);
-    if (!loadWeights(NNUEFileName, stream))
+    if (!loadWeights(stream))
     {
-      throw std::invalid_argument("could not load nnue file");
+      throw std::invalid_argument("Could not load nnue file!");
+    }
+  }
+
+  void loadFile(std::string fileName) {
+    ifstream stream(fileName, ios::binary);
+    if (!loadWeights(stream))
+    {
+      std::cout << "Could not load nnue file!" << std::endl;
+    } else {
+      std::cout << "Now using NNUE file: " << fileName << std::endl;
     }
   }
 
@@ -81,10 +91,9 @@ namespace NNUE
     return stream && stream.peek() == std::ios::traits_type::eof();
   }
 
-  bool loadWeights(std::string name, std::istream &stream)
+  bool loadWeights(std::istream &stream)
   {
     initNet();
-    fileName = name;
     return readParameters(stream);
   }
 

@@ -36,7 +36,7 @@ class Tournament:
    
   def start(self):
     cmd = (
-      f'./cutechess-cli/cutechess-cli -each proto=uci tc={self.tc} '
+      f'./cutechess-cli/cutechess-cli -each proto=uci tc={self.tc} dir={os.path.dirname(os.path.realpath(__file__))} '
       f'{"".join([e.to_string() for e in self.engines])} '
       f'-event {"_vs_".join(["_".join(e.name.split()) for e in self.engines])} '
       f'-games 2 '
@@ -50,8 +50,8 @@ class Tournament:
     os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(QS_CHECKS, name='HYBRID')]
-  tournament = Tournament(engines, 12, 60, 1)
+  engines = [Engine(name='NNUE'), Engine(name='Bad_NNUE', options=[['nnueFile', 'bad2.nnue']])]
+  tournament = Tournament(engines, 3, 60, 1)
   tournament.start()
 
 if __name__ == '__main__':
