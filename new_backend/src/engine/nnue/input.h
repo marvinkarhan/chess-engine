@@ -24,14 +24,6 @@ namespace NNUE
     // Size of forward propagation buffer used from the input layer to this layer
     static constexpr std::size_t kBufferSize = 0;
 
-    // Hash value embedded in the evaluation file
-    static constexpr std::uint32_t GetHashValue()
-    {
-      std::uint32_t hash_value = 0xEC42E90Du;
-      hash_value ^= kOutputDimensions ^ (Offset << 10);
-      return hash_value;
-    }
-
     // Read network parameters
     bool readParameters(std::istream & /*stream*/)
     {

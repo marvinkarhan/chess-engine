@@ -29,7 +29,7 @@ namespace NNUE
   AlignedPtr<FeatureTransformer> feature_transformer;
   AlignedPtr<Network> network;
 
-  void init()
+  bool init()
   {
     // C++ way to prepare a buffer for a memory stream
     class MemoryBuffer : public basic_streambuf<char>
@@ -47,17 +47,21 @@ namespace NNUE
     istream stream(&buffer);
     if (!loadWeights(stream))
     {
-      throw std::invalid_argument("Could not load nnue file!");
+      std::cout << "Could not load nnue file!" << std::endl;
+      return false;
     }
+    return true;
   }
 
-  void loadFile(std::string fileName) {
+  bool loadFile(std::string fileName) {
     ifstream stream(fileName, ios::binary);
     if (!loadWeights(stream))
     {
       std::cout << "Could not load nnue file!" << std::endl;
+      return false;
     } else {
       std::cout << "Now using NNUE file: " << fileName << std::endl;
+      return true;
     }
   }
 

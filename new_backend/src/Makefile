@@ -12,8 +12,8 @@ BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
 
 # Compiler settings
 CPP_STANDARD = 17
-CXXFLAGS = -std=c++$(CPP_STANDARD) -O3
-CC = g++
+CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64 -static
+CCX = g++
 
 # Add support for simd
 # only support x86-64-modern right now
@@ -118,11 +118,11 @@ debug: build-step uci-engine main-engine clean
 
 uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
 	@echo Link uci engine
-	$(CC) $(CXXFLAGS) $(OBJ_FILES) $(UCI_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(UCI_EXE_NAME)
+	$(CCX) $(CXXFLAGS) $(OBJ_FILES) $(UCI_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(UCI_EXE_NAME)
 
 main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
 	@echo Main uci engine
-	$(CC) $(CXXFLAGS) $(OBJ_FILES) $(MAIN_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(MAIN_EXE_NAME)
+	$(CCX) $(CXXFLAGS) $(OBJ_FILES) $(MAIN_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(MAIN_EXE_NAME)
 
 # wasm-engine:
 # 	@echo Compile wasm
@@ -130,7 +130,6 @@ main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
 
 build-step:
 	@echo Build directories
-	@echo $(sse2)
 	$(RM_DIR_CMD) $(BUILD_PATH)
 	mkdir $(BUILD_PATH) $(BUILD_TMP_PATH) $(BUILD_TMP_PATH)/nnue $(BUILD_BIN_PATH)
 
@@ -140,16 +139,16 @@ clean:
 
 $(UCI_OBJ_FILE): $(UCI_SRC_FILE)
 	@echo Compile uci engine main
-	$(CC) $(CXXFLAGS) -c $< -o $@ 
+	$(CCX) $(CXXFLAGS) -c $< -o $@ 
 
 $(MAIN_OBJ_FILE): $(MAIN_SRC_FILE)
 	@echo Compile uci engine main
-	$(CC) $(CXXFLAGS) -c $< -o $@ 
+	$(CCX) $(CXXFLAGS) -c $< -o $@ 
 
 # Compile every engine src into the the build engine folder for multiple use
 $(BUILD_TMP_PATH)/%.o: $(ENGINE_FOLDER)/%.cpp
 	@echo Compile engine sources
-	$(CC) $(CXXFLAGS) -c $< -o $@ 
+	$(CCX) $(CXXFLAGS) -c $< -o $@ 
 
 
 
