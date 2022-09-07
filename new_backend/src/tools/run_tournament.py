@@ -7,6 +7,7 @@ CLASSIC_ENGINE = './engines/classic'
 CLASSIC_OLD = './engines/classic_old'
 STOCKFISH_WITH_MY_NET = './engines/stockfish_mse_55_epoch'
 OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
+OPENING_8MVS_V3 = './books/8mvs_big_+80_+109.epd'
 MASTER = './engines/master'
 STOCKFISH = './engines/stockfish_11_x64'
 QS_CHECKS = './engines/withQSChecks'
@@ -42,17 +43,18 @@ class Tournament:
       f'-games 2 '
       f'-rounds {self.rounds} '
       f'-pgnout tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn '
-      f'-openings file={OPENING_BOOK_EPD} format=epd order=random -repeat '
+      f'-openings file={OPENING_8MVS_V3} format=epd order=random -repeat '
       f'-concurrency 6 '
+      f'-resign movecount=3 score=1000 '
+      f'-draw movenumber=40 movecount=8 score=10 '
       f'-recover '
-      # f'-draw movenumber=40 movecount=8 score=10 '
     )
     print(cmd)
     os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(MASTER, name='MASTER')]
-  tournament = Tournament(engines, 100, 10, 0.2)
+  engines = [Engine(name='NNUE'), Engine(MAVERICK, name='MAVERICK')]
+  tournament = Tournament(engines, 100, 120, 1)
   tournament.start()
 
 if __name__ == '__main__':
