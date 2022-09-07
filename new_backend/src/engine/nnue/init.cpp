@@ -15,14 +15,7 @@
 //   const unsigned char        gBinNNUEData[];  // pointer to start
 //   const unsigned char *const gBinNNUEEnd;     // pointer to end
 //   const unsigned int         gBinNNUESize;    // file size
-#if !defined(_WIN32) && !defined(WIN32) && !defined(_MSC_VER)
 INCBIN(BinNNUE, NNUEFileName);
-#else
-const unsigned char gBinNNUEData[1] = {0x0};
-const unsigned char *const gBinNNUEEnd = &gBinNNUEData[1];
-const unsigned int gBinNNUESize = 1;
-#endif
-
 namespace NNUE
 {
 
