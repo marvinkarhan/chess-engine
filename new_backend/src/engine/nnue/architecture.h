@@ -3,13 +3,12 @@
 #include "input.h"
 #include "affine-transform.h"
 #include "clipped-relu.h"
-#include "feature-set.h"
 #include "halfkp.h"
 
 namespace NNUE
 {
   // Input features used in evaluation function
-  using RawFeatures = FeatureSet<HalfKP<Side::kFriend>>;
+  using FeatureSet = HalfKP;
 
   // Number of input feature dimensions after conversion
   constexpr std::uint32_t kTransformedFeatureDimensions = 256;

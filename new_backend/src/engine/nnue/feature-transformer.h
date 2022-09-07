@@ -2,7 +2,6 @@
 
 #include "halfkp.h"
 #include "architecture.h"
-#include "index-list.h"
 
 namespace NNUE
 {
@@ -18,19 +17,12 @@ namespace NNUE
     using OutputType = std::uint8_t;
 
     // Number of input/output dimensions
-    static constexpr std::uint32_t kInputDimensions = RawFeatures::kDimensions;
+    static constexpr std::uint32_t kInputDimensions = FeatureSet::kDimensions;
     static constexpr std::uint32_t kOutputDimensions = kHalfDimensions * 2;
 
     // Size of forward propagation buffer
     static constexpr std::size_t kBufferSize =
         kOutputDimensions * sizeof(OutputType);
-
-    // Hash value embedded in the evaluation file
-    static constexpr std::uint32_t GetHashValue()
-    {
-
-      return RawFeatures::kHashValue ^ kOutputDimensions;
-    }
 
     // Read network parameters
     bool readParameters(std::istream &stream)
@@ -173,13 +165,12 @@ namespace NNUE
     {
       auto &accumulator = board.state->accumulator;
       std::uint32_t i = 0;
-      IndexList active_indices[2];
-      RawFeatures::AppendActiveIndices(board, active_indices);
       for (bool perspective : {WHITE, BLACK})
       {
-        std::memcpy(accumulator.accumulation[perspective], biases_,
-                    kHalfDimensions * sizeof(BiasType));
-        for (const auto index : active_indices[perspective])
+        FeatureSet::IndexList active_indices;
+        FeatureSet::AppendActiveIndices(board, perspective, active_indices);
+        std::memcpy(accumulator.accumulation[perspective], biases_, kHalfDimensions * sizeof(BiasType));
+        for (const auto index : active_indices)
         {
           const std::uint32_t offset = kHalfDimensions * index;
 #if defined(USE_AVX512)
@@ -241,11 +232,10 @@ namespace NNUE
       const auto prev_accumulator = board.state->oldBoard->accumulator;
       auto &accumulator = board.state->accumulator;
       std::uint32_t i = 0;
-      IndexList removed_indices[2], added_indices[2];
-      bool reset[2];
-      RawFeatures::AppendChangedIndices(board, removed_indices, added_indices, reset);
       for (bool perspective : {WHITE, BLACK})
       {
+        FeatureSet::IndexList removed_indices, added_indices;
+        bool reset = FeatureSet::AppendChangedIndices(board, perspective, removed_indices, added_indices);
 
 #if defined(USE_AVX2)
         constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
@@ -268,7 +258,7 @@ namespace NNUE
             &accumulator.accumulation[perspective]);
 #endif
 
-        if (reset[perspective])
+        if (reset)
         {
           std::memcpy(accumulator.accumulation[perspective], biases_,
                       kHalfDimensions * sizeof(BiasType));
@@ -279,7 +269,7 @@ namespace NNUE
                       prev_accumulator.accumulation[perspective],
                       kHalfDimensions * sizeof(BiasType));
           // Difference calculation for the deactivated features
-          for (const auto index : removed_indices[perspective])
+          for (const auto index : removed_indices)
           {
             const std::uint32_t offset = kHalfDimensions * index;
 
@@ -310,7 +300,7 @@ namespace NNUE
           }
         }
         { // Difference calculation for the activated features
-          for (const auto index : added_indices[perspective])
+          for (const auto index : added_indices)
           {
             const std::uint32_t offset = kHalfDimensions * index;
 
