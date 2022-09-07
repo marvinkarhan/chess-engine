@@ -27,22 +27,22 @@
 //       compiled with older g++ crashes because the output memory is not aligned
 //       even though alignas is specified.
 #if defined(USE_AVX2)
-#if defined(__GNUC__ ) && (__GNUC__ < 9) && defined(_WIN32) && !defined(__clang__)
-#define _mm256_loadA_si256  _mm256_loadu_si256
+#if defined(__GNUC__) && (__GNUC__ < 9) && defined(_WIN32) && !defined(__clang__)
+#define _mm256_loadA_si256 _mm256_loadu_si256
 #define _mm256_storeA_si256 _mm256_storeu_si256
 #else
-#define _mm256_loadA_si256  _mm256_load_si256
+#define _mm256_loadA_si256 _mm256_load_si256
 #define _mm256_storeA_si256 _mm256_store_si256
 #endif
 #endif
 
 #if defined(USE_AVX512)
-#if defined(__GNUC__ ) && (__GNUC__ < 9) && defined(_WIN32) && !defined(__clang__)
-#define _mm512_loadA_si512   _mm512_loadu_si512
-#define _mm512_storeA_si512  _mm512_storeu_si512
+#if defined(__GNUC__) && (__GNUC__ < 9) && defined(_WIN32) && !defined(__clang__)
+#define _mm512_loadA_si512 _mm512_loadu_si512
+#define _mm512_storeA_si512 _mm512_storeu_si512
 #else
-#define _mm512_loadA_si512   _mm512_load_si512
-#define _mm512_storeA_si512  _mm512_store_si512
+#define _mm512_loadA_si512 _mm512_load_si512
+#define _mm512_storeA_si512 _mm512_store_si512
 #endif
 #endif
 
@@ -50,7 +50,7 @@
 class Board;
 
 void *stdAlignedAlloc(size_t alignment, size_t size);
-void stdAlignedFree(void* ptr);
+void stdAlignedFree(void *ptr);
 constexpr std::size_t kMaxSimdWidth = 32;
 constexpr std::size_t kCacheLineSize = 64;
 constexpr int FV_SCALE = 16;
@@ -59,8 +59,10 @@ constexpr int NNUE_PAWN_VALUE = 208;
 
 // Deleter for automating release of memory area
 template <typename T>
-struct AlignedDeleter {
-  void operator()(T* ptr) const {
+struct AlignedDeleter
+{
+  void operator()(T *ptr) const
+  {
     ptr->~T();
     stdAlignedFree(ptr);
   }
@@ -127,3 +129,34 @@ constexpr std::size_t kSimdWidth = 8;
 #elif defined(USE_NEON)
 constexpr std::size_t kSimdWidth = 16;
 #endif
+
+// Class template used for feature index list
+template <typename T, std::size_t MaxSize>
+class ValueList
+{
+
+public:
+  std::size_t size() const { return size_; }
+  void resize(std::size_t size) { size_ = size; }
+  void push_back(const T &value) { values_[size_++] = value; }
+  T &operator[](std::size_t index) { return values_[index]; }
+  T *begin() { return values_; }
+  T *end() { return values_ + size_; }
+  const T &operator[](std::size_t index) const { return values_[index]; }
+  const T *begin() const { return values_; }
+  const T *end() const { return values_ + size_; }
+
+  void swap(ValueList &other)
+  {
+    const std::size_t max_size = std::max(size_, other.size_);
+    for (std::size_t i = 0; i < max_size; ++i)
+    {
+      std::swap(values_[i], other.values_[i]);
+    }
+    std::swap(size_, other.size_);
+  }
+
+private:
+  T values_[MaxSize];
+  std::size_t size_ = 0;
+};
