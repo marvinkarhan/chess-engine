@@ -13,30 +13,9 @@ namespace NNUE
   template <typename... FeatureTypes>
   class FeatureSet;
 
-  // Trigger to perform full calculations instead of difference only
-  enum class TriggerEvent
-  {
-    kFriendKingMoved // calculate full evaluation when own king moves
-  };
-
   enum class Side
   {
     kFriend // side to move
-  };
-
-  // Class template that represents a list of values
-  template <typename T, T... Values>
-  struct CompileTimeList;
-
-  template <typename T, T First, T... Remaining>
-  struct CompileTimeList<T, First, Remaining...>
-  {
-    static constexpr bool Contains(T value)
-    {
-      return value == First || CompileTimeList<T, Remaining...>::Contains(value);
-    }
-    static constexpr std::array<T, sizeof...(Remaining) + 1>
-        kValues = {{First, Remaining...}};
   };
 
   // Base class of feature set
@@ -47,22 +26,18 @@ namespace NNUE
   public:
     // Get a list of indices for active features
     template <typename IndexListType>
-    static void AppendActiveIndices(
-        Board &board, TriggerEvent trigger, IndexListType active[2])
+    static void AppendActiveIndices(Board &board, IndexListType active[2])
     {
 
       for (bool perspective : {WHITE, BLACK})
       {
-        Derived::CollectActiveIndices(
-            board, trigger, perspective, &active[perspective]);
+        Derived::CollectActiveIndices(board, perspective, &active[perspective]);
       }
     }
 
     // Get a list of indices for recently changed features
     template <typename IndexListType>
-    static void AppendChangedIndices(
-        Board &board, TriggerEvent trigger,
-        IndexListType removed[2], IndexListType added[2], bool reset[2])
+    static void AppendChangedIndices(Board &board, IndexListType removed[2], IndexListType added[2], bool reset[2])
     {
 
       const auto &dp = board.state->dirtyPiece;
@@ -72,25 +47,14 @@ namespace NNUE
       for (bool perspective : {WHITE, BLACK})
       {
         reset[perspective] = false;
-        switch (trigger)
-        {
-        case TriggerEvent::kFriendKingMoved:
-          reset[perspective] = dp.piece[0] == makePiece(perspective, KING);
-          break;
-        default:
-          assert(false);
-          break;
-        }
+        reset[perspective] = dp.piece[0] == makePiece(perspective, KING);
         if (reset[perspective])
         {
-          Derived::CollectActiveIndices(
-              board, trigger, perspective, &added[perspective]);
+          Derived::CollectActiveIndices(board, perspective, &added[perspective]);
         }
         else
         {
-          Derived::CollectChangedIndices(
-              board, trigger, perspective,
-              &removed[perspective], &added[perspective]);
+          Derived::CollectChangedIndices(board, perspective, &removed[perspective], &added[perspective]);
         }
       }
     }
@@ -107,35 +71,19 @@ namespace NNUE
     // Number of feature dimensions
     static constexpr std::uint32_t kDimensions = FeatureType::kDimensions;
     // Maximum number of simultaneously active features
-    static constexpr std::uint32_t kMaxActiveDimensions =
-        FeatureType::kMaxActiveDimensions;
-    // Trigger for full calculation instead of difference calculation
-    using SortedTriggerSet =
-        CompileTimeList<TriggerEvent, FeatureType::kRefreshTrigger>;
-    static constexpr auto kRefreshTriggers = SortedTriggerSet::kValues;
+    static constexpr std::uint32_t kMaxActiveDimensions = FeatureType::kMaxActiveDimensions;
 
   private:
     // Get a list of indices for active features
-    static void CollectActiveIndices(
-        Board &board, const TriggerEvent trigger, const bool perspective,
-        IndexList *const active)
+    static void CollectActiveIndices(Board &board, const bool perspective, IndexList *const active)
     {
-      if (FeatureType::kRefreshTrigger == trigger)
-      {
-        FeatureType::AppendActiveIndices(board, perspective, active);
-      }
+      FeatureType::AppendActiveIndices(board, perspective, active);
     }
 
     // Get a list of indices for recently changed features
-    static void CollectChangedIndices(
-        Board &board, const TriggerEvent trigger, const bool perspective,
-        IndexList *const removed, IndexList *const added)
+    static void CollectChangedIndices(Board &board, const bool perspective, IndexList *const removed, IndexList *const added)
     {
-
-      if (FeatureType::kRefreshTrigger == trigger)
-      {
-        FeatureType::AppendChangedIndices(board, perspective, removed, added);
-      }
+      FeatureType::AppendChangedIndices(board, perspective, removed, added);
     }
 
     // Make the base class and the class template that recursively uses itself a friend

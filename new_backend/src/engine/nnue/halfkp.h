@@ -26,8 +26,6 @@ namespace NNUE
         static_cast<std::uint32_t>(64) * static_cast<std::uint32_t>(PS_END);
     // Maximum number of simultaneously active features
     static constexpr std::uint32_t kMaxActiveDimensions = 30; // Kings don't count
-    // Trigger for full calculation instead of difference calculation
-    static constexpr TriggerEvent kRefreshTrigger = TriggerEvent::kFriendKingMoved;
 
     // Get a list of indices for active features
     static void AppendActiveIndices(Board &board, bool perspective,

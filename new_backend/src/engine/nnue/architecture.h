@@ -14,9 +14,6 @@ namespace NNUE
   // Number of input feature dimensions after conversion
   constexpr std::uint32_t kTransformedFeatureDimensions = 256;
 
-  // Trigger for full calculation instead of difference calculation
-  constexpr auto kRefreshTriggers = RawFeatures::kRefreshTriggers;
-
   using InputLayer = InputSlice<kTransformedFeatureDimensions * 2>;
   using HiddenLayer1 = ClippedReLU<AffineTransform<InputLayer, 32>>;
   using HiddenLayer2 = ClippedReLU<AffineTransform<HiddenLayer1, 32>>;

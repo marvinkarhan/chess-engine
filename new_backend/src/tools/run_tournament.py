@@ -7,7 +7,7 @@ CLASSIC_ENGINE = './engines/classic'
 CLASSIC_OLD = './engines/classic_old'
 STOCKFISH_WITH_MY_NET = './engines/stockfish_mse_55_epoch'
 OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
-NNUE_CENTROPY_111_EPOCH = './engines/centropy_111_epoch'
+MASTER = './engines/master'
 STOCKFISH = './engines/stockfish_11_x64'
 QS_CHECKS = './engines/withQSChecks'
 MAVERICK ='./engines/maverick-10-lin32-ja_2500'
@@ -50,8 +50,8 @@ class Tournament:
     os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(name='Bad_NNUE', options=[['nnueFile', 'bad2.nnue']])]
-  tournament = Tournament(engines, 3, 60, 1)
+  engines = [Engine(name='NNUE'), Engine(MASTER, name='MASTER')]
+  tournament = Tournament(engines, 100, 10, 0.1)
   tournament.start()
 
 if __name__ == '__main__':
