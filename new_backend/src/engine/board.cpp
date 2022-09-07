@@ -30,7 +30,7 @@ Board::Board(FenString fen /*=START_POS_FEN*/)
   stopSearch = false;
   parseFenString(fen);
 
-  NNUE::init();
+  useNNUE = NNUE::init();
 }
 
 Board::~Board()

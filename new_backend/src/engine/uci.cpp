@@ -135,7 +135,7 @@ void setOption(std::istringstream &ss)
       getBoard().useNNUE = value == "true";
       std::cout << "Using NNUE: " << value << std::endl;
   } else if (id == "nnueFile" && value.length() > 0) {
-    NNUE::loadFile(value);
+    getBoard().useNNUE = NNUE::loadFile(value);
   } else
     std::cout << "Not an option" << std::endl;
 }

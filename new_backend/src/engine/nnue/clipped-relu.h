@@ -28,13 +28,6 @@ namespace NNUE
     static constexpr std::size_t kBufferSize =
         PreviousLayer::kBufferSize + kSelfBufferSize;
 
-    // Hash value embedded in the evaluation file
-    static constexpr std::uint32_t GetHashValue()
-    {
-      std::uint32_t hash_value = 0x538D24C7u;
-      hash_value += PreviousLayer::GetHashValue();
-      return hash_value;
-    }
 
     // Read network parameters
     bool readParameters(std::istream &stream)

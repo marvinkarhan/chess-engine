@@ -8,8 +8,8 @@
 
 namespace NNUE
 {
-  void init();
-  void loadFile(std::string fileName);
+  bool init();
+  bool loadFile(std::string fileName);
   
   bool loadWeights(std::istream &stream);
   int evaluate(Board &board);
