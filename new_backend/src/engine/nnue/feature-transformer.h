@@ -103,9 +103,9 @@ namespace NNUE
         for (std::uint32_t j = 0; j < kNumChunks; ++j)
         {
           __m256i sum0 = _mm256_loadA_si256(
-              &reinterpret_cast<const __m256i *>(accumulation[perspectives[p]][0])[j * 2 + 0]);
+              &reinterpret_cast<const __m256i *>(accumulation[perspectives[p]])[j * 2 + 0]);
           __m256i sum1 = _mm256_loadA_si256(
-              &reinterpret_cast<const __m256i *>(accumulation[perspectives[p]][0])[j * 2 + 1]);
+              &reinterpret_cast<const __m256i *>(accumulation[perspectives[p]])[j * 2 + 1]);
           _mm256_storeA_si256(&out[j], _mm256_permute4x64_epi64(_mm256_max_epi8(
                                                                     _mm256_packs_epi16(sum0, sum1), kZero),
                                                                 kControl));
@@ -116,9 +116,9 @@ namespace NNUE
         for (std::uint32_t j = 0; j < kNumChunks; ++j)
         {
           __m128i sum0 = _mm_load_si128(&reinterpret_cast<const __m128i *>(
-              accumulation[perspectives[p]][0])[j * 2 + 0]);
+              accumulation[perspectives[p]])[j * 2 + 0]);
           __m128i sum1 = _mm_load_si128(&reinterpret_cast<const __m128i *>(
-              accumulation[perspectives[p]][0])[j * 2 + 1]);
+              accumulation[perspectives[p]])[j * 2 + 1]);
           const __m128i packedbytes = _mm_packs_epi16(sum0, sum1);
 
           _mm_store_si128(&out[j],
@@ -137,9 +137,9 @@ namespace NNUE
         for (std::uint32_t j = 0; j < kNumChunks; ++j)
         {
           __m64 sum0 = *(&reinterpret_cast<const __m64 *>(
-              accumulation[perspectives[p]][0])[j * 2 + 0]);
+              accumulation[perspectives[p]])[j * 2 + 0]);
           __m64 sum1 = *(&reinterpret_cast<const __m64 *>(
-              accumulation[perspectives[p]][0])[j * 2 + 1]);
+              accumulation[perspectives[p]])[j * 2 + 1]);
           const __m64 packedbytes = _mm_packs_pi16(sum0, sum1);
           out[j] = _mm_subs_pi8(_mm_adds_pi8(packedbytes, k0x80s), k0x80s);
         }
@@ -149,14 +149,14 @@ namespace NNUE
         for (std::uint32_t j = 0; j < kNumChunks; ++j)
         {
           int16x8_t sum = reinterpret_cast<const int16x8_t *>(
-              accumulation[perspectives[p]][0])[j];
+              accumulation[perspectives[p]])[j];
           out[j] = vmax_s8(vqmovn_s16(sum), kZero);
         }
 
 #else
         for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
         {
-          BiasType sum = accumulation[static_cast<int>(perspectives[p])][0][j];
+          BiasType sum = accumulation[static_cast<int>(perspectives[p])][j];
           output[offset + j] = static_cast<OutputType>(
               std::max<int>(0, std::min<int>(127, sum)));
         }
@@ -174,18 +174,17 @@ namespace NNUE
       auto &accumulator = board.state->accumulator;
       std::uint32_t i = 0;
       IndexList active_indices[2];
-      RawFeatures::AppendActiveIndices(board, kRefreshTriggers[i],
-                                       active_indices);
+      RawFeatures::AppendActiveIndices(board, active_indices);
       for (bool perspective : {WHITE, BLACK})
       {
-        std::memcpy(accumulator.accumulation[perspective][i], biases_,
+        std::memcpy(accumulator.accumulation[perspective], biases_,
                     kHalfDimensions * sizeof(BiasType));
         for (const auto index : active_indices[perspective])
         {
           const std::uint32_t offset = kHalfDimensions * index;
 #if defined(USE_AVX512)
           auto accumulation = reinterpret_cast<__m512i *>(
-              &accumulator.accumulation[perspective][i][0]);
+              &accumulator.accumulation[perspective]);
           auto column = reinterpret_cast<const __m512i *>(&weights_[offset]);
           constexpr std::uint32_t kNumChunks = kHalfDimensions / kSimdWidth;
           for (std::uint32_t j = 0; j < kNumChunks; ++j)
@@ -193,7 +192,7 @@ namespace NNUE
 
 #elif defined(USE_AVX2)
           auto accumulation = reinterpret_cast<__m256i *>(
-              &accumulator.accumulation[perspective][i][0]);
+              &accumulator.accumulation[perspective]);
           auto column = reinterpret_cast<const __m256i *>(&weights_[offset]);
           constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
           for (std::uint32_t j = 0; j < kNumChunks; ++j)
@@ -201,7 +200,7 @@ namespace NNUE
 
 #elif defined(USE_SSE2)
           auto accumulation = reinterpret_cast<__m128i *>(
-              &accumulator.accumulation[perspective][i][0]);
+              &accumulator.accumulation[perspective]);
           auto column = reinterpret_cast<const __m128i *>(&weights_[offset]);
           constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
           for (std::uint32_t j = 0; j < kNumChunks; ++j)
@@ -209,7 +208,7 @@ namespace NNUE
 
 #elif defined(USE_MMX)
           auto accumulation = reinterpret_cast<__m64 *>(
-              &accumulator.accumulation[perspective][i][0]);
+              &accumulator.accumulation[perspective]);
           auto column = reinterpret_cast<const __m64 *>(&weights_[offset]);
           constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
           for (std::uint32_t j = 0; j < kNumChunks; ++j)
@@ -217,7 +216,7 @@ namespace NNUE
 
 #elif defined(USE_NEON)
           auto accumulation = reinterpret_cast<int16x8_t *>(
-              &accumulator.accumulation[perspective][i][0]);
+              &accumulator.accumulation[perspective]);
           auto column = reinterpret_cast<const int16x8_t *>(&weights_[offset]);
           constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
           for (std::uint32_t j = 0; j < kNumChunks; ++j)
@@ -225,7 +224,7 @@ namespace NNUE
 
 #else
           for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
-            accumulator.accumulation[perspective][i][j] += weights_[offset + j];
+            accumulator.accumulation[perspective][j] += weights_[offset + j];
 #endif
         }
       }
@@ -244,41 +243,40 @@ namespace NNUE
       std::uint32_t i = 0;
       IndexList removed_indices[2], added_indices[2];
       bool reset[2];
-      RawFeatures::AppendChangedIndices(board, kRefreshTriggers[i],
-                                        removed_indices, added_indices, reset);
+      RawFeatures::AppendChangedIndices(board, removed_indices, added_indices, reset);
       for (bool perspective : {WHITE, BLACK})
       {
 
 #if defined(USE_AVX2)
         constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
         auto accumulation = reinterpret_cast<__m256i *>(
-            &accumulator.accumulation[perspective][i][0]);
+            &accumulator.accumulation[perspective]);
 
 #elif defined(USE_SSE2)
         constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
         auto accumulation = reinterpret_cast<__m128i *>(
-            &accumulator.accumulation[perspective][i][0]);
+            &accumulator.accumulation[perspective]);
 
 #elif defined(USE_MMX)
         constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
         auto accumulation = reinterpret_cast<__m64 *>(
-            &accumulator.accumulation[perspective][i][0]);
+            &accumulator.accumulation[perspective]);
 
 #elif defined(USE_NEON)
         constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
         auto accumulation = reinterpret_cast<int16x8_t *>(
-            &accumulator.accumulation[perspective][i][0]);
+            &accumulator.accumulation[perspective]);
 #endif
 
         if (reset[perspective])
         {
-          std::memcpy(accumulator.accumulation[perspective][i], biases_,
+          std::memcpy(accumulator.accumulation[perspective], biases_,
                       kHalfDimensions * sizeof(BiasType));
         }
         else
         {
-          std::memcpy(accumulator.accumulation[perspective][i],
-                      prev_accumulator.accumulation[perspective][i],
+          std::memcpy(accumulator.accumulation[perspective],
+                      prev_accumulator.accumulation[perspective],
                       kHalfDimensions * sizeof(BiasType));
           // Difference calculation for the deactivated features
           for (const auto index : removed_indices[perspective])
@@ -307,7 +305,7 @@ namespace NNUE
 
 #else
             for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
-              accumulator.accumulation[perspective][i][j] -= weights_[offset + j];
+              accumulator.accumulation[perspective][j] -= weights_[offset + j];
 #endif
           }
         }
@@ -338,7 +336,7 @@ namespace NNUE
 
 #else
             for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
-              accumulator.accumulation[perspective][i][j] += weights_[offset + j];
+              accumulator.accumulation[perspective][j] += weights_[offset + j];
 #endif
           }
         }
