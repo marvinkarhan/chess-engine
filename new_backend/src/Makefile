@@ -12,7 +12,7 @@ BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
 
 # Compiler settings
 CPP_STANDARD = 17
-CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64 -static
+CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64
 CCX = g++
 
 # Add support for simd
