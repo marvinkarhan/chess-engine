@@ -1,10 +1,11 @@
 ifeq ($(OS),Windows_NT)
+	RM_DIR_CMD = if exist $(BUILD_PATH) rmdir /q /s
 	FixPath = $(subst /,\,$1)
 else
+	RM_DIR_CMD = rm -rf
 	FixPath = $1
 endif
 
-RM_DIR_CMD = rm -rf
 BUILD_PATH = build
 BUILD_TMP_PATH = $(call FixPath,$(BUILD_PATH)/tmp)
 BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
@@ -30,7 +31,7 @@ ENGINE_SRC_FILES = $(wildcard $(ENGINE_FOLDER)/*.cpp)
 # changed the .cpp ending to .o for every file
 OBJ_FILES = $(patsubst $(ENGINE_FOLDER)/%.cpp,$(BUILD_TMP_PATH)/%.o,$(ENGINE_SRC_FILES)) \
 
-all: build-step uci-engine main-engine wasm-engine clean
+all: build-step uci-engine main-engine clean
 
 debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O1 -g
 debug: build-step uci-engine clean
