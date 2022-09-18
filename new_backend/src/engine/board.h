@@ -128,7 +128,6 @@ public:
   bool partialStalemate();
   bool stalemate();
   bool checkmate();
-  auto getMovesTree(int depth);
   u64 perft(int depth);
   std::string divide(int depth);
   void store(Piece capturedPiece = NO_PIECE);

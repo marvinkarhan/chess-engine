@@ -164,7 +164,6 @@ namespace NNUE
     void RefreshAccumulator(Board &board) const
     {
       auto &accumulator = board.state->accumulator;
-      std::uint32_t i = 0;
       for (bool perspective : {WHITE, BLACK})
       {
         FeatureSet::IndexList active_indices;
@@ -231,7 +230,6 @@ namespace NNUE
     {
       const auto prev_accumulator = board.state->oldBoard->accumulator;
       auto &accumulator = board.state->accumulator;
-      std::uint32_t i = 0;
       for (bool perspective : {WHITE, BLACK})
       {
         FeatureSet::IndexList removed_indices, added_indices;
