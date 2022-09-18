@@ -150,11 +150,11 @@ void initArrRectangularLines()
     {
       BB bb_2 = SQUARE_BBS[j];
       if (BISHOP_MOVE_BBS[i] & bb_2)
-        LINE_BBS[i][j] = BISHOP_MOVE_BBS[i] & BISHOP_MOVE_BBS[j] | bb_1 | bb_2;
+        LINE_BBS[i][j] = (BISHOP_MOVE_BBS[i] & BISHOP_MOVE_BBS[j]) | bb_1 | bb_2;
       else if (HORIZONTAL_MOVE_BBS[i] & bb_2)
-        LINE_BBS[i][j] = HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j] | bb_1 | bb_2;
+        LINE_BBS[i][j] = (HORIZONTAL_MOVE_BBS[i] & HORIZONTAL_MOVE_BBS[j]) | bb_1 | bb_2;
       else if (VERTICAL_MOVE_BBS[i] & bb_2)
-        LINE_BBS[i][j] = VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j] | bb_1 | bb_2;
+        LINE_BBS[i][j] = (VERTICAL_MOVE_BBS[i] & VERTICAL_MOVE_BBS[j]) | bb_1 | bb_2;
       else
         LINE_BBS[i][j] = 0;
     }

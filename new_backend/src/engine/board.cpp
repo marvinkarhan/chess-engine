@@ -204,7 +204,6 @@ void Board::printBitboard(BB bb)
 
 void Board::prettyPrint()
 {
-  BB bb = piecesByType[ALL_PIECES];
   std::string lineSeperator = "+---+---+---+---+---+---+---+---+";
   for (int i = 7; i >= 0; i--)
   {
@@ -543,7 +542,6 @@ void Board::printEveryPiece()
 {
   for (auto piece : PIECE_ENUMERATED)
   {
-    BB bb = pieces(piece);
     std::cout << std::string(1, CharIndexToPiece[piece]) + ":" << std::endl;
     printBitboard(pieces(piece));
     std::cout << std::endl;
@@ -568,7 +566,7 @@ void Board::parseFenString(FenString fen)
   {
     if (isdigit(character))
       placementSquare -= character - '0';
-    else if (character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z')
+    else if ((character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z'))
     {
       createPiece(Piece(CharIndexToPiece.find(character)), placementSquare);
       hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[Piece(CharIndexToPiece.find(character))] + originSquare(placementSquare)];
@@ -745,7 +743,7 @@ BB Board::blockers(int square, bool activeSide, BB occupied)
 std::vector<Move> Board::getPV()
 {
   std::vector<Move> moves;
-  if (stopSearch || (pvLength[0] == 0) && !latestPv.empty())
+  if (stopSearch || ((pvLength[0] == 0) && !latestPv.empty()))
   {
     return latestPv;
   }
@@ -795,7 +793,6 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
   {
     // pawn moves
     // generate vars to handle pawn colors easier
-    BB R2orR7 = activeSide ? RANK_2 : RANK_7;
     BB R3orR6 = activeSide ? RANK_3 : RANK_6;
     BB promotionRank = activeSide ? RANK_7 : RANK_2;
     Direction moveDirection = activeSide ? UP : DOWN;
@@ -1099,8 +1096,6 @@ bool Board::checkmate()
   }
   return false;
 }
-
-auto Board::getMovesTree(int depth) {}
 
 u64 Board::perft(int depth)
 {
@@ -1420,11 +1415,7 @@ bool Board::makeMove(const Move &newMove)
 
 void Board::unmakeMove(const Move &oldMove)
 {
-  // std::cout << "unmake move: " << toUciString(oldMove) << std::endl;
   activeSide = !activeSide;
-  BB originSquareBB = SQUARE_BBS[originSquare(oldMove)];
-  BB targetSquareBB = SQUARE_BBS[targetSquare(oldMove)];
-  Piece originPiece = piecePos[targetSquare(oldMove)];
 
   if (moveType(oldMove) == PROMOTION)
   {

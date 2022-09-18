@@ -5,7 +5,7 @@
 #include "engine/constants.h"
 #include "engine/uci.h"
 
-int main(int argc, char *argv[])
+int main()
 {
   initConstants();
 

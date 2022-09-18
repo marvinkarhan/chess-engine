@@ -12,7 +12,7 @@ BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
 
 # Compiler settings
 CPP_STANDARD = 17
-CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64
+CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64 -Wall -Wextra
 CCX = g++
 
 # Add support for simd
@@ -110,11 +110,14 @@ ENGINE_SRC_FILES = $(wildcard $(NNUE_FOLDER)/*.cpp) $(wildcard $(ENGINE_FOLDER)/
 # changed the .cpp ending to .o for every file
 OBJ_FILES = $(patsubst $(ENGINE_FOLDER)/%.cpp,$(BUILD_TMP_PATH)/%.o,$(ENGINE_SRC_FILES))
 
-all: build-step uci-engine main-engine clean
-# all: build-step uci-engine main-engine wasm-engine clean
+all: build-step uci-engine clean
+# all: build-step uci-engine wasm-engine clean
 
 debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O1 -g
-debug: build-step uci-engine main-engine clean
+debug: all
+
+profile: CXXFLAGS += -gp
+profile: all
 
 uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
 	@echo Link uci engine
