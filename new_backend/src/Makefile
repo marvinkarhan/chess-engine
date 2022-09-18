@@ -116,9 +116,6 @@ all: build-step uci-engine clean
 debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O1 -g
 debug: all
 
-profile: CXXFLAGS += -gp
-profile: all
-
 uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE) 
 	@echo Link uci engine
 	$(CCX) $(CXXFLAGS) $(OBJ_FILES) $(UCI_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(UCI_EXE_NAME)
