@@ -2,21 +2,19 @@ import os
 from datetime import datetime
 from typing import List
 
-DEFAULT_ENGINE_SAVE = '../build/bin/uci-engine'
+DEFAULT_ENGINE = '../build/bin/uci-engine'
+HCE_ENGINE = './engines/HCE'
 CLASSIC_ENGINE = './engines/classic'
-CLASSIC_OLD = './engines/classic_old'
-STOCKFISH_WITH_MY_NET = './engines/stockfish_mse_55_epoch'
-OPENING_BOOK_EPD = './books/UHO_V3_6mvs_+090_+099.epd'
+OPENING_BOOK_UHO = './books/UHO_V3_6mvs_+090_+099.epd'
 OPENING_8MVS_V3 = './books/8mvs_big_+80_+109.epd'
-MASTER = './engines/master'
 STOCKFISH = './engines/stockfish_11_x64'
-QS_CHECKS = './engines/withQSChecks'
 MAVERICK ='./engines/maverick-10-lin32-ja_2500'
 
 # using cutechess (cli): https://github.com/cutechess/cutechess
+ORDO = './ordo/ordo-linux64'
 
 class Engine:
-  def __init__(self, file = DEFAULT_ENGINE_SAVE, name = '', options=[]):
+  def __init__(self, file = DEFAULT_ENGINE, name = '', options=[]):
     self.file = file
     self.name = name
     self.option = "".join([f'option.{o[0]}={o[1]} ' for o in options])
@@ -34,6 +32,7 @@ class Tournament:
     self.engines = engines
     self.rounds = rounds
     self.tc = f'{time}+{increment}' if increment else f'{time}'
+    self.out_file = f'tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn'
    
   def start(self):
     cmd = (
@@ -42,20 +41,36 @@ class Tournament:
       f'-event {"_vs_".join(["_".join(e.name.split()) for e in self.engines])} '
       f'-games 2 '
       f'-rounds {self.rounds} '
-      f'-pgnout tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn '
-      f'-openings file={OPENING_8MVS_V3} format=epd order=random -repeat '
+      f'-pgnout {self.out_file} '
+      f'-openings file={OPENING_BOOK_UHO} format=epd order=random -repeat '
       f'-concurrency 6 '
-      f'-resign movecount=3 score=1000 '
-      f'-draw movenumber=40 movecount=8 score=10 '
+      # f'-resign movecount=3 score=1000 '
+      # f'-draw movenumber=40 movecount=8 score=10 '
       f'-recover '
     )
     print(cmd)
     os.system(cmd)
 
+  def estimate_elo_with_ordo(self):
+    ordo_file = self.out_file.replace('.pgn', '_ordo.txt')
+    cmd = (
+      f'{ORDO} '
+      f'-q ' # quiet
+      f'-a 0 ' # avg to 0 in order to diff to master
+      f'-D ' # adjust for draw rate
+      f'-W ' # adjust for white advantage
+      f'-s 100 ' # use 100 simulations to estimate error
+      f'-p {self.out_file} '
+      f'-o {ordo_file} '
+    )
+    print(cmd)
+    return os.system(cmd)
+
 def main():
-  engines = [Engine(name='NNUE'), Engine(MAVERICK, name='MAVERICK')]
-  tournament = Tournament(engines, 100, 120, 1)
+  engines = [Engine(name='NNUE'), Engine(HCE_ENGINE, name='HCE')]
+  tournament = Tournament(engines, 5, 10, 1)
   tournament.start()
+  tournament.estimate_elo_with_ordo()
 
 if __name__ == '__main__':
   main()
