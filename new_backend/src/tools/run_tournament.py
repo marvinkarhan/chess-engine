@@ -1,4 +1,6 @@
 import os
+import argparse
+import os
 from datetime import datetime
 from typing import List
 
@@ -68,10 +70,17 @@ class Tournament:
     return os.system(cmd)
 
 def main():
-  engines = [Engine(name='NNUE'), Engine(HCE_ENGINE, name='HCE')]
-  tournament = Tournament(engines, 5, 10, 0.1)
+  parser = argparse.ArgumentParser(description='Plays a gauntlet tournament comparing the master to a chess engine.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument('--engine', type=str, help='Set the path enemy to test against')
+  parser.add_argument('--rounds', default=200, type=int, help='Number of rounds to play.')
+  parser.add_argument('--tc', default=10, type=int, help='Number of Seconds for each Game.')
+  args = parser.parse_args()
+  enemy_name = os.path.split(os.path.normpath(args.engine))[-1]
+  print(args.engine, enemy_name)
+  engines = [Engine(name='NNUE'), Engine(args.engine, name=enemy_name)]
+  tournament = Tournament(engines, args.rounds, args.tc, 0.1)
   tournament.start()
-  tournament.estimate_elo_with_ordo('HCE')
+  tournament.estimate_elo_with_ordo(enemy_name)
 
 if __name__ == '__main__':
   main()
