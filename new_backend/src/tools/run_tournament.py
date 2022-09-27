@@ -30,10 +30,11 @@ class Engine:
     return string
 
 class Tournament:
-  def __init__(self, engines: List[Engine], rounds: int, time: int, increment = 0):
+  def __init__(self, engines: List[Engine], rounds: int, time: int, increment = 0, concurrency = 1):
     self.engines = engines
     self.rounds = rounds
     self.tc = f'{time}+{increment}' if increment else f'{time}'
+    self.concurrency = concurrency
     self.out_file = f'tournaments/{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.pgn'
    
   def start(self):
@@ -45,7 +46,7 @@ class Tournament:
       f'-rounds {self.rounds} '
       f'-pgnout {self.out_file} '
       f'-openings file={OPENING_BOOK_UHO} format=epd order=random -repeat '
-      f'-concurrency 64 '
+      f'-concurrency {self.concurrency} '
       f'-resign movecount=3 score=1000 '
       f'-draw movenumber=40 movecount=8 score=10 '
       f'-recover '
@@ -72,15 +73,18 @@ class Tournament:
 def main():
   parser = argparse.ArgumentParser(description='Plays a gauntlet tournament comparing the master to a chess engine.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--engine', type=str, help='Set the path enemy to test against')
+  parser.add_argument('--engine_name', type=str, help='Set the name of the enemy engine')
   parser.add_argument('--rounds', default=200, type=int, help='Number of rounds to play.')
   parser.add_argument('--tc', default=10, type=int, help='Number of Seconds for each Game.')
+  parser.add_argument('--increment', default=0.1, type=float, help='Number of Seconds of increment for each Game.')
+  parser.add_argument('--concurrency', default=8, type=int, help='Number of concurrently ran games.')
   args = parser.parse_args()
   enemy_name = os.path.split(os.path.normpath(args.engine))[-1]
   print(args.engine, enemy_name)
-  engines = [Engine(name='NNUE'), Engine(args.engine, name=enemy_name)]
-  tournament = Tournament(engines, args.rounds, args.tc, 0.1)
+  engines = [Engine(name='NNUE'), Engine(args.engine, name=args.engine_name)]
+  tournament = Tournament(engines, args.rounds, args.tc, args.increment, args.concurrency)
   tournament.start()
-  tournament.estimate_elo_with_ordo(enemy_name)
+  tournament.estimate_elo_with_ordo(args.engine_name)
 
 if __name__ == '__main__':
   main()
