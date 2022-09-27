@@ -43,20 +43,21 @@ class Tournament:
       f'-rounds {self.rounds} '
       f'-pgnout {self.out_file} '
       f'-openings file={OPENING_BOOK_UHO} format=epd order=random -repeat '
-      f'-concurrency 6 '
-      # f'-resign movecount=3 score=1000 '
-      # f'-draw movenumber=40 movecount=8 score=10 '
+      f'-concurrency 64 '
+      f'-resign movecount=3 score=1000 '
+      f'-draw movenumber=40 movecount=8 score=10 '
       f'-recover '
     )
     print(cmd)
     os.system(cmd)
 
-  def estimate_elo_with_ordo(self):
+  def estimate_elo_with_ordo(self, relative_to = 'NNUE'):
     ordo_file = self.out_file.replace('.pgn', '_ordo.txt')
     cmd = (
       f'{ORDO} '
       f'-q ' # quiet
       f'-a 0 ' # avg to 0 in order to diff to master
+      f'-A {relative_to} ' # show result relative to master
       f'-D ' # adjust for draw rate
       f'-W ' # adjust for white advantage
       f'-s 100 ' # use 100 simulations to estimate error
@@ -68,9 +69,9 @@ class Tournament:
 
 def main():
   engines = [Engine(name='NNUE'), Engine(HCE_ENGINE, name='HCE')]
-  tournament = Tournament(engines, 5, 10, 1)
+  tournament = Tournament(engines, 5, 10, 0.1)
   tournament.start()
-  tournament.estimate_elo_with_ordo()
+  tournament.estimate_elo_with_ordo('HCE')
 
 if __name__ == '__main__':
   main()
