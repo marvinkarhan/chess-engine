@@ -1,11 +1,10 @@
 ifeq ($(OS),Windows_NT)
-	RM_DIR_CMD = if exist $(BUILD_PATH) rmdir /q /s
 	FixPath = $(subst /,\,$1)
 else
-	RM_DIR_CMD = rm -rf
 	FixPath = $1
 endif
 
+RM_DIR_CMD = rm -rf
 BUILD_PATH = build
 BUILD_TMP_PATH = $(call FixPath,$(BUILD_PATH)/tmp)
 BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
