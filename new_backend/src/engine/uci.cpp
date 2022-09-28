@@ -111,6 +111,25 @@ void uciUnmakeMove()
   std::cout << "unmademove" << std::endl;
 }
 
+void uciPerft(std::istringstream &ss)
+{
+  std::string token, fen;
+
+  ss >> token;
+  int depth = std::stoi(token);
+
+  while (ss >> token)
+    fen += token + " ";
+  if (!fen.empty())
+    getBoard().parseFenString(fen);
+
+  auto startTime = std::chrono::system_clock::now();
+  u64 nodes = getBoard().perft(depth);
+  auto endTime = std::chrono::system_clock::now();
+  auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() + 1;
+  std::cout << "info " << "nodes " << nodes << " nps " << nodes * 1000 / timePassed << " time " << timePassed << "ms" << std::endl;
+}
+
 void setOption(std::istringstream &ss)
 {
   std::string token, id, value;
@@ -128,19 +147,24 @@ void setOption(std::istringstream &ss)
   while (ss >> token)
     value += token + " ";
   // remove suffixed spaces
-  id.erase(id.find_last_not_of(' ')+1);
-  value.erase(value.find_last_not_of(' ')+1);
+  id.erase(id.find_last_not_of(' ') + 1);
+  value.erase(value.find_last_not_of(' ') + 1);
 
-  if (id == "nnue" && (value == "true" || value == "false")) {
-      getBoard().useNNUE = value == "true";
-      std::cout << "Using NNUE: " << value << std::endl;
-  } else if (id == "nnueFile" && value.length() > 0) {
+  if (id == "nnue" && (value == "true" || value == "false"))
+  {
+    getBoard().useNNUE = value == "true";
+    std::cout << "Using NNUE: " << value << std::endl;
+  }
+  else if (id == "nnueFile" && value.length() > 0)
+  {
     getBoard().useNNUE = NNUE::loadFile(value);
-  } else
+  }
+  else
     std::cout << "Not an option" << std::endl;
 }
 
-void printOptions() {
+void printOptions()
+{
   std::cout << "option name nnue type check default true" << std::endl;
   std::cout << "option name nnueFile type string default <empty>" << std::endl;
 }
@@ -192,6 +216,8 @@ std::string uciProcessCommand(std::string command)
     uciMove(ss);
   else if (token == "unmakemove")
     uciUnmakeMove();
+  else if (token == "perft")
+    uciPerft(ss);
 
   return token;
 }
