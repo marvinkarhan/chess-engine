@@ -1,8 +1,25 @@
-# Chess engine
+# NoPy++
+```__    __            _______                                
+|  \  |  \          |       \               __        __    
+| $$\ | $$  ______  | $$$$$$$\ __    __    |  \      |  \   
+| $$$\| $$ /      \ | $$__/ $$|  \  |  \ __| $$__  __| $$__ 
+| $$$$\ $$|  $$$$$$\| $$    $$| $$  | $$|    $$  \|    $$  \
+| $$\$$ $$| $$  | $$| $$$$$$$ | $$  | $$ \$$$$$$$$ \$$$$$$$$
+| $$ \$$$$| $$__/ $$| $$      | $$__/ $$   | $$      | $$   
+| $$  \$$$ \$$    $$| $$       \$$    $$    \$$       \$$   
+ \$$   \$$  \$$$$$$  \$$       _\$$$$$$$                    
+                              |  \__| $$                    
+                               \$$    $$                    
+                                \$$$$$$               
+```
 
 ## History
 ---
 This Chess engine was started as a small Project in a University class. Later a NNUE Evaluation was added as Part of a Bachelorthesis. The engine was called NoPy++ because the project started out as a pyhton engine, but quickly transitioned to C++ for obvious reasons. We're currently still looking for a new name.
+
+## Frontend
+---
+Provides a user interface for the WebAssambly chess engine comunication over UCI.
 
 ## Backend
 ---
@@ -16,7 +33,73 @@ Curren playing strength
 STC (10+0.1s):  2670.1 +- 6.8
 LTC (60+1s)  :  2685.7 +- 6.3
 ```
-
-## Frontend
+## Compile
 ---
-Provides a user interface for the WebAssambly chess engine comunication over UCI.
+Compile the engine using make on Windows or Linux in ./src
+
+```
+make
+.\src\build\bin\uci-engine
+```
+
+## UCI settings
+---
+A list of settings that can be set via `setoption name <id> [value <x>]`:
+
+* UseNNUE\
+  Toggle between NNUE and classical evaluation. Setting the value to "true" activates the NNUE evaluation
+
+* EvalFile\
+  Sets the NNUE Network used via a file. Only compatible formats work, likely only those generated for this engine
+## Custom commands
+---
+* print\
+  prints the current position
+
+* fen\
+  prints the fen of the current position
+
+* legalmoves\
+  prints all legal moves
+
+* move \<list of moves\>\
+  plays moves spcified in a list consecutivly (like position ... moves does)
+
+* unmakemove\
+  unmakes the last move
+
+* perft \<depth\> [\<fen\>]\
+  runs a perft for a specified depth on either the current position or specified one
+
+## Features
+---
+### Board Representation
+
+* Bitboards
+
+### Search
+
+* Iterative Deepening
+* Aspiration Windows
+* Negamax Search
+* Transpositon Table
+* Move Ordering
+  * Killer Heuristic
+  * MVV/LVA
+  * SEE
+* Quiescence Search
+
+### Evaluation
+
+* NNUE
+  * HalfKP Input -> 2x256 -> 32 -> 32 -> 1
+  * incremental updates
+  * SIMD intrinsics up to AVX512
+* Classical
+  * Material
+    * Point Values
+    * Bishop Pair bonus
+    * Knight Pair penelty
+    * Rook Pair penelty
+    * No Pawn penelty
+  * Mobility

@@ -1,0 +1,1 @@
+This folder includes code inspired/copied from stockfishs nnue implementation.

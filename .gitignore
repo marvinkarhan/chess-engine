@@ -7,4 +7,6 @@ Debug
 *.pyd
 build
 new_backend/test/engine/lib/
-new_backend/src/tools/tournaments/
+src/tools/tournaments
+src/tools/books
+src/tools/engines
