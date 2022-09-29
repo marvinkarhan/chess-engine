@@ -150,12 +150,12 @@ void setOption(std::istringstream &ss)
   id.erase(id.find_last_not_of(' ') + 1);
   value.erase(value.find_last_not_of(' ') + 1);
 
-  if (id == "nnue" && (value == "true" || value == "false"))
+  if (id == "UseNNUE" && (value == "true" || value == "false"))
   {
     getBoard().useNNUE = value == "true";
     std::cout << "Using NNUE: " << value << std::endl;
   }
-  else if (id == "nnueFile" && value.length() > 0)
+  else if (id == "EvalFile" && value.length() > 0)
   {
     getBoard().useNNUE = NNUE::loadFile(value);
   }

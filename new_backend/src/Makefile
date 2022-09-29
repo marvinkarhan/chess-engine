@@ -98,10 +98,6 @@ UCI_EXE_NAME = uci-engine
 UCI_SRC_FILE = ./MainUCI.cpp
 UCI_OBJ_FILE = $(BUILD_TMP_PATH)/MainUCI.o
 
-MAIN_EXE_NAME = main-engine
-MAIN_SRC_FILE = ./MainEngine.cpp
-MAIN_OBJ_FILE = $(BUILD_TMP_PATH)/MainEngine.o
-
 ENGINE_FOLDER = ./engine
 NNUE_FOLDER = ./engine/nnue
 # Match all src file from the engine folder
@@ -119,10 +115,6 @@ uci-engine: $(OBJ_FILES) $(UCI_OBJ_FILE)
 	@echo Link uci engine
 	$(CCX) $(CXXFLAGS) $(OBJ_FILES) $(UCI_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(UCI_EXE_NAME)
 
-main-engine: $(OBJ_FILES) $(MAIN_OBJ_FILE)
-	@echo Main uci engine
-	$(CCX) $(CXXFLAGS) $(OBJ_FILES) $(MAIN_OBJ_FILE) -o $(BUILD_BIN_PATH)/$(MAIN_EXE_NAME)
-
 # wasm-engine:
 # 	@echo Compile wasm
 # 	emcc $(CXXFLAGS) wasm/test.cpp $(ENGINE_SRC_FILES) -o $(BUILD_BIN_PATH)/wasm-engine.js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
@@ -137,10 +129,6 @@ clean:
 	$(RM_DIR_CMD) $(BUILD_TMP_PATH)
 
 $(UCI_OBJ_FILE): $(UCI_SRC_FILE)
-	@echo Compile uci engine main
-	$(CCX) $(CXXFLAGS) -c $< -o $@ 
-
-$(MAIN_OBJ_FILE): $(MAIN_SRC_FILE)
 	@echo Compile uci engine main
 	$(CCX) $(CXXFLAGS) -c $< -o $@ 
 

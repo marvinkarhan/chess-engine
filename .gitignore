@@ -6,7 +6,5 @@ Debug
 *__pycache__*
 *.pyd
 build
-utility/build
-new_backend/src/vendor
 new_backend/test/engine/lib/
 new_backend/src/tools/tournaments/
