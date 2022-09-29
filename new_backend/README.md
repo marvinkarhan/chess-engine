@@ -13,53 +13,73 @@
                                 \$$$$$$               
 ```
 
-Simple **multithreaded** websocket for the chess engine backend. Built with oat++ (AKA oatpp) web framework.
-
-See more:
-- [Oat++ Website](https://oatpp.io/)
-
-## Overview
-
-### Project layout
+## Compile
+---
+Compile the engine using make on Windows or Linux in ./new_backend/src
 
 ```
-|- CMakeLists.txt                         // projects CMakeLists.txt
-|- src/
-|    |- oatpp                             // The oatpp engine for code intellisense
-     |- oatpp-websocket                   // The oatpp-websocket for code intellisense
-     |- engine                            // The chess engine
-|    |- controller/
-|    |    |
-|    |    |- MyController.hpp             // ApiController with websocket endpoint
-|    |
-|    |- websocket/
-|    |    |
-|    |    |- WSListener.hpp               // WebSocket listeners are defined here
-|    |
-|    |- AppComponent.hpp                  // Application config. 
-|    |- App.cpp                           // main() is here
-|
-|- utility/install-oatpp-modules.sh       // utility script to install required oatpp-modules.  
+make
+.\new_backend\src\build\bin\uci-engine
 ```
 
-## Build and Run
+## UCI settings
+---
+A list of settings that can be set via `setoption name <id> [value <x>]`:
 
-### Using CMake
+* UseNNUE\
+  Toggle between NNUE and classical evaluation. Setting the value to "true" activates the NNUE evaluation
 
-**Requires:** [oatpp](https://github.com/oatpp/oatpp), and [oatpp-websocket](https://github.com/oatpp/oatpp-websocket) 
-modules installed. You may run `utility/install-oatpp-modules.sh` 
-script to install required oatpp modules.
+* EvalFile\
+  Sets the NNUE Network used via a file. Only compatible formats work, likely only those generated for this engine
+## Custom commands
+---
+* print\
+  prints the current position
 
-GET MAKE FOR WINDOWS
-After all dependencies satisfied:
+* fen\
+  prints the fen of the current position
 
-```
-$ mkdir build && cd build
-$ cmake .. -G "Unix Makefiles"
-$ ON LINUX / Windows
-$ make 
-$ ./chess-server-exe       # - run application.
+* legalmoves\
+  prints all legal moves
 
-```
+* move \<list of moves\>\
+  plays moves spcified in a list consecutivly (like position ... moves does)
 
+* unmakemove\
+  unmakes the last move
 
+* perft \<depth\> [\<fen\>]\
+  runs a perft for a specified depth on either the current position or specified one
+
+## Features
+---
+### Board Representation
+
+* Bitboards
+
+### Search
+
+* Iterative Deepening
+* Aspiration Windows
+* Negamax Search
+* Transpositon Table
+* Move Ordering
+  * Killer Heuristic
+  * MVV/LVA
+  * SEE
+* Quiescence Search
+
+### Evaluation
+
+* NNUE
+  * HalfKP Input -> 2x256 -> 32 -> 32 -> 1
+  * incremental updates
+  * SIMD intrinsics up to AVX512
+* Classical
+  * Material
+    * Point Values
+    * Bishop Pair bonus
+    * Knight Pair penelty
+    * Rook Pair penelty
+    * No Pawn penelty
+  * Mobility
