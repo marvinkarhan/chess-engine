@@ -15,11 +15,11 @@
 
 ## History
 
-This Chess engine was started as a small Project in a University class. Later a NNUE Evaluation was added as Part of a Bachelorthesis. The engine was called NoPy++ because the project started out as a pyhton engine, but quickly transitioned to C++ for obvious reasons. We're currently still looking for a new name.
+This Chess engine was started as a small project in an university class. Later a NNUE Evaluation was added as part of a bachelor thesis. The engine was called NoPy++ because the project started out as a Python engine, but quickly transitioned to C++ for obvious reasons. We're currently still looking for a new name.
 
 ## Frontend
 
-Provides a user interface for the WebAssambly chess engine comunication over UCI.
+Provides a user interface for the WebAssembly chess engine, communication over UCI.
 
 ## Backend
 
@@ -27,7 +27,7 @@ The backend consists of a UCI compatible chess engine, that can be compiled to W
 
 ## Elo
 
-Curren playing strength
+Current playing strength
 
 ```
 STC (10+0.1s):  2670.1 +- 6.8
@@ -35,11 +35,12 @@ LTC (60+1s)  :  2685.7 +- 6.3
 ```
 ## Compile
 
-Compile the engine using make on Windows or Linux in ./src
+Compile the engine using make on Windows or Linux
 
 ```
+cd ./src
 make
-.\src\build\bin\uci-engine
+./build/bin/uci-engine
 ```
 
 ## UCI settings
@@ -47,10 +48,10 @@ make
 A list of settings that can be set via `setoption name <id> [value <x>]`:
 
 * UseNNUE\
-  Toggle between NNUE and classical evaluation. Setting the value to "true" activates the NNUE evaluation
+  toggle between NNUE and classical evaluation. Setting the value to "true" activates the NNUE evaluation
 
 * EvalFile\
-  Sets the NNUE Network used via a file. Only compatible formats work, likely only those generated for this engine
+  sets the NNUE Network used via a file. Only compatible formats work, likely only those generated for this engine
 ## Custom commands
 
 * print\
@@ -82,7 +83,7 @@ A list of settings that can be set via `setoption name <id> [value <x>]`:
 * Iterative Deepening
 * Aspiration Windows
 * Negamax Search
-* Transpositon Table
+* Transposition Table
 * Move Ordering
   * Killer Heuristic
   * MVV/LVA
@@ -99,7 +100,7 @@ A list of settings that can be set via `setoption name <id> [value <x>]`:
   * Material
     * Point Values
     * Bishop Pair bonus
-    * Knight Pair penelty
-    * Rook Pair penelty
-    * No Pawn penelty
+    * Knight Pair penalty
+    * Rook Pair penalty
+    * No Pawn penalty
   * Mobility
