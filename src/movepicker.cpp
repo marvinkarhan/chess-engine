@@ -141,9 +141,9 @@ bool MovePicker::see(Move move)
       // add discovered attackers if needed
       if (SQUARE_BBS[originSq] & mayXRay) {
         if (SQUARE_BBS[originSq] & board.pieces(PAWN) || SQUARE_BBS[originSq] & board.pieces(BISHOP) || SQUARE_BBS[originSq] & board.pieces(QUEEN)) {
-          attackersDefendersBB |= (bishop_moves(SQUARE_BBS[targetSq], ~occupiedBB, BB(0)) & occupiedBB) & (board.pieces(!side, BISHOP) | board.pieces(!side, QUEEN));
+          attackersDefendersBB |= (bishop_moves(targetSq, occupiedBB) & occupiedBB) & (board.pieces(!side, BISHOP) | board.pieces(!side, QUEEN));
         } else if (SQUARE_BBS[originSq] & board.pieces(ROOK) || SQUARE_BBS[originSq] & board.pieces(QUEEN)) {
-          attackersDefendersBB |= (rook_moves(SQUARE_BBS[targetSq], ~occupiedBB, BB(0)) & occupiedBB) & (board.pieces(!side, ROOK) | board.pieces(!side, QUEEN));
+          attackersDefendersBB |= (rook_moves(targetSq, occupiedBB) & occupiedBB) & (board.pieces(!side, ROOK) | board.pieces(!side, QUEEN));
         }
       }      // select next piece in least to most valuable order
       if ((bb = attackersDefendersBB & board.pieces(side, PAWN)))
