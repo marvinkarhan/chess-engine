@@ -1,12 +1,5 @@
 .vscode
-.vs
-Debug
-*.sln
-*.vcxproj*
-*__pycache__*
-*.pyd
 build
-utility/build
-new_backend/src/vendor
-new_backend/test/engine/lib/
-new_backend/src/tools/tournaments/
+src/tools/tournaments
+src/tools/books
+src/tools/engines
