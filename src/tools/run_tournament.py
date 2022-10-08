@@ -73,7 +73,7 @@ class Tournament:
 def main():
   parser = argparse.ArgumentParser(description='Plays a gauntlet tournament comparing the master to a chess engine.', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--engine', type=str, help='Set the path enemy to test against')
-  parser.add_argument('--engine_name', type=str, help='Set the name of the enemy engine')
+  parser.add_argument('--engine_name', default="enemy", type=str, help='Set the name of the enemy engine')
   parser.add_argument('--rounds', default=200, type=int, help='Number of rounds to play.')
   parser.add_argument('--tc', default=10, type=int, help='Number of Seconds for each Game.')
   parser.add_argument('--increment', default=0.1, type=float, help='Number of Seconds of increment for each Game.')
