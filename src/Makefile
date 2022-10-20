@@ -1,3 +1,11 @@
+ifeq ($(OS),Windows_NT)
+	rm = cmd //C del //Q //S
+	rm_o = $(rm) *.o
+else
+	rm = rm -rf
+	rm_o = $(rm) **/*.o *.o
+endif
+
 # Compiler settings
 CPP_STANDARD = 17
 CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64 -Wall -Wextra
@@ -96,7 +104,9 @@ engine: $(OBJ_FILES)
 # 	emcc $(CXXFLAGS) wasm/test.cpp $(SRCS) -o wasm-engine.js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
 
 clean:
-	rm -rf **/*.o *.o
-	rm $(EXE)
+# execute the command twice because windows is weird
+	$(rm_o)
+	$(rm_o)
+	$(rm) $(EXE)*
 
 .PHONY: all clean
