@@ -118,20 +118,6 @@ namespace NNUE
       _mm_empty();
       constexpr std::uint32_t kStart = kNumChunks * kSimdWidth;
 
-#elif defined(USE_NEON)
-      constexpr std::uint32_t kNumChunks = kInputDimensions / (kSimdWidth / 2);
-      const int8x8_t kZero = {0};
-      const auto in = reinterpret_cast<const int32x4_t *>(input);
-      const auto out = reinterpret_cast<int8x8_t *>(output);
-      for (std::uint32_t i = 0; i < kNumChunks; ++i)
-      {
-        int16x8_t shifted;
-        const auto pack = reinterpret_cast<int16x4_t *>(&shifted);
-        pack[0] = vqshrn_n_s32(in[i * 2 + 0], kWeightScaleBits);
-        pack[1] = vqshrn_n_s32(in[i * 2 + 1], kWeightScaleBits);
-        out[i] = vmax_s8(vqmovn_s16(shifted), kZero);
-      }
-      constexpr std::uint32_t kStart = kNumChunks * (kSimdWidth / 2);
 #else
       constexpr std::uint32_t kStart = 0;
 #endif

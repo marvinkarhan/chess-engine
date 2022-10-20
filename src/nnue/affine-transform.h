@@ -79,10 +79,6 @@ namespace NNUE
       constexpr std::uint32_t kNumChunks = kPaddedInputDimensions / kSimdWidth;
       const __m64 kZeros = _mm_setzero_si64();
       const auto input_vector = reinterpret_cast<const __m64 *>(input);
-
-#elif defined(USE_NEON)
-      constexpr std::uint32_t kNumChunks = kPaddedInputDimensions / kSimdWidth;
-      const auto input_vector = reinterpret_cast<const int8x8_t *>(input);
 #endif
 
       for (std::uint32_t i = 0; i < kOutputDimensions; ++i)
@@ -207,17 +203,6 @@ namespace NNUE
         __m64 sum = _mm_add_pi32(sum_lo, sum_hi);
         sum = _mm_add_pi32(sum, _mm_unpackhi_pi32(sum, sum));
         output[i] = _mm_cvtsi64_si32(sum);
-
-#elif defined(USE_NEON)
-        int32x4_t sum = {biases_[i]};
-        const auto row = reinterpret_cast<const int8x8_t *>(&weights_[offset]);
-        for (std::uint32_t j = 0; j < kNumChunks; ++j)
-        {
-          int16x8_t product = vmull_s8(input_vector[j * 2], row[j * 2]);
-          product = vmlal_s8(product, input_vector[j * 2 + 1], row[j * 2 + 1]);
-          sum = vpadalq_s16(sum, product);
-        }
-        output[i] = sum[0] + sum[1] + sum[2] + sum[3];
 
 #else
         OutputType sum = biases_[i];
