@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include "../engine/constants.h"
-#include "../engine/board.h"
-#include "../engine/uci.h"
+#include "../constants.h"
+#include "../board.h"
+#include "../uci.h"
 
 int main() {
   initConstants();
