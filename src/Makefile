@@ -33,8 +33,6 @@ avx512 = no
 vnni256 = no
 # INTEL Vector Neural Network Instructions extension of AVX-512
 vnni512 = no
-# ARM SIMD
-neon = no
 
 ifeq ($(SIMD), no)
 	sse = no
@@ -45,7 +43,6 @@ ifeq ($(SIMD), no)
 	avx512 = no
 	vnni256 = no
 	vnni512 = no
-	neon = no
 endif
 
 ifeq ($(sse), yes)
@@ -85,11 +82,6 @@ endif
 ifeq ($(vnni512), yes)
 	CXXFLAGS += -DUSE_VNNI
 	CXXFLAGS += -mavx512vnni -mavx512dq -mavx512vl
-endif
-
-ifeq ($(neon), yes)
-	CXXFLAGS += -DUSE_NEON
-	CXXFLAGS += -mfpu=neon
 endif
 
 # BUILD_PATHS

@@ -18,9 +18,6 @@
 
 #elif defined(USE_MMX)
 #include <mmintrin.h>
-
-#elif defined(USE_NEON)
-#include <arm_neon.h>
 #endif
 
 // HACK: Use _mm256_loadu_si256() instead of _mm256_load_si256. Otherwise a binary
@@ -125,9 +122,6 @@ constexpr std::size_t kSimdWidth = 16;
 
 #elif defined(USE_MMX)
 constexpr std::size_t kSimdWidth = 8;
-
-#elif defined(USE_NEON)
-constexpr std::size_t kSimdWidth = 16;
 #endif
 
 // Class template used for feature index list

@@ -79,10 +79,6 @@ namespace NNUE
 #elif defined(USE_MMX)
       constexpr std::uint32_t kNumChunks = kHalfDimensions / kSimdWidth;
       const __m64 k0x80s = _mm_set1_pi8(-128);
-
-#elif defined(USE_NEON)
-      constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
-      const int8x8_t kZero = {0};
 #endif
 
       const bool perspectives[2] = {board.activeSide, !board.activeSide};
@@ -134,15 +130,6 @@ namespace NNUE
               accumulation[perspectives[p]])[j * 2 + 1]);
           const __m64 packedbytes = _mm_packs_pi16(sum0, sum1);
           out[j] = _mm_subs_pi8(_mm_adds_pi8(packedbytes, k0x80s), k0x80s);
-        }
-
-#elif defined(USE_NEON)
-        const auto out = reinterpret_cast<int8x8_t *>(&output[offset]);
-        for (std::uint32_t j = 0; j < kNumChunks; ++j)
-        {
-          int16x8_t sum = reinterpret_cast<const int16x8_t *>(
-              accumulation[perspectives[p]])[j];
-          out[j] = vmax_s8(vqmovn_s16(sum), kZero);
         }
 
 #else
@@ -204,14 +191,6 @@ namespace NNUE
           for (std::uint32_t j = 0; j < kNumChunks; ++j)
             accumulation[j] = _mm_add_pi16(accumulation[j], column[j]);
 
-#elif defined(USE_NEON)
-          auto accumulation = reinterpret_cast<int16x8_t *>(
-              &accumulator.accumulation[perspective]);
-          auto column = reinterpret_cast<const int16x8_t *>(&weights_[offset]);
-          constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
-          for (std::uint32_t j = 0; j < kNumChunks; ++j)
-            accumulation[j] = vaddq_s16(accumulation[j], column[j]);
-
 #else
           for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
             accumulator.accumulation[perspective][j] += weights_[offset + j];
@@ -250,10 +229,6 @@ namespace NNUE
         auto accumulation = reinterpret_cast<__m64 *>(
             &accumulator.accumulation[perspective]);
 
-#elif defined(USE_NEON)
-        constexpr std::uint32_t kNumChunks = kHalfDimensions / (kSimdWidth / 2);
-        auto accumulation = reinterpret_cast<int16x8_t *>(
-            &accumulator.accumulation[perspective]);
 #endif
 
         if (reset)
@@ -286,11 +261,6 @@ namespace NNUE
             for (std::uint32_t j = 0; j < kNumChunks; ++j)
               accumulation[j] = _mm_sub_pi16(accumulation[j], column[j]);
 
-#elif defined(USE_NEON)
-            auto column = reinterpret_cast<const int16x8_t *>(&weights_[offset]);
-            for (std::uint32_t j = 0; j < kNumChunks; ++j)
-              accumulation[j] = vsubq_s16(accumulation[j], column[j]);
-
 #else
             for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
               accumulator.accumulation[perspective][j] -= weights_[offset + j];
@@ -316,11 +286,6 @@ namespace NNUE
             auto column = reinterpret_cast<const __m64 *>(&weights_[offset]);
             for (std::uint32_t j = 0; j < kNumChunks; ++j)
               accumulation[j] = _mm_add_pi16(accumulation[j], column[j]);
-
-#elif defined(USE_NEON)
-            auto column = reinterpret_cast<const int16x8_t *>(&weights_[offset]);
-            for (std::uint32_t j = 0; j < kNumChunks; ++j)
-              accumulation[j] = vaddq_s16(accumulation[j], column[j]);
 
 #else
             for (std::uint32_t j = 0; j < kHalfDimensions; ++j)
