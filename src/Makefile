@@ -1,14 +1,3 @@
-ifeq ($(OS),Windows_NT)
-	FixPath = $(subst /,\,$1)
-else
-	FixPath = $1
-endif
-
-RM_DIR_CMD = rm -rf
-BUILD_PATH = build
-BUILD_TMP_PATH = $(call FixPath,$(BUILD_PATH)/tmp)
-BUILD_BIN_PATH = $(call FixPath,$(BUILD_PATH)/bin)
-
 # Compiler settings
 CPP_STANDARD = 17
 CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64 -Wall -Wextra
@@ -85,44 +74,29 @@ ifeq ($(vnni512), yes)
 endif
 
 # BUILD_PATHS
-
-EXE_NAME = uci-engine
+EXE = uci-engine
 
 # Match all src file from the engine folder
-ENGINE_SRC_FILES = $(wildcard ./nnue/*.cpp) $(wildcard ./*.cpp)
+SRCS = $(wildcard ./nnue/*.cpp) $(wildcard ./*.cpp)
 # changed the .cpp ending to .o for every file
-OBJ_FILES = $(patsubst ./%.cpp,$(BUILD_TMP_PATH)/%.o,$(ENGINE_SRC_FILES))
+OBJ_FILES = $(patsubst %.cpp,%.o,$(SRCS))
 
-all: build-step engine clean
-# all: build-step engine wasm-engine clean
+%.o: %.cpp
+	$(CCX) $(CXXFLAGS) -c $< -o $@ 
 
-debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O1 -g
+all: engine
+
+debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -g -fno-omit-frame-pointer
 debug: all
 
 engine: $(OBJ_FILES) 
-	@echo Link engine
-	$(CCX) $(CXXFLAGS) $(OBJ_FILES) -o $(BUILD_BIN_PATH)/$(EXE_NAME)
+	$(CCX) $(CXXFLAGS) $(OBJ_FILES) -o $(EXE)
 
 # wasm-engine:
-# 	@echo Compile wasm
-# 	emcc $(CXXFLAGS) wasm/test.cpp $(ENGINE_SRC_FILES) -o $(BUILD_BIN_PATH)/wasm-engine.js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
-
-build-step:
-	@echo Build directories
-	$(RM_DIR_CMD) $(BUILD_PATH)
-	mkdir $(BUILD_PATH) $(BUILD_TMP_PATH) $(BUILD_TMP_PATH)/nnue $(BUILD_BIN_PATH)
+# 	emcc $(CXXFLAGS) wasm/test.cpp $(SRCS) -o wasm-engine.js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
 
 clean:
-	@echo Cleanup
-	$(RM_DIR_CMD) $(BUILD_TMP_PATH)
+	rm -rf **/*.o *.o
+	rm $(EXE)
 
-# Compile every engine src into the the build engine folder for multiple use
-$(BUILD_TMP_PATH)/%.o: ./%.cpp
-	@echo Compile engine sources
-	$(CCX) $(CXXFLAGS) -c $< -o $@ 
-
-
-
-
-
-	
+.PHONY: all clean

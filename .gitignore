@@ -1,5 +1,11 @@
+# config files
 .vscode
-build
+
+# build files
+**/*.o
+src/uci-engine*
+
+# log/external files for semi-manual testing
 src/tools/tournaments
 src/tools/books
 src/tools/engines
