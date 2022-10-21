@@ -1,6 +1,6 @@
 # Compiler settings
 CPP_STANDARD = 17
-CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -m64 -Wall -Wextra
+CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -Wall -Wextra
 CCX = g++
 
 # Add support for simd
@@ -53,28 +53,32 @@ ifeq ($(sse41), yes)
 	CXXFLAGS += -msse4.1
 endif
 
-ifeq ($(avx2), yes)
-	CXXFLAGS += -DUSE_AVX2
-	CXXFLAGS += -mavx2
+# wasm does not support avx2 and up
+ifneq ($(MAKECMDGOALS), wasm)
+	ifeq ($(avx2), yes)
+		CXXFLAGS += -DUSE_AVX2
+		CXXFLAGS += -mavx2
+	endif
+
+	ifeq ($(avx512), yes)
+		CXXFLAGS += -DUSE_AVX512
+		CXXFLAGS += -mavx512f -mavx512bw
+	endif
+
+	ifeq ($(vnni256), yes)
+		CXXFLAGS += -DUSE_VNNI
+		CXXFLAGS += -mavx512f -mavx512bw -mavx512vnni -mavx512dq -mavx512vl -mprefer-vector-width=256
+	endif
+
+	ifeq ($(vnni512), yes)
+		CXXFLAGS += -DUSE_VNNI
+		CXXFLAGS += -mavx512vnni -mavx512dq -mavx512vl
+	endif
 endif
 
-ifeq ($(avx512), yes)
-	CXXFLAGS += -DUSE_AVX512
-	CXXFLAGS += -mavx512f -mavx512bw
-endif
-
-ifeq ($(vnni256), yes)
-	CXXFLAGS += -DUSE_VNNI
-	CXXFLAGS += -mavx512f -mavx512bw -mavx512vnni -mavx512dq -mavx512vl -mprefer-vector-width=256
-endif
-
-ifeq ($(vnni512), yes)
-	CXXFLAGS += -DUSE_VNNI
-	CXXFLAGS += -mavx512vnni -mavx512dq -mavx512vl
-endif
-
-# BUILD_PATHS
 EXE = uci-engine
+WASM = wasm-engine
+WASM_SRC = wasm/wasm.cpp
 
 # Match all src file from the engine folder
 SRCS = $(wildcard ./nnue/*.cpp) $(wildcard ./*.cpp)
@@ -92,10 +96,15 @@ debug: all
 engine: $(OBJ_FILES) 
 	$(CCX) $(CXXFLAGS) $(OBJ_FILES) -o $(EXE)
 
-# wasm-engine:
-# 	emcc $(CXXFLAGS) wasm/test.cpp $(SRCS) -o wasm-engine.js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1
+wasm: FORCE
+	@echo $(MAKECMDGOALS)
+	emcc $(CXXFLAGS) -DWASM $(WASM_SRC) $(SRCS) -o $(WASM).js -s ASSERTIONS=1 -s EXPORTED_FUNCTIONS='["_main","_processCommand"]' -s EXPORTED_RUNTIME_METHODS='["cwrap"]' -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s TOTAL_MEMORY=64MB --embed-file default.nnue -msimd128
+	@rm -f ../frontend/src/assets/wasm/$(WASM)*
+	@mv wasm-engine* ../frontend/src/assets/wasm/
+
+FORCE: ;
 
 clean:
-	@rm -f *.o ./nnue/*.o $(EXE)*
+	@rm -f *.o ./nnue/*.o $(EXE)* $(WASM)*
 
 .PHONY: all clean

@@ -1,3 +1,4 @@
+#pragma once
 #include <sstream>
 #include <string>
 #include "constants.h"
@@ -10,6 +11,7 @@ void uciUnmakeMove();
 std::string uciProcessCommand(std::string command);
 void uciLoop();
 
+#ifndef WASM
 int main()
 {
   initConstants();
@@ -17,3 +19,4 @@ int main()
   uciLoop();
   return 0;
 }
+#endif
