@@ -3,27 +3,31 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
-#include "../incbin/incbin.h"
 #include "init.h"
 #include "feature-transformer.h"
 #include "halfkp.h"
 #include "nnue-helper.h"
 
+#ifndef WASM
+#include "../incbin/incbin.h"
 // embed NNUE net into the engine binary (using incbin by Dale Weiler)
 // declares:
 //   const unsigned char        gBinNNUEData[];  // pointer to start
 //   const unsigned char *const gBinNNUEEnd;     // pointer to end
 //   const unsigned int         gBinNNUESize;    // file size
 INCBIN(BinNNUE, NNUEFileName);
+#endif
+
 namespace NNUE
 {
-
   AlignedPtr<FeatureTransformer> feature_transformer;
   AlignedPtr<Network> network;
 
   bool init()
   {
+#ifndef WASM
     // C++ way to prepare a buffer for a memory stream
     class MemoryBuffer : public basic_streambuf<char>
     {
@@ -44,15 +48,22 @@ namespace NNUE
       return false;
     }
     return true;
+#else
+    return loadFile(NNUEFileName);
+#endif
   }
 
-  bool loadFile(std::string fileName) {
+  bool loadFile(std::string fileName)
+  {
+    std::cout << fileName << std::endl;
     ifstream stream(fileName, ios::binary);
     if (!loadWeights(stream))
     {
       std::cout << "Could not load nnue file!" << std::endl;
       return false;
-    } else {
+    }
+    else
+    {
       std::cout << "Now using NNUE file: " << fileName << std::endl;
       return true;
     }
