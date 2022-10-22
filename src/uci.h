@@ -12,10 +12,20 @@ std::string uciProcessCommand(std::string command);
 void uciLoop();
 
 #ifndef WASM
-int main()
+int main(int argc, char *argv[])
 {
   initConstants();
-
+  // run single command
+  if (argc > 1) {
+    std::string input = "";
+    for (int i = 1; i < argc; i++)
+    {
+      input += argv[i];
+      input += " ";
+    }
+    uciProcessCommand(input);
+    return 0;
+  }
   uciLoop();
   return 0;
 }

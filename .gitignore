@@ -9,3 +9,6 @@ src/uci-engine*
 src/tools/tournaments
 src/tools/books
 src/tools/engines
+
+# vtune profile project files
+src/chess-engine-vtune

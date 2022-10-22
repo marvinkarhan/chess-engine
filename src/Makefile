@@ -93,6 +93,9 @@ all: engine
 debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -g -fno-omit-frame-pointer
 debug: all
 
+profile: CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -pg -ggdb3 -fno-omit-frame-pointer
+profile: all
+
 engine: $(OBJ_FILES) 
 	$(CCX) $(CXXFLAGS) $(OBJ_FILES) -o $(EXE)
 
