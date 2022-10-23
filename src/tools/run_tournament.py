@@ -4,13 +4,9 @@ import os
 from datetime import datetime
 from typing import List
 
-DEFAULT_ENGINE = '../build/bin/uci-engine'
-HCE_ENGINE = './engines/HCE'
-CLASSIC_ENGINE = './engines/classic'
+DEFAULT_ENGINE = '../uci-engine'
 OPENING_BOOK_UHO = './books/UHO_V3_6mvs_+090_+099.epd'
 OPENING_8MVS_V3 = './books/8mvs_big_+80_+109.epd'
-STOCKFISH = './engines/stockfish_11_x64'
-MAVERICK ='./engines/maverick-10-lin32-ja_2500'
 
 # using cutechess (cli): https://github.com/cutechess/cutechess
 ORDO = './ordo/ordo-linux64'
