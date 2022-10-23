@@ -27,7 +27,6 @@ struct StoredBoard
   int8_t halfMoves;
   Piece capturedPiece;
   Move move;
-  RepetitionType repetition;
 
   StoredBoard *oldBoard; // board state before store
 
@@ -127,7 +126,7 @@ public:
   {
     return attackers(DEBRUIJN_INDEX[((pieces(activeSide, KING) ^ (pieces(activeSide, KING) - 1)) * DEBRUIJN) >> 58], activeSide, piecesByType[ALL_PIECES]);
   }
-  bool hasRepetitions();
+  bool hasRepetitions(int drawIn = 3);
   bool partialStalemate();
   bool stalemate();
   bool checkmate();

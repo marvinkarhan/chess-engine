@@ -1038,15 +1038,16 @@ bool Board::moveIsPseudoLegal(const Move checkedMove)
   return true;
 }
 
-bool Board::hasRepetitions()
+bool Board::hasRepetitions(int drawIn /*= 3*/)
 {
-  StoredBoard *stateP = state;
-  int bound = halfMoves;
-  while (bound-- >= 4 && stateP)
+  uint8_t c = 0;
+  for (int i = static_cast<int>(hashHistory.size()) - 2;
+       i >= 0 && i >= static_cast<int>(hashHistory.size()) - halfMoves; i -= 2)
   {
-    if (stateP->repetition)
+    if (hashHistory[i] == hashKey)
+      c++;
+    if (c == drawIn)
       return true;
-    stateP = stateP->oldBoard;
   }
   return false;
 }
@@ -1057,7 +1058,7 @@ bool Board::partialStalemate()
   if (halfMoves >= 100 && (!kingAttackers() || MoveList<LEGAL_MOVES>(*this, activeSide).size()))
     return true;
 
-  return state->repetition;
+  return hasRepetitions(1);
 }
 
 bool Board::stalemate()
@@ -1122,7 +1123,6 @@ void Board::store(Piece capturedPiece /*= NO_PIECE*/)
   stored->epSquare = epSquare;
   stored->halfMoves = halfMoves;
   stored->capturedPiece = capturedPiece;
-  stored->repetition = NO_REPETITION;
   stored->oldBoard = std::move(state);
   state = std::move(stored);
 }
@@ -1357,26 +1357,6 @@ bool Board::makeMove(const Move &newMove)
   // swap sides
   activeSide = !activeSide;
   hashKey ^= ZOBRIST_TABLE[ACTIVE_SIDE];
-  // calculate repetitions
-  // a halfMove counts up reversible moves so we can use it for repetition counting
-  // can only be repetition if atleast 4 half moves where made
-  if (halfMoves >= 4)
-  {
-    // only check every 2nd board because we only check our side moves
-    StoredBoard *stateP = state->oldBoard->oldBoard;
-    for (int i = 4; i < halfMoves; i += 2)
-    {
-      if (stateP->oldBoard && stateP->oldBoard->oldBoard)
-        stateP = stateP->oldBoard->oldBoard;
-      else
-        break;
-      if (hashHistory.end()[-i] == hashKey)
-      {
-        state->repetition = stateP->repetition == TWO_FOLD ? THREE_FOLD : TWO_FOLD;
-        break;
-      }
-    }
-  }
   // DEBUG
   // unmake move if it was illegal
   // if (attackers(bitScanForward(pieces(!activeSide, KING)), !activeSide, piecesByType[ALL_PIECES]))

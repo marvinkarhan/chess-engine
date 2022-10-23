@@ -26,13 +26,6 @@ const int DEFAULT_HASH_TABLE_SIZE = 1024;
 const bool WHITE = true;
 const bool BLACK = false;
 
-enum RepetitionType
-{
-  NO_REPETITION,
-  TWO_FOLD,
-  THREE_FOLD
-};
-
 enum MoveGenType
 {
   PSEUDO_LEGAL_MOVES,
