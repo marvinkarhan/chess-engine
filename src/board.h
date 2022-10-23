@@ -26,7 +26,6 @@ struct StoredBoard
   Square epSquare;
   int8_t halfMoves;
   Piece capturedPiece;
-  u64 hashValue;
   Move move;
   RepetitionType repetition;
 
@@ -78,6 +77,8 @@ public:
   StoredBoard *state;
   int hashTableSize;
   HashEntry *hashTable;
+  u64 hashKey = 0ULL;
+  std::vector<u64> hashHistory;
   inline BB pieces(bool activeSide, PieceType pt = ALL_PIECES)
   {
     return piecesBySide[activeSide] & piecesByType[pt];
@@ -136,7 +137,7 @@ public:
   void restore();
   int probeHash(int depth, int alpha, int beta, Move *bestMove);
   void storeHash(int depth, int score, Move move, HashEntryFlag hashFlag);
-  void zobristToggleCastle(u64 &hashValue);
+  void zobristToggleCastle();
   // to simplify updating piece positions
   constexpr HashEntry *probeHash();
 

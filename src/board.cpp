@@ -168,6 +168,7 @@ void Board::resetBoard()
   epSquare = NONE_SQUARE;
   pieceValues = 0;
   pieceSquareValues = 0;
+  hashKey = 0;
 
   // keep following data to increase speed
   // delete[] hashTable;
@@ -238,23 +239,7 @@ int Board::quiesce(int alpha, int beta, int depth /*= 0*/)
   nodeCount++;
 
   int score, bestScore;
-  // HashEntryFlag hashFlag = UPPER_BOUND;
   Move bestMove = NONE_MOVE;
-  // HashEntry *entry = probeHash();
-  // if (entry->key == hashValue)
-  // {
-  //   bestMove = entry->bestMove;
-  //   if (entry->depth >= depth)
-  //   {
-  //     hashTableHits++;
-  //     if (entry->flag == EXACT)
-  //       score = entry->score;
-  //     else if ((entry->flag == UPPER_BOUND) && (entry->score <= alpha))
-  //       score = alpha;
-  //     else if ((entry->flag == LOWER_BOUND) && (entry->score >= beta))
-  //       score = beta;
-  //   }
-  // }
 
   if (partialStalemate())
     return STALEMATE_VALUE;
@@ -374,7 +359,7 @@ int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*
   int score;
   Move bestMove = NONE_MOVE;
   HashEntry *entry = probeHash();
-  if (entry->key == state->hashValue)
+  if (entry->key == hashKey)
   {
     bestMove = entry->bestMove;
     if (entry->depth >= depth)
@@ -555,7 +540,6 @@ void Board::parseFenString(FenString fen)
 {
   resetBoard();
   unsigned char character;
-  u64 hashValue = 0ULL;
   BB placementSquare = 63;
   std::istringstream ss(fen);
   ss >> std::noskipws; // don't default on skipping white space
@@ -567,7 +551,7 @@ void Board::parseFenString(FenString fen)
     else if ((character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z'))
     {
       createPiece(Piece(CharIndexToPiece.find(character)), placementSquare);
-      hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[Piece(CharIndexToPiece.find(character))] + originSquare(placementSquare)];
+      hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[Piece(CharIndexToPiece.find(character))] + originSquare(placementSquare)];
       placementSquare--;
     }
   }
@@ -575,7 +559,7 @@ void Board::parseFenString(FenString fen)
   ss >> character;
   activeSide = character == 'w';
   if (activeSide)
-    hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
+    hashKey ^= ZOBRIST_TABLE[ACTIVE_SIDE];
   ss >> character;
   // castling
   while ((ss >> character) && !isspace(character))
@@ -589,7 +573,7 @@ void Board::parseFenString(FenString fen)
     else if (character == 'q')
       castleBlackQueenSide = true;
   }
-  zobristToggleCastle(hashValue);
+  zobristToggleCastle();
   // en passant
   ss >> character;
   if (character == '-')
@@ -600,7 +584,7 @@ void Board::parseFenString(FenString fen)
     ss >> character;
     unsigned char rank = (character - '1');
     epSquare = Square((7 - file) + 8 * rank);
-    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+    hashKey ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
   }
   ss >> character;
   // half moves
@@ -610,7 +594,6 @@ void Board::parseFenString(FenString fen)
   ss >> character;
   fullMoves = character - '0';
   store();
-  state->hashValue = hashValue;
 }
 
 BB Board::potentialSlidingAttackers(int square, bool activeSide)
@@ -1128,6 +1111,9 @@ std::string Board::divide(int depth)
 
 void Board::store(Piece capturedPiece /*= NO_PIECE*/)
 {
+  // hash
+  hashHistory.emplace_back(hashKey);
+  // state
   StoredBoard *stored = new StoredBoard();
   stored->castleWhiteKingSide = castleWhiteKingSide;
   stored->castleWhiteQueenSide = castleWhiteQueenSide;
@@ -1143,6 +1129,10 @@ void Board::store(Piece capturedPiece /*= NO_PIECE*/)
 
 void Board::restore()
 {
+  // hash
+  hashKey = hashHistory.back();
+  hashHistory.pop_back();
+  // state
   castleWhiteKingSide = state->castleWhiteKingSide;
   castleWhiteQueenSide = state->castleWhiteQueenSide;
   castleBlackKingSide = state->castleBlackKingSide;
@@ -1156,33 +1146,33 @@ void Board::restore()
 
 void Board::storeHash(int depth, int score, Move move, HashEntryFlag hashFlag)
 {
-  HashEntry *entry = &hashTable[state->hashValue % hashTableSize];
+  HashEntry *entry = &hashTable[hashKey % hashTableSize];
   if (entry->depth > depth)
   {
     return;
   }
-  entry->key = state->hashValue;
+  entry->key = hashKey;
   entry->depth = depth;
   entry->flag = hashFlag;
   entry->score = score;
   entry->bestMove = move;
 }
 
-void Board::zobristToggleCastle(u64 &hashValue)
+void Board::zobristToggleCastle()
 {
   if (castleWhiteKingSide)
-    hashValue ^= ZOBRIST_TABLE[CASTLE_WHITE_KING_SIDE];
+    hashKey ^= ZOBRIST_TABLE[CASTLE_WHITE_KING_SIDE];
   if (castleWhiteQueenSide)
-    hashValue ^= ZOBRIST_TABLE[CASTLE_WHITE_QUEEN_SIDE];
+    hashKey ^= ZOBRIST_TABLE[CASTLE_WHITE_QUEEN_SIDE];
   if (castleBlackKingSide)
-    hashValue ^= ZOBRIST_TABLE[CASTLE_BLACK_KING_SIDE];
+    hashKey ^= ZOBRIST_TABLE[CASTLE_BLACK_KING_SIDE];
   if (castleBlackQueenSide)
-    hashValue ^= ZOBRIST_TABLE[CASTLE_BLACK_QUEEN_SIDE];
+    hashKey ^= ZOBRIST_TABLE[CASTLE_BLACK_QUEEN_SIDE];
 }
 
 constexpr HashEntry *Board::probeHash()
 {
-  return &hashTable[state->hashValue % hashTableSize];
+  return &hashTable[hashKey % hashTableSize];
 }
 
 bool Board::makeMove(const Move &newMove)
@@ -1200,9 +1190,8 @@ bool Board::makeMove(const Move &newMove)
   PieceType originPieceType = getPieceType(originPiece);
   Piece targetPiece = piecePos[targetSquare(newMove)];
 
-  u64 hashValue = state->hashValue;
-
-  store(targetPiece); // store to save partial board information in order to be able to do unmakeMove
+  // store to save info to unmakeMove later
+  store(targetPiece);
 
   state->accumulator.computed_accumulation = false;
   auto &dirtyPiece = state->dirtyPiece;
@@ -1224,7 +1213,7 @@ bool Board::makeMove(const Move &newMove)
     // if (in_between(originSquare(newMove), targetSquare(newMove)) & piecesByType[ALL_PIECES])
     //   std::cout << "capture thru friendly piece" << std::endl;
     deletePiece(targetSquare(newMove));
-    hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[targetPiece] + targetSquare(newMove)];
+    hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[targetPiece] + targetSquare(newMove)];
     capture = true;
 
     if (USE_NNUE)
@@ -1246,7 +1235,7 @@ bool Board::makeMove(const Move &newMove)
   }
   // update bitboards to represent change
   updatePiece(originSquare(newMove), targetSquare(newMove));
-  hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + originSquare(newMove)] | ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + targetSquare(newMove)];
+  hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + originSquare(newMove)] | ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + targetSquare(newMove)];
 
   // pawn move
   if (originPieceType == PAWN)
@@ -1257,10 +1246,10 @@ bool Board::makeMove(const Move &newMove)
       // remove pawn
       // remove piece on target square because it already moved
       deletePiece(targetSquare(newMove));
-      hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + targetSquare(newMove)];
+      hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[originPiece] + targetSquare(newMove)];
       // add promoted piece
       createPiece(makePiece(activeSide, promotion(newMove)), targetSquare(newMove));
-      hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[makePiece(activeSide, promotion(newMove))] + targetSquare(newMove)];
+      hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[makePiece(activeSide, promotion(newMove))] + targetSquare(newMove)];
 
       if (USE_NNUE)
       {
@@ -1278,26 +1267,26 @@ bool Board::makeMove(const Move &newMove)
       int capturedSquare = bitScanForward(capturedPawnBB);
       state->capturedPiece = Piece(piecePos[capturedSquare]);
       deletePiece(capturedSquare);
-      hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[state->capturedPiece] + capturedSquare];
+      hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[state->capturedPiece] + capturedSquare];
       capture = true;
     }
     // check for resulting en passant
     if (epSquare != NONE_SQUARE)
-      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+      hashKey ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
     epSquare = getPotentialEPSquareBB(originSquare(newMove), targetSquare(newMove), *this);
     if (epSquare != NONE_SQUARE)
-      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+      hashKey ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
   }
   else
   {
     if (epSquare != NONE_SQUARE)
-      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+      hashKey ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
     epSquare = NONE_SQUARE;
   }
   // castles
   // check rook moves
   // set it back to start
-  zobristToggleCastle(hashValue);
+  zobristToggleCastle();
   if (originPiece == WHITE_ROOK || targetPiece == WHITE_ROOK)
   {
     if (originSquareBB == (FILE_H & RANK_1) || targetSquareBB == (FILE_H & RANK_1))
@@ -1337,7 +1326,7 @@ bool Board::makeMove(const Move &newMove)
         rookSquare = activeSide ? 0 : 56;
         rookTargetSquare = rookSquare + 2;
         updatePiece(rookSquare, rookTargetSquare);
-        hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
+        hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
       }
       // castle queen side
       else
@@ -1346,7 +1335,7 @@ bool Board::makeMove(const Move &newMove)
         rookSquare = activeSide ? 7 : 63;
         rookTargetSquare = rookSquare - 3;
         updatePiece(rookSquare, rookTargetSquare);
-        hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
+        hashKey ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
       }
       if (USE_NNUE)
       {
@@ -1358,7 +1347,7 @@ bool Board::makeMove(const Move &newMove)
     }
   }
   // set it to what it is now
-  zobristToggleCastle(hashValue);
+  zobristToggleCastle();
   if (capture || originPieceType == PAWN)
     halfMoves = 0;
   else
@@ -1367,9 +1356,7 @@ bool Board::makeMove(const Move &newMove)
     fullMoves++;
   // swap sides
   activeSide = !activeSide;
-  hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
-  // update key to reflect actual value
-  state->hashValue = hashValue;
+  hashKey ^= ZOBRIST_TABLE[ACTIVE_SIDE];
   // calculate repetitions
   // a halfMove counts up reversible moves so we can use it for repetition counting
   // can only be repetition if atleast 4 half moves where made
@@ -1383,7 +1370,7 @@ bool Board::makeMove(const Move &newMove)
         stateP = stateP->oldBoard->oldBoard;
       else
         break;
-      if (stateP->hashValue == hashValue)
+      if (hashHistory.end()[-i] == hashKey)
       {
         state->repetition = stateP->repetition == TWO_FOLD ? THREE_FOLD : TWO_FOLD;
         break;
@@ -1460,19 +1447,16 @@ void Board::unmakeMove(const Move &oldMove)
 // changes side without moving anything
 void Board::makeNullMove()
 {
-  u64 hashValue = state->hashValue;
   store();
 
   if (epSquare != NONE_SQUARE)
   {
-    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+    hashKey ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
     epSquare = NONE_SQUARE;
   }
   halfMoves = 0;
   activeSide = !activeSide;
-  hashValue ^= ZOBRIST_TABLE[ACTIVE_SIDE];
-
-  state->hashValue = hashValue;
+  hashKey ^= ZOBRIST_TABLE[ACTIVE_SIDE];
 }
 
 void Board::unmakeNullMove()
