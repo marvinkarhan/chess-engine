@@ -24,7 +24,7 @@ struct StoredBoard
 {
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide;
   Square epSquare;
-  int fullMoves, halfMoves;
+  int8_t halfMoves;
   Piece capturedPiece;
   u64 hashValue;
   Move move;
@@ -58,7 +58,8 @@ public:
   bool useNNUE = USE_NNUE;
   Square epSquare;
   u64 nodeCount, hashTableHits = 0;
-  int fullMoves, halfMoves;
+  int8_t halfMoves;
+  int fullMoves = 0;
   float thinkingTime = 0.1;
   long long endTime = std::numeric_limits<long long>::max();
   // quadratic pv table

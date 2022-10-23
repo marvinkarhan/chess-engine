@@ -25,7 +25,6 @@ int64_t timeNow() {
 Board::Board(FenString fen /*=START_POS_FEN*/)
 {
   initHashTableSize(DEFAULT_HASH_TABLE_SIZE);
-  fullMoves = 0;
   state = nullptr;
   stopSearch = false;
   parseFenString(fen);
@@ -164,7 +163,6 @@ void Board::resetBoard()
   fullMoves = 0;
   latestScore = 0;
   halfMoves = 0;
-  fullMoves = 0;
   nodeCount = 0;
   hashTableHits = 0;
   epSquare = NONE_SQUARE;
@@ -1136,7 +1134,6 @@ void Board::store(Piece capturedPiece /*= NO_PIECE*/)
   stored->castleBlackKingSide = castleBlackKingSide;
   stored->castleBlackQueenSide = castleBlackQueenSide;
   stored->epSquare = epSquare;
-  stored->fullMoves = fullMoves;
   stored->halfMoves = halfMoves;
   stored->capturedPiece = capturedPiece;
   stored->repetition = NO_REPETITION;
@@ -1151,7 +1148,6 @@ void Board::restore()
   castleBlackKingSide = state->castleBlackKingSide;
   castleBlackQueenSide = state->castleBlackQueenSide;
   epSquare = state->epSquare;
-  fullMoves = state->fullMoves;
   halfMoves = state->halfMoves;
   StoredBoard *oldBoard = std::move(state->oldBoard);
   delete state;
@@ -1414,6 +1410,8 @@ bool Board::makeMove(const Move &newMove)
 
 void Board::unmakeMove(const Move &oldMove)
 {
+  if (!activeSide)
+    fullMoves--;
   activeSide = !activeSide;
 
   if (moveType(oldMove) == PROMOTION)
