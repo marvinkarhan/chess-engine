@@ -104,15 +104,6 @@ void uciMove(std::istringstream &ss)
   }
 }
 
-void uciUnmakeMove()
-{
-  if (getBoard().state->move)
-  {
-    getBoard().unmakeMove(getBoard().state->move);
-  }
-  std::cout << "unmademove" << std::endl;
-}
-
 void uciPerft(std::istringstream &ss)
 {
   std::string token, fen;
@@ -216,8 +207,6 @@ std::string uciProcessCommand(std::string command)
     uciLegalMoves();
   else if (token == "move")
     uciMove(ss);
-  else if (token == "unmakemove")
-    uciUnmakeMove();
   else if (token == "perft")
     uciPerft(ss);
 

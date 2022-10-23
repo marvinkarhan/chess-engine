@@ -339,7 +339,7 @@ int Board::evaluateMobility()
   return score;
 }
 
-int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*/)
+int Board::negaMax(int depth, int alpha, int beta/*, bool nullMoveAllowed /*=true*/)
 {
   // track time control in interval
   if ((nodeCount & 2047) == 0)
@@ -1197,7 +1197,6 @@ bool Board::makeMove(const Move &newMove)
   auto &dirtyPiece = state->dirtyPiece;
   dirtyPiece.dirty_num = 1;
 
-  state->move = newMove;
   // DEBUG
   // if (originPiece == NO_PIECE)
   // {

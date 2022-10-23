@@ -26,7 +26,6 @@ struct StoredBoard
   Square epSquare;
   int8_t halfMoves;
   Piece capturedPiece;
-  Move move;
 
   StoredBoard *oldBoard; // board state before store
 
@@ -90,7 +89,7 @@ public:
   {
     return piecesByType[piece];
   }
-  int negaMax(int depth, int alpha, int beta, bool nullMoveAllowed =true);
+  int negaMax(int depth, int alpha, int beta/*, bool nullMoveAllowed =true*/);
   int iterativeDeepening(float timeInSeconds = std::numeric_limits<float>::max(), int maxDepth = MAX_DEPTH);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
