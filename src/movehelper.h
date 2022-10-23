@@ -299,4 +299,4 @@ extern Move uciToMove(std::string uci, const Board &board);
 
 MoveType getMoveType(int originSquare, int targetSquare, bool isDigit, const Board &board);
 
-extern BB getPotentialEPSquareBB(int originSquare, int targetSquare, const Board &board);
+extern Square getPotentialEPSquareBB(int originSquare, int targetSquare, const Board &board);

@@ -23,7 +23,7 @@ namespace NNUE {
 struct StoredBoard
 {
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide;
-  BB epSquareBB;
+  Square epSquare;
   int fullMoves, halfMoves;
   Piece capturedPiece;
   u64 hashValue;
@@ -56,7 +56,8 @@ public:
   Piece piecePos[64];
   bool castleWhiteKingSide, castleWhiteQueenSide, castleBlackKingSide, castleBlackQueenSide, activeSide, stopSearch;
   bool useNNUE = USE_NNUE;
-  u64 epSquareBB, nodeCount, hashTableHits = 0;
+  Square epSquare;
+  u64 nodeCount, hashTableHits = 0;
   int fullMoves, halfMoves;
   float thinkingTime = 0.1;
   long long endTime = std::numeric_limits<long long>::max();

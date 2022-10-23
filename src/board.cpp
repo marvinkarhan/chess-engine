@@ -167,7 +167,7 @@ void Board::resetBoard()
   fullMoves = 0;
   nodeCount = 0;
   hashTableHits = 0;
-  epSquareBB = 0;
+  epSquare = NONE_SQUARE;
   pieceValues = 0;
   pieceSquareValues = 0;
 
@@ -529,10 +529,10 @@ FenString Board::toFenString()
   if (castleRights == "")
     castleRights += "-";
   fen += castleRights + " ";
-  if (epSquareBB == BB(0))
+  if (epSquare == NONE_SQUARE)
     fen += "- ";
   else
-    fen += SQUARE_TO_ALGEBRAIC[bitScanForward(epSquareBB)] + " ";
+    fen += SQUARE_TO_ALGEBRAIC[epSquare] + " ";
   fen += std::to_string(halfMoves) + " ";
   fen += std::to_string(fullMoves);
   return fen;
@@ -595,14 +595,14 @@ void Board::parseFenString(FenString fen)
   // en passant
   ss >> character;
   if (character == '-')
-    epSquareBB = BB(0);
+    epSquare = NONE_SQUARE;
   else
   {
     unsigned char file = (character - 'a');
     ss >> character;
     unsigned char rank = (character - '1');
-    epSquareBB = SQUARE_BBS[(7 - file) + 8 * rank];
-    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
+    epSquare = Square((7 - file) + 8 * rank);
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
   }
   ss >> character;
   // half moves
@@ -864,9 +864,8 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
         *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
       }
       // en passant
-      if (epSquareBB && (targetSquaresBB & move(epSquareBB, activeSide ? DOWN : UP)))
+      if (epSquare != NONE_SQUARE && (targetSquaresBB & move(SQUARE_BBS[epSquare], activeSide ? DOWN : UP)))
       {
-        int epSquare = bitScanForward(epSquareBB);
         bb = pawnsNotOnPromotionRank & PAWN_ATTACKS_BBS[epSquare][!activeSide];
         while (bb)
         {
@@ -996,7 +995,7 @@ bool Board::moveIsLegal(const Move checkedMove, bool activeSide, BB blockersBB, 
   if (moveType(checkedMove) == EN_PASSANT)
     // if piece is pinned it has to move in the ray it is pinned and after making the move the king cannot be attacked
     return ((~blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)]) &&
-           !(blockers(kingSquare, activeSide, piecesByType[ALL_PIECES] ^ move(epSquareBB, activeSide ? DOWN : UP)) & SQUARE_BBS[originSquare(checkedMove)]);
+           !(blockers(kingSquare, activeSide, piecesByType[ALL_PIECES] ^ move(SQUARE_BBS[epSquare], activeSide ? DOWN : UP)) & SQUARE_BBS[originSquare(checkedMove)]);
   // special case: king is moving
   if (originSquare(checkedMove) == kingSquare)
     // is king attacked after moving
@@ -1136,7 +1135,7 @@ void Board::store(Piece capturedPiece /*= NO_PIECE*/)
   stored->castleWhiteQueenSide = castleWhiteQueenSide;
   stored->castleBlackKingSide = castleBlackKingSide;
   stored->castleBlackQueenSide = castleBlackQueenSide;
-  stored->epSquareBB = epSquareBB;
+  stored->epSquare = epSquare;
   stored->fullMoves = fullMoves;
   stored->halfMoves = halfMoves;
   stored->capturedPiece = capturedPiece;
@@ -1151,7 +1150,7 @@ void Board::restore()
   castleWhiteQueenSide = state->castleWhiteQueenSide;
   castleBlackKingSide = state->castleBlackKingSide;
   castleBlackQueenSide = state->castleBlackQueenSide;
-  epSquareBB = state->epSquareBB;
+  epSquare = state->epSquare;
   fullMoves = state->fullMoves;
   halfMoves = state->halfMoves;
   StoredBoard *oldBoard = std::move(state->oldBoard);
@@ -1279,7 +1278,7 @@ bool Board::makeMove(const Move &newMove)
     // en passant move
     if (moveType(newMove) == EN_PASSANT)
     {
-      BB capturedPawnBB = move(epSquareBB, activeSide ? DOWN : UP);
+      BB capturedPawnBB = move(SQUARE_BBS[epSquare], activeSide ? DOWN : UP);
       int capturedSquare = bitScanForward(capturedPawnBB);
       state->capturedPiece = Piece(piecePos[capturedSquare]);
       deletePiece(capturedSquare);
@@ -1287,17 +1286,17 @@ bool Board::makeMove(const Move &newMove)
       capture = true;
     }
     // check for resulting en passant
-    if (epSquareBB)
-      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
-    epSquareBB = getPotentialEPSquareBB(originSquare(newMove), targetSquare(newMove), *this);
-    if (epSquareBB)
-      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
+    if (epSquare != NONE_SQUARE)
+      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+    epSquare = getPotentialEPSquareBB(originSquare(newMove), targetSquare(newMove), *this);
+    if (epSquare != NONE_SQUARE)
+      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
   }
   else
   {
-    if (epSquareBB)
-      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
-    epSquareBB = 0;
+    if (epSquare != NONE_SQUARE)
+      hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+    epSquare = NONE_SQUARE;
   }
   // castles
   // check rook moves
@@ -1466,10 +1465,10 @@ void Board::makeNullMove()
   u64 hashValue = state->hashValue;
   store();
 
-  if (epSquareBB)
+  if (epSquare != NONE_SQUARE)
   {
-    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (bitScanForward(epSquareBB) & 7)];
-    epSquareBB = 0;
+    hashValue ^= ZOBRIST_TABLE[EP_SQUARE_H + (epSquare & 7)];
+    epSquare = NONE_SQUARE;
   }
   halfMoves = 0;
   activeSide = !activeSide;

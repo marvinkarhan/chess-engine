@@ -62,7 +62,7 @@ MoveType getMoveType(int originSquare, int targetSquare, bool isDigit, const Boa
   {
     if (!isDigit)
       return PROMOTION; // found a promotion letter
-    if (board.epSquareBB == SQUARE_BBS[targetSquare])
+    if (board.epSquare == targetSquare)
       return EN_PASSANT; // found en passant square
   }
   if (movedPieceType == KING && REY_BBS[originSquare][targetSquare] > 0)
@@ -72,7 +72,7 @@ MoveType getMoveType(int originSquare, int targetSquare, bool isDigit, const Boa
   return NORMAL;
 }
 
-BB getPotentialEPSquareBB(int originSquare, int targetSquare, const Board &board)
+Square getPotentialEPSquareBB(int originSquare, int targetSquare, const Board &board)
 {
   BB originSquareBB = SQUARE_BBS[originSquare];
   BB targetSquareBB = SQUARE_BBS[targetSquare];
@@ -84,7 +84,7 @@ BB getPotentialEPSquareBB(int originSquare, int targetSquare, const Board &board
     Piece rightSquarePiece = board.piecePos[bitScanForward(move(targetSquareBB, RIGHT))];
     Piece enemyPawnKey = board.activeSide ? BLACK_PAWN : WHITE_PAWN;
     if (leftSquarePiece == enemyPawnKey || rightSquarePiece == enemyPawnKey)
-      return move(targetSquareBB & RANK_4, DOWN) | move(targetSquareBB & RANK_5, UP);
+      return Square(bitScanForward(move(targetSquareBB & RANK_4, DOWN) | move(targetSquareBB & RANK_5, UP)));
   }
-  return 0ULL;
+  return NONE_SQUARE;
 }
