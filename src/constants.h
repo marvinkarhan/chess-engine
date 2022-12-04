@@ -21,7 +21,7 @@ const int MAX_DEPTH = 64;
 const float MOVES_TO_GO = 24;
 const float TIME_BUFFER = 0.2;
 
-const int DEFAULT_HASH_TABLE_SIZE = 1024;
+const int DEFAULT_HASH_TABLE_SIZE = 32;
 
 const bool WHITE = true;
 const bool BLACK = false;

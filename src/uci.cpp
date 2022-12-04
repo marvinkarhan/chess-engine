@@ -12,6 +12,19 @@
 #include "nnue/halfkp.h"
 #include "nnue/init.h"
 
+const std::vector<std::string> fens = {
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1",
+  "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+  "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
+  "4k3/8/8/8/8/8/8/R3K3 w Q - 0 1",
+  "4k2r/8/8/8/8/8/8/4K3 w k - 0 1",
+  "r3k3/8/8/8/8/8/8/4K3 w q - 0 1",
+  "4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1",
+  "r3k2r/8/8/8/8/8/8/4K3 w kq - 0 1",
+  "8/8/8/8/8/8/6k1/4K2R w K - 0 1",
+};
+
 // implement First Use Idiom
 Board &getBoard()
 {
@@ -132,6 +145,19 @@ void uciPerft(std::istringstream &ss)
   std::cout << "info " << "nodes " << nodes << " nps " << nodes * 1000 / timePassed << " time " << timePassed << "ms" << std::endl;
 }
 
+void uciBench(std::istringstream &ss) {
+  long long timePassed = 0;
+  u64 nodes = 0;
+  for (int i = 0; i < fens.size(); i++) {
+    getBoard().parseFenString(fens[i]);
+    auto startTime = std::chrono::system_clock::now();
+    nodes += getBoard().perft(4);
+    auto endTime = std::chrono::system_clock::now();
+    timePassed += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() + 1;
+  }
+  std::cout << "info " << nodes << " nodes " << nodes * 1000 / timePassed  << " nps " << timePassed << "ms"  << " time"<< std::endl;
+}
+
 void setOption(std::istringstream &ss)
 {
   std::string token, id, value;
@@ -160,6 +186,10 @@ void setOption(std::istringstream &ss)
   else if (id == "EvalFile" && value.length() > 0)
   {
     getBoard().useNNUE = NNUE::loadFile(value);
+  }
+  else if (id == "Hash" && value.length() > 0)
+  {
+    getBoard().initHashTableSize(std::stoi(value));
   }
   else
     std::cout << "Not an option" << std::endl;
@@ -220,7 +250,8 @@ std::string uciProcessCommand(std::string command)
     uciUnmakeMove();
   else if (token == "perft")
     uciPerft(ss);
-
+  else if (token == "bench")
+    uciBench(ss);
   return token;
 }
 
