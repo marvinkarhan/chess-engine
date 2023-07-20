@@ -64,7 +64,7 @@ A list of settings that can be set via `setoption name <id> [value <x>]`:
   prints all legal moves
 
 * move \<list of moves\>\
-  plays moves spcified in a list consecutivly (like position ... moves does)
+  plays moves specified in a list consecutively (like position ... moves does)
 
 * unmakemove\
   unmakes the last move
