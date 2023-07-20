@@ -40,7 +40,7 @@ Compile the engine using make on Windows or Linux
 ```
 cd ./src
 make
-./build/bin/uci-engine
+./uci-engine
 ```
 
 ## UCI settings

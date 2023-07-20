@@ -108,6 +108,13 @@ wasm: FORCE
 FORCE: ;
 
 clean:
+ifeq ($(OS),Windows_NT)
+	for /R . %%G in (*.o) do del /Q /F "%%G"
+	del /Q /F $(EXE)*
+	del /Q /F $(WASM)*
+else
 	@rm -f *.o ./nnue/*.o $(EXE)* $(WASM)*
+endif
+
 
 .PHONY: all clean
