@@ -1342,7 +1342,7 @@ bool Board::makeMove(const Move &newMove)
         rookSquare = activeSide ? 0 : 56;
         rookTargetSquare = rookSquare + 2;
         updatePiece(rookSquare, rookTargetSquare);
-        hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
+        hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookTargetSquare];
       }
       // castle queen side
       else
@@ -1351,7 +1351,7 @@ bool Board::makeMove(const Move &newMove)
         rookSquare = activeSide ? 7 : 63;
         rookTargetSquare = rookSquare - 3;
         updatePiece(rookSquare, rookTargetSquare);
-        hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare + 2];
+        hashValue ^= ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookSquare] | ZOBRIST_TABLE[ZobristPieceOffset[activeSide ? WHITE_ROOK : BLACK_ROOK] + rookTargetSquare];
       }
       if (USE_NNUE)
       {
