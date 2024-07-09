@@ -45,7 +45,7 @@ void Board::initHashTableSize(int sizeInMB /*=32*/)
   hashTable = new HashEntry[hashTableSize];
 }
 
-int Board::evaluateNextMove(float movetime /*= 0*/, float wtime /*= 0*/, float btime /*= 0*/, int maxDepth /*= MAX_DEPTH*/)
+int Board::evaluateNextMove(float movetime /*= 0*/, float wtime /*= 0*/, float btime /*= 0*/, int maxDepth /*= MAX_DEPTH*/, bool print /*= true*/)
 {
   if (!movetime)
   {
@@ -57,11 +57,11 @@ int Board::evaluateNextMove(float movetime /*= 0*/, float wtime /*= 0*/, float b
   }
   if (movetime > TIME_BUFFER)
     movetime -= TIME_BUFFER;
-  int score = iterativeDeepening(movetime, maxDepth);
+  int score = iterativeDeepening(movetime, maxDepth, print);
   return score;
 }
 
-int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/)
+int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>::max()*/, int maxDepth /*= MAX_DEPTH*/, bool print /*= true*/)
 {
   int64_t startTime = timeNow();
   if (timeInSeconds)
@@ -88,7 +88,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       if (score <= CHECKMATE_VALUE || score >= -CHECKMATE_VALUE)
       {
         // position is already mate
-        if (pv[0] == NONE_MOVE || MoveList<LEGAL_MOVES>(*this, activeSide, ALL).size() == 0)
+        if (print && (pv[0] == NONE_MOVE || MoveList<LEGAL_MOVES>(*this, activeSide, ALL).size() == 0))
         {
           std::cout << "info depth 0 score mate 0" << std::endl;
           std::cout << "bestmove (none)" << std::endl;
@@ -112,23 +112,29 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       beta = score + ASPIRATION_WINDOW_VALUE;
       latestScore = score;
       auto timePassed = timeNow() - startTime + 1;
-      std::cout << "info depth " << currDepth << " nodes " << nodeCount << " nps " << nodeCount * 1000 / timePassed;
-      printScore(latestScore, pv);
-      std::cout << " pv";
-      for (Move move : pv)
+      if (print)
       {
-        std::cout << " " << toUciString(move);
+        std::cout << "info depth " << currDepth << " nodes " << nodeCount << " nps " << nodeCount * 1000 / timePassed;
+        printScore(latestScore, pv);
+        std::cout << " pv";
+        for (Move move : pv)
+        {
+          std::cout << " " << toUciString(move);
+        }
+        std::cout << std::endl;
       }
-      std::cout << std::endl;
       currDepth++;
     }
   }
   stopSearch = true;
-  if (pv.size() > 0 && pv.at(0) != NONE_MOVE)
-    // signal we made out final decision if there are moves left to make
-    std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
-  else
-    std::cout << "bestmove (none)" << std::endl;
+  if (print)
+  {
+    if (pv.size() > 0 && pv.at(0) != NONE_MOVE)
+      // signal we made out final decision if there are moves left to make
+      std::cout << "bestmove " << toUciString(pv[0]) << std::endl;
+    else
+      std::cout << "bestmove (none)" << std::endl;
+  }
 
   return latestScore;
 }

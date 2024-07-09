@@ -151,7 +151,8 @@ void uciBench() {
   for (unsigned int i = 0; i < fens.size(); i++) {
     getBoard().parseFenString(fens[i]);
     auto startTime = std::chrono::system_clock::now();
-    nodes += getBoard().perft(4);
+    getBoard().evaluateNextMove(std::numeric_limits<int>::max(), 0, 0, 7, false);
+    nodes += getBoard().nodeCount;
     auto endTime = std::chrono::system_clock::now();
     timePassed += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() + 1;
   }
