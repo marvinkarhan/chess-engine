@@ -156,7 +156,7 @@ void uciBench() {
     auto endTime = std::chrono::system_clock::now();
     timePassed += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() + 1;
   }
-  std::cout << "info " << nodes << " nodes " << nodes * 1000 / timePassed  << " nps " << timePassed << "ms"  << " time"<< std::endl;
+  std::cout << nodes << " nodes " << nodes * 1000 / timePassed  << " nps " << std::endl;
 }
 
 void setOption(std::istringstream &ss)
