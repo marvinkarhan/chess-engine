@@ -52,6 +52,10 @@ A list of settings that can be set via `setoption name <id> [value <x>]`:
 
 * EvalFile\
   sets the NNUE Network used via a file. Only compatible formats work, likely only those generated for this engine
+
+* Hash\
+  sets the Hash table size in MB
+
 ## Custom commands
 
 * print\
@@ -71,6 +75,9 @@ A list of settings that can be set via `setoption name <id> [value <x>]`:
 
 * perft \<depth\> [\<fen\>]\
   runs a perft for a specified depth on either the current position or specified one
+
+* bench \<depth\>\
+  runs a benchmark on a series of searches and returns nodes and nps info
 
 ## Features
 

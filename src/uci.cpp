@@ -145,10 +145,10 @@ void uciPerft(std::istringstream &ss)
   std::cout << "info " << "nodes " << nodes << " nps " << nodes * 1000 / timePassed << " time " << timePassed << "ms" << std::endl;
 }
 
-void uciBench(std::istringstream &ss) {
+void uciBench() {
   long long timePassed = 0;
   u64 nodes = 0;
-  for (int i = 0; i < fens.size(); i++) {
+  for (unsigned int i = 0; i < fens.size(); i++) {
     getBoard().parseFenString(fens[i]);
     auto startTime = std::chrono::system_clock::now();
     nodes += getBoard().perft(4);
@@ -199,6 +199,7 @@ void printOptions()
 {
   std::cout << "option name nnue type check default true" << std::endl;
   std::cout << "option name nnueFile type string default <empty>" << std::endl;
+  std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
 }
 
 std::string uciProcessCommand(std::string command)
@@ -251,7 +252,7 @@ std::string uciProcessCommand(std::string command)
   else if (token == "perft")
     uciPerft(ss);
   else if (token == "bench")
-    uciBench(ss);
+    uciBench();
   return token;
 }
 
