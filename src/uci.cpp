@@ -13,16 +13,16 @@
 #include "nnue/init.h"
 
 const std::vector<std::string> fens = {
-  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1",
-  "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-  "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
-  "4k3/8/8/8/8/8/8/R3K3 w Q - 0 1",
-  "4k2r/8/8/8/8/8/8/4K3 w k - 0 1",
-  "r3k3/8/8/8/8/8/8/4K3 w q - 0 1",
-  "4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1",
-  "r3k2r/8/8/8/8/8/8/4K3 w kq - 0 1",
-  "8/8/8/8/8/8/6k1/4K2R w K - 0 1",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1",
+    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+    "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
+    "4k3/8/8/8/8/8/8/R3K3 w Q - 0 1",
+    "4k2r/8/8/8/8/8/8/4K3 w k - 0 1",
+    "r3k3/8/8/8/8/8/8/4K3 w q - 0 1",
+    "4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1",
+    "r3k2r/8/8/8/8/8/8/4K3 w kq - 0 1",
+    "8/8/8/8/8/8/6k1/4K2R w K - 0 1",
 };
 
 // implement First Use Idiom
@@ -145,10 +145,12 @@ void uciPerft(std::istringstream &ss)
   std::cout << "info " << "nodes " << nodes << " nps " << nodes * 1000 / timePassed << " time " << timePassed << "ms" << std::endl;
 }
 
-void uciBench() {
+void uciBench()
+{
   long long timePassed = 0;
   u64 nodes = 0;
-  for (unsigned int i = 0; i < fens.size(); i++) {
+  for (unsigned int i = 0; i < fens.size(); i++)
+  {
     getBoard().parseFenString(fens[i]);
     auto startTime = std::chrono::system_clock::now();
     getBoard().evaluateNextMove(std::numeric_limits<int>::max(), 0, 0, 7, false);
@@ -156,7 +158,7 @@ void uciBench() {
     auto endTime = std::chrono::system_clock::now();
     timePassed += std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() + 1;
   }
-  std::cout << nodes << " nodes " << nodes * 1000 / timePassed  << " nps " << std::endl;
+  std::cout << nodes << " nodes " << nodes * 1000 / timePassed << " nps " << std::endl;
 }
 
 void setOption(std::istringstream &ss)
