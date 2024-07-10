@@ -16,7 +16,7 @@ namespace NNUE
   inline std::uint32_t HalfKP::MakeIndex(
       bool perspective, Square s, Piece pc, Square ksq)
   {
-    return static_cast<std::uint32_t>(orient(perspective, s) + kpp_board_index[pc][perspective] + PS_END * ksq);
+    return static_cast<std::uint32_t>(orient(perspective, s) + kpp_board_index[pc][perspective] + PS_END * static_cast<int>(ksq));
   }
 
   // Get a list of indices for active features

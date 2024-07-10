@@ -1,5 +1,5 @@
 # Compiler settings
-CPP_STANDARD = 17
+CPP_STANDARD = 20
 CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -Wall -Wextra
 CCX = g++
 

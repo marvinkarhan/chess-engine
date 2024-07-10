@@ -187,33 +187,29 @@ void Board::resetBoard()
   // state = nullptr;
 }
 
-void Board::printBitboard(BB bb)
-{
-  std::string result = "";
-  std::string lineSeperator = "+---+---+---+---+---+---+---+---+";
-  for (int i = 0; i < 8; i++)
-  {
-    std::string tmpLine = " ";
-    for (int j = 0; j < 8; j++)
-    {
-      tmpLine.insert(0, "" + std::to_string(bb & 1) + " | ");
-      bb >>= 1;
-    }
 
-    // tmpLine.erase(0, 1);
-    result.insert(0, " " + to_string(i + 1) + " | " + tmpLine + "\r\n   " + lineSeperator + "\r\n");
+void Board::printBitboard(BB bb) {
+  std::ostringstream result;
+  std::string lineSeparator = "+---+---+---+---+---+---+---+---+";
+
+  result << "   " << lineSeparator << "\r\n";
+  for (int i = 0; i < 8; ++i) {
+    result << " " << (8 - i) << " |";
+    for (int j = 0; j < 8; ++j) {
+      result << " " << ((bb & (1ULL << ((7 - i) * 8 + (7 - j)))) ? "1" : "0") << " |";
+    }
+    result << "\r\n   " << lineSeparator << "\r\n";
   }
-  result.insert(0, "   " + lineSeperator + "\r\n");
-  std::cout << result;
-  std::cout << "     A   B   C   D   E   F   G   H" << std::endl;
+  result << "     A   B   C   D   E   F   G   H" << std::endl;
+  std::cout << result.str();
 }
 
 void Board::prettyPrint()
 {
-  std::string lineSeperator = "+---+---+---+---+---+---+---+---+";
+  std::string lineSeparator = "+---+---+---+---+---+---+---+---+";
   for (int i = 7; i >= 0; i--)
   {
-    std::cout << "   " + lineSeperator << std::endl;
+    std::cout << "   " + lineSeparator << std::endl;
     std::cout << " " << i + 1 << " | ";
     for (int j = 7; j >= 0; j--)
     {
@@ -221,7 +217,7 @@ void Board::prettyPrint()
     }
     std::cout << std::endl;
   }
-  std::cout << "   " + lineSeperator << std::endl;
+  std::cout << "   " + lineSeparator << std::endl;
   std::cout << "     A   B   C   D   E   F   G   H" << std::endl;
 }
 
