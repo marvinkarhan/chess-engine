@@ -76,6 +76,9 @@ ifneq ($(MAKECMDGOALS), wasm)
 	endif
 endif
 
+# Add BMI2 support
+CXXFLAGS += -mbmi2
+
 EXE = uci-engine
 WASM = wasm-engine
 WASM_SRC = wasm/wasm.cpp

@@ -653,6 +653,7 @@ BB Board::pieceMoves(PieceType type, bool activeSide)
 {
   BB attackFields = BB(0);
   BB friendlies = piecesBySide[activeSide];
+  BB occupiedBB = piecesByType[ALL_PIECES];
   switch (type)
   {
   case PAWN:
@@ -678,7 +679,13 @@ BB Board::pieceMoves(PieceType type, bool activeSide)
   case BISHOP:
   {
     BB bishops = pieces(activeSide, BISHOP);
-    return bishop_moves(bishops, ~piecesByType[ALL_PIECES], friendlies);
+    int bishopSquare = 0;
+    while (bishops)
+    {
+      bishopSquare = pop_lsb(bishops);
+      attackFields |= bishop_moves(bishopSquare, occupiedBB);
+    }
+    return attackFields;
   }
   case KNIGHT:
   {
@@ -694,12 +701,24 @@ BB Board::pieceMoves(PieceType type, bool activeSide)
   case ROOK:
   {
     BB rooks = pieces(activeSide, ROOK);
-    return rook_moves(rooks, ~piecesByType[ALL_PIECES], friendlies);
+    int rookSquare = 0;
+    while (rooks)
+    {
+      rookSquare = pop_lsb(rooks);
+      attackFields |= rook_moves(rookSquare, occupiedBB);
+    }
+    return attackFields;
   }
   case QUEEN:
   {
     BB queens = pieces(activeSide, QUEEN);
-    return queen_moves(queens, ~piecesByType[ALL_PIECES], friendlies);
+     int queenSquare = 0;
+    while (queens)
+    {
+      queenSquare = pop_lsb(queens);
+      attackFields |= queen_moves(queenSquare, occupiedBB);
+    }
+    return attackFields;
   }
   case KING:
   {
@@ -881,7 +900,7 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
     while (rookBB)
     {
       originSquare = pop_lsb(rookBB);
-      bb = rook_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & targetSquaresBB;
+      bb = rook_moves(originSquare, occupiedBB) & targetSquaresBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
@@ -892,18 +911,18 @@ ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSid
     while (bishopBB)
     {
       originSquare = pop_lsb(bishopBB);
-      bb = bishop_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & targetSquaresBB;
+      bb = bishop_moves(originSquare, occupiedBB) & targetSquaresBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);
         *moveList++ = createMove(originSquare, targetSquare);
       }
     }
-    // bishop moves
+    // queen moves
     while (queenBB)
     {
       originSquare = pop_lsb(queenBB);
-      bb = queen_moves(SQUARE_BBS[originSquare], emptyBB, friendliesBB) & targetSquaresBB;
+      bb = queen_moves(originSquare, occupiedBB) & targetSquaresBB;
       while (bb)
       {
         targetSquare = pop_lsb(bb);

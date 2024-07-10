@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "move.h"
 #include "board.h"
+#include "Pext.hpp"
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -115,114 +116,6 @@ inline BB move(BB bb, Direction dir)
   return 0;
 }
 
-/* Following Board Filling Functions are using the Kogge-Stone Algorithm */
-
-inline BB north_occluded_attacks(BB bb, BB empty_bb)
-{
-  bb |= empty_bb & (bb << 8);
-  empty_bb &= (empty_bb << 8);
-  bb |= empty_bb & (bb << 16);
-  empty_bb &= (empty_bb << 16);
-  bb |= empty_bb & (bb << 32);
-  return bb << 8 & FULL;
-}
-
-inline BB east_occluded_attacks(BB bb, BB empty_bb)
-{
-  empty_bb &= NOT_A;
-  bb |= empty_bb & (bb >> 1);
-  empty_bb &= (empty_bb >> 1);
-  bb |= empty_bb & (bb >> 2);
-  empty_bb &= (empty_bb >> 2);
-  bb |= empty_bb & (bb >> 4);
-  return bb >> 1 & ~FILE_A;
-}
-
-inline BB south_occluded_attacks(BB bb, BB empty_bb)
-{
-  bb |= empty_bb & (bb >> 8);
-  empty_bb &= (empty_bb >> 8);
-  bb |= empty_bb & (bb >> 16);
-  empty_bb &= (empty_bb >> 16);
-  bb |= empty_bb & (bb >> 32);
-  return bb >> 8;
-}
-
-inline BB west_occluded_attacks(BB bb, BB empty_bb)
-{
-  empty_bb &= NOT_H;
-  bb |= empty_bb & (bb << 1);
-  empty_bb &= (empty_bb << 1);
-  bb |= empty_bb & (bb << 2);
-  empty_bb &= (empty_bb << 2);
-  bb |= empty_bb & (bb << 4);
-  return (bb << 1 & ~FILE_H) & FULL;
-}
-
-inline BB no_we_occluded_attacks(BB bb, BB empty_bb)
-{
-  empty_bb &= NOT_H;
-  bb |= empty_bb & (bb << 9);
-  empty_bb &= (empty_bb << 9);
-  bb |= empty_bb & (bb << 18);
-  empty_bb &= (empty_bb << 18);
-  bb |= empty_bb & (bb << 36);
-  return (bb << 9 & ~FILE_H) & FULL;
-}
-
-inline BB so_we_occluded_attacks(BB bb, BB empty_bb)
-{
-  empty_bb &= NOT_H;
-  bb |= empty_bb & (bb >> 7);
-  empty_bb &= (empty_bb >> 7);
-  bb |= empty_bb & (bb >> 14);
-  empty_bb &= (empty_bb >> 14);
-  bb |= empty_bb & (bb >> 28);
-  return bb >> 7 & ~FILE_H;
-}
-
-inline BB so_ea_occluded_attacks(BB bb, BB empty_bb)
-{
-  empty_bb &= NOT_A;
-  bb |= empty_bb & (bb >> 9);
-  empty_bb &= (empty_bb >> 9);
-  bb |= empty_bb & (bb >> 18);
-  empty_bb &= (empty_bb >> 18);
-  bb |= empty_bb & (bb >> 36);
-  return bb >> 9 & ~FILE_A;
-}
-
-inline BB no_ea_occluded_attacks(BB bb, BB empty_bb)
-{
-  empty_bb &= NOT_A;
-  bb |= empty_bb & (bb << 7);
-  empty_bb &= (empty_bb << 7);
-  bb |= empty_bb & (bb << 14);
-  empty_bb &= (empty_bb << 14);
-  bb |= empty_bb & (bb << 28);
-  return (bb << 7 & ~FILE_A) & FULL;
-}
-
-inline BB horizontal_vertical_moves(BB bb, BB empty_bb)
-{
-  BB acc = 0;
-  acc |= north_occluded_attacks(bb, empty_bb);
-  acc |= east_occluded_attacks(bb, empty_bb);
-  acc |= south_occluded_attacks(bb, empty_bb);
-  acc |= west_occluded_attacks(bb, empty_bb);
-  return acc;
-}
-
-inline BB diagonal_moves(BB bb, BB empty_bb)
-{
-  BB acc = 0;
-  acc |= no_ea_occluded_attacks(bb, empty_bb);
-  acc |= so_ea_occluded_attacks(bb, empty_bb);
-  acc |= so_we_occluded_attacks(bb, empty_bb);
-  acc |= no_we_occluded_attacks(bb, empty_bb);
-  return acc;
-}
-
 inline BB traverse_bb(BB bb, std::vector<Direction> directions, BB friendlies_bb, BB enemies_bb)
 {
   BB result_bb = 0;
@@ -242,19 +135,19 @@ inline BB traverse_bb(BB bb, std::vector<Direction> directions, BB friendlies_bb
   return result_bb;
 }
 
-inline BB rook_moves(BB bb, BB empties_bb, BB friendlies_bb)
+inline BB rook_moves(int square, BB occupied_bb)
 {
-  return horizontal_vertical_moves(bb, empties_bb) & ~friendlies_bb;
+  return Chess_Lookup::Lookup_Pext::Rook(square, occupied_bb);
 }
 
-inline BB bishop_moves(BB bb, BB empties_bb, BB friendlies_bb)
+inline BB bishop_moves(int sq, BB occupied_bb)
 {
-  return diagonal_moves(bb, empties_bb) & ~friendlies_bb;
+  return Chess_Lookup::Lookup_Pext::Bishop(sq, occupied_bb);
 }
 
-inline BB queen_moves(BB bb, BB empties_bb, BB friendlies_bb)
+inline BB queen_moves(int sq, BB occupied_bb)
 {
-  return rook_moves(bb, empties_bb, friendlies_bb) | bishop_moves(bb, empties_bb, friendlies_bb);
+  return Chess_Lookup::Lookup_Pext::Queen(sq, occupied_bb);
 }
 
 inline BB king_moves(BB bb, BB friendlies_bb)
