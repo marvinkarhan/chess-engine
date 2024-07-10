@@ -202,6 +202,7 @@ void printOptions()
 {
   std::cout << "option name nnue type check default true" << std::endl;
   std::cout << "option name nnueFile type string default <empty>" << std::endl;
+  std::cout << "option name Hash type spin default 32" << std::endl;
   std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
 }
 
