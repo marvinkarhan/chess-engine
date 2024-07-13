@@ -93,7 +93,7 @@ OBJ_FILES = $(patsubst %.cpp,%.o,$(SRCS))
 
 all: engine
 
-debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -g -fno-omit-frame-pointer
+debug: CXXFLAGS = -std=c++$(CPP_STANDARD) -g -fno-omit-frame-pointer
 debug: all
 
 profile: CXXFLAGS = -std=c++$(CPP_STANDARD) -O3 -pg -ggdb3 -fno-omit-frame-pointer

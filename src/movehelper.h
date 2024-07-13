@@ -1,10 +1,46 @@
 #include "constants.h"
 #include "move.h"
 #include "board.h"
-#include "Pext.hpp"
+#include "Hash_Fancy.hpp"
 #include <algorithm>
 #include <vector>
 #include <string>
+
+constexpr int squareRank(Square sq) { return sq >> 3; }
+
+constexpr int squareFile(Square sq) { return sq & 7; }
+
+constexpr uint8_t diagonalOf(Square sq) {
+  return 7 + squareRank(sq) - squareFile(sq);
+}
+constexpr uint8_t antiDiagonalOf(Square sq) {
+  return squareRank(sq) + squareFile(sq);
+}
+
+static auto init_squares_between = []() constexpr
+{
+  // initialize squares between table
+  std::array<std::array<BB, 64>, 64> squares_between_bb{};
+  BB sqs = 0;
+  for (Square sq1 = H1; sq1 <= A8; ++sq1)
+  {
+    for (Square sq2 = H1; sq2 <= A8; ++sq2)
+    {
+      sqs = (1ULL << sq1) | (1ULL << sq2);
+      if (sq1 == sq2)
+        squares_between_bb[sq1][sq2] = 0ull;
+      else if (squareFile(sq1) == squareFile(sq2) || squareRank(sq1) == squareRank(sq2))
+        squares_between_bb[sq1][sq2] = Chess_Lookup::Fancy::GetRookAttacks(sq1, sqs) & Chess_Lookup::Fancy::GetRookAttacks(sq2, sqs);
+      else if (diagonalOf(sq1) == diagonalOf(sq2) ||
+               antiDiagonalOf(sq1) == antiDiagonalOf(sq2))
+        squares_between_bb[sq1][sq2] =
+            Chess_Lookup::Fancy::GetBishopAttacks(sq1, sqs) & Chess_Lookup::Fancy::GetBishopAttacks(sq2, sqs);
+    }
+  }
+  return squares_between_bb;
+};
+
+static const std::array<std::array<BB, 64>, 64> REY_BBS = init_squares_between();
 
 enum Direction : int
 {
@@ -137,45 +173,34 @@ inline BB traverse_bb(BB bb, std::vector<Direction> directions, BB friendlies_bb
 
 inline BB rook_moves(int square, BB occupied_bb)
 {
-  return Chess_Lookup::Lookup_Pext::Rook(square, occupied_bb);
+  return Chess_Lookup::Fancy::GetRookAttacks(square, occupied_bb);
 }
 
 inline BB bishop_moves(int sq, BB occupied_bb)
 {
-  return Chess_Lookup::Lookup_Pext::Bishop(sq, occupied_bb);
+  return  Chess_Lookup::Fancy::GetBishopAttacks(sq, occupied_bb);
 }
 
 inline BB queen_moves(int sq, BB occupied_bb)
 {
-  return Chess_Lookup::Lookup_Pext::Queen(sq, occupied_bb);
+  return  Chess_Lookup::Fancy::Queen(sq, occupied_bb);
 }
 
-inline BB king_moves(BB bb, BB friendlies_bb)
+inline BB pawn_left_attacks(BB bb, int active_side)
 {
-  BB moves_bb = BB(0);
-  for (Direction &dir : DIRECTION_MOVES)
-    moves_bb |= move(bb, dir);
-  return moves_bb & ~friendlies_bb;
+  return (active_side ? move(bb, LEFT_UP) : move(bb, RIGHT_DOWN));
 }
 
-inline BB knight_moves(BB bb, BB friendlies_bb)
+inline BB pawn_right_attacks(BB bb, int active_side)
 {
-  BB moves_bb = 0;
-  for (auto &moves : KNIGHT_MOVES)
-  {
-    BB moveAcc = bb;
-    for (Direction &dir : moves)
-      moveAcc = move(moveAcc, dir);
-    moves_bb |= moveAcc;
-  }
-  return moves_bb & ~friendlies_bb;
+  return (active_side ? move(bb, RIGHT_UP) : move(bb, LEFT_DOWN));
 }
 
 inline BB pawn_attacks(BB bb, int active_side, BB friendlies_bb)
 {
-  if (active_side)
-    return (move(bb, LEFT_UP) | move(bb, RIGHT_UP)) & ~friendlies_bb;
-  return (move(bb, LEFT_DOWN) | move(bb, RIGHT_DOWN)) & ~friendlies_bb;
+  return (pawn_left_attacks(bb, active_side) |
+          pawn_right_attacks(bb, active_side)) &
+         ~friendlies_bb;
 }
 
 inline BB in_between(int origin, int target)

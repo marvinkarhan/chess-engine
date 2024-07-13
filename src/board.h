@@ -92,7 +92,6 @@ public:
   int iterativeDeepening(float timeInSeconds = std::numeric_limits<int>::max(), int maxDepth = MAX_DEPTH, bool print = true);
   int quiesce(int alpha, int beta, int depth = 0);
   int evaluate();
-  int evaluateMobility();
   int evaluateNextMove(float movetime = 0, float wtime = 0, float btime = 0, int maxDepth = MAX_DEPTH, bool print = true);
   Board(FenString fen = START_POS_FEN);
   ~Board();
@@ -105,16 +104,14 @@ public:
   void printHashTable(); 
   FenString toFenString();
   void printEveryPiece();
-  BB allPiecesBB();
   void parseFenString(FenString fen);
-  BB pieceMoves(PieceType type, bool activeSide);
-  BB potentialSlidingAttackers(int square, bool activeSide);
-  BB attackers(int square, bool activeSide, BB occupied, bool onlySliders = false, bool excludeSliders = false);
-  BB blockers(int square, bool activeSide, BB occupied);
+  BB attackers(int square, bool activeSide, BB occupied);
+  BB attackedSquares(bool activeSide, BB emptyAndEmpty);
+  BB checkedSquares(int square, bool activeSide, int &double_check);
+  BB horizontalVerticalPinned(int square, bool activeSide, BB friendliesBB, BB enemiesBB);
+  BB diagonalPinned(int square, bool activeSide, BB friendliesBB, BB enemiesBB);
   std::vector<Move> getPV();
-  ValuedMove *generatePseudoLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
   ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
-  bool moveIsLegal(const Move move, bool activeSide, BB blockers, int kingSquare);
   bool moveIsPseudoLegal(const Move move);
   inline bool isKingAttacked()
   {
@@ -191,18 +188,15 @@ public:
   int getStateHistory();
 };
 
-template <MoveGenType moveType>
+template <MoveGenCategory category = ALL>
 struct MoveList
 {
   ValuedMove moves[MAX_MOVES], *last;
-  MoveList(Board &board, bool activeSide, MoveGenCategory category = ALL)
+  MoveList(Board &board, bool activeSide)
   {
-    if constexpr (moveType == PSEUDO_LEGAL_MOVES)
-      last = board.generatePseudoLegalMoves(moves, activeSide, category);
-    else if constexpr (moveType == LEGAL_MOVES) {
-      last = board.generateLegalMoves(moves, activeSide, category);
-    }
+    last = board.generateLegalMoves(moves, activeSide, category);
   }
+
   // implement iterator pattern
   const ValuedMove *begin() const { return moves; }
   const ValuedMove *end() const { return last; }

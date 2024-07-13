@@ -6,6 +6,7 @@
 
 MovePicker::MovePicker(Board &b, Move hMove, bool onlyAttacks /*= false*/) : board(b), hashMove(hMove), onlyWinningEqualAttacks(onlyAttacks)
 {
+  
   if (board.isKingAttacked())
     if (hMove && b.moveIsPseudoLegal(hMove))
       stage = EVASION_HASH_STAGE;

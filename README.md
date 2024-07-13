@@ -110,4 +110,3 @@ A list of settings that can be set via `setoption name <id> [value <x>]`:
     * Knight Pair penalty
     * Rook Pair penalty
     * No Pawn penalty
-  * Mobility

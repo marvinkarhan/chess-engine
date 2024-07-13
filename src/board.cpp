@@ -88,7 +88,7 @@ int Board::iterativeDeepening(float timeInSeconds /*= std::numeric_limits<float>
       if (score <= CHECKMATE_VALUE || score >= -CHECKMATE_VALUE)
       {
         // position is already mate
-        if (print && (pv[0] == NONE_MOVE || MoveList<LEGAL_MOVES>(*this, activeSide, ALL).size() == 0))
+        if (print && (pv[0] == NONE_MOVE || MoveList<ALL>(*this, activeSide).size() == 0))
         {
           std::cout << "info depth 0 score mate 0" << std::endl;
           std::cout << "bestmove (none)" << std::endl;
@@ -334,28 +334,9 @@ int Board::evaluate()
     score += NO_PAWNS;
   if (!(pieces(0, PAWN)))
     score -= NO_PAWNS;
-  score += evaluateMobility();
 
   int sideMultiplier = activeSide ? 1 : -1;
   return score * sideMultiplier;
-}
-
-int Board::evaluateMobility()
-{
-  int score = 0;
-  score += popCount(pieceMoves(PAWN, 1)) * 7;
-  score += popCount(pieceMoves(PAWN, 0)) * -7;
-  score += popCount(pieceMoves(BISHOP, 1)) * 6;
-  score += popCount(pieceMoves(BISHOP, 0)) * -6;
-  score += popCount(pieceMoves(KNIGHT, 1)) * 5;
-  score += popCount(pieceMoves(KNIGHT, 0)) * -5;
-  score += popCount(pieceMoves(ROOK, 1)) * 4;
-  score += popCount(pieceMoves(ROOK, 0)) * -4;
-  score += popCount(pieceMoves(QUEEN, 1)) * 3;
-  score += popCount(pieceMoves(QUEEN, 0)) * -3;
-  // score += popCount(pieceMoves(KING,1)) * 4;
-  // score += popCount(pieceMoves(KING,0)) * -4;
-  return score;
 }
 
 int Board::negaMax(int depth, int alpha, int beta, bool nullMoveAllowed /*=true*/)
@@ -550,11 +531,6 @@ void Board::printEveryPiece()
   }
 }
 
-BB Board::allPiecesBB()
-{
-  return piecesByType[ALL_PIECES];
-}
-
 void Board::parseFenString(FenString fen)
 {
   resetBoard();
@@ -617,148 +593,187 @@ void Board::parseFenString(FenString fen)
   state->hashValue = hashValue;
 }
 
-BB Board::potentialSlidingAttackers(int square, bool activeSide)
+BB Board::attackers(int square, bool activeSide, BB occupied)
 {
-  BB rookBB = pieces(!activeSide, ROOK), bishopBB = pieces(!activeSide, BISHOP), queenBB = pieces(!activeSide, QUEEN);
-  BB potentialAttackersBB = BB(0);
-  potentialAttackersBB |= BISHOP_MOVE_BBS[square] & (bishopBB | queenBB);
-  potentialAttackersBB |= ROOK_MOVE_BBS[square] & (rookBB | queenBB);
-  return potentialAttackersBB;
+  // get attackers
+  const BB rookBB = pieces(!activeSide, ROOK);
+  const BB bishopBB = pieces(!activeSide, BISHOP);
+  const BB queenBB = pieces(!activeSide, QUEEN);
+  const BB knightBB = pieces(!activeSide, KNIGHT);
+  const BB pawnBB = pieces(!activeSide, PAWN);
+  const BB kingBB = pieces(!activeSide, KING);
+
+  const BB raysBB = bishop_moves(square, occupied);
+  const BB linesBB = rook_moves(square, occupied);
+
+  BB attackersBB = raysBB & (bishopBB | queenBB);
+  attackersBB |= linesBB & (rookBB | queenBB);
+  attackersBB |= KNIGHT_MOVE_BBS[square] & knightBB;
+  attackersBB |= PAWN_ATTACKS_BBS[activeSide][square] & pawnBB;
+  attackersBB |= KING_MOVES_BBS[square] & kingBB;
+
+  return attackersBB;
 }
 
-BB Board::attackers(int square, bool activeSide, BB occupied, bool onlySliders /*= false*/, bool excludeSliders /*= false*/)
+// get attacked squares from enemy
+// used for king move gen
+BB Board::attackedSquares(bool activeSide, BB emptyAndEmpty)
 {
-  BB potentialSlidingAttackersBB = BB(0);
-  if (!excludeSliders)
-    potentialSlidingAttackersBB = potentialSlidingAttackers(square, activeSide);
+  BB attackBB = BB(0);
+  
+  int ownKingSquare = bitScanForward(pieces(!activeSide, KING));
+  int kingSquare = bitScanForward(pieces(activeSide, KING));
 
-  BB attackersBB = BB(0);
-  while (potentialSlidingAttackersBB)
-  {
-    int moveSquare = pop_lsb(potentialSlidingAttackersBB);
-    if (may_move(moveSquare, square, occupied))
-      attackersBB |= SQUARE_BBS[moveSquare];
-  }
-  if (!onlySliders)
-  {
-    attackersBB |= KNIGHT_MOVE_BBS[square] & pieces(!activeSide, KNIGHT);
-    attackersBB |= PAWN_ATTACKS_BBS[square][activeSide] & pieces(!activeSide, PAWN);
-    attackersBB |= KING_MOVES_BBS[square] & pieces(!activeSide, KING);
-  }
-  // make sure attacker is on an occupied square
-  return attackersBB & occupied;
-}
+  BB pawnsBB = pieces(activeSide, PAWN);
+  BB knightsBB = pieces(activeSide, KNIGHT);
+  // add queen to rooks and bishops as it is a combination of both
+  BB queensBB = pieces(activeSide, QUEEN);
+  BB bishopsBB = pieces(activeSide, BISHOP) | queensBB;
+  BB rooksBB = pieces(activeSide, ROOK) | queensBB;
 
-BB Board::pieceMoves(PieceType type, bool activeSide)
-{
-  BB attackFields = BB(0);
-  BB friendlies = piecesBySide[activeSide];
   BB occupiedBB = piecesByType[ALL_PIECES];
-  switch (type)
-  {
-  case PAWN:
-  {
-    BB pawns = pieces(activeSide, PAWN);
-    attackFields = pawn_attacks(pawns, activeSide, friendlies) & piecesBySide[!activeSide];
-    if (activeSide)
-    {
-      BB oneUP = move(pawns, UP) & ~piecesByType[ALL_PIECES];
-      attackFields |= oneUP;
-      BB doublePawnPush = oneUP & RANK_3;
-      attackFields |= move(doublePawnPush, UP) & ~piecesByType[ALL_PIECES];
-    }
-    else
-    {
-      BB oneDown = move(pawns, DOWN) & ~piecesByType[ALL_PIECES];
-      attackFields |= oneDown;
-      BB doublePawnPush = oneDown & RANK_6;
-      attackFields |= move(doublePawnPush, DOWN) & ~piecesByType[ALL_PIECES];
-    }
-    return attackFields;
+
+  BB kingAttacksBB = KING_MOVES_BBS[ownKingSquare] & emptyAndEmpty;
+
+  // if king is surrounded none of these squares can be attacked
+  if (kingAttacksBB == 0ULL) {
+    return 0ULL;
   }
-  case BISHOP:
+
+  // remove the king
+  occupiedBB &= ~SQUARE_BBS[ownKingSquare];
+
+  attackBB |= pawn_attacks(pawnsBB, activeSide, 0ULL);
+
+  while (knightsBB)
   {
-    BB bishops = pieces(activeSide, BISHOP);
-    int bishopSquare = 0;
-    while (bishops)
-    {
-      bishopSquare = pop_lsb(bishops);
-      attackFields |= bishop_moves(bishopSquare, occupiedBB);
-    }
-    return attackFields;
+    int knightSquare = pop_lsb(knightsBB);
+    attackBB |= KNIGHT_MOVE_BBS[knightSquare];
   }
-  case KNIGHT:
+
+  while (bishopsBB)
   {
-    BB knights = pieces(activeSide, KNIGHT);
-    int KnightSquare = 0;
-    while (knights)
-    {
-      KnightSquare = pop_lsb(knights);
-      attackFields |= KNIGHT_MOVE_BBS[KnightSquare] & ~friendlies;
-    }
-    return attackFields;
+    int bishopSquare = pop_lsb(bishopsBB);
+    attackBB |= bishop_moves(bishopSquare, occupiedBB);
   }
-  case ROOK:
+
+  while (rooksBB)
   {
-    BB rooks = pieces(activeSide, ROOK);
-    int rookSquare = 0;
-    while (rooks)
-    {
-      rookSquare = pop_lsb(rooks);
-      attackFields |= rook_moves(rookSquare, occupiedBB);
-    }
-    return attackFields;
+    int rookSquare = pop_lsb(rooksBB);
+    attackBB |= rook_moves(rookSquare, occupiedBB);
   }
-  case QUEEN:
-  {
-    BB queens = pieces(activeSide, QUEEN);
-     int queenSquare = 0;
-    while (queens)
-    {
-      queenSquare = pop_lsb(queens);
-      attackFields |= queen_moves(queenSquare, occupiedBB);
-    }
-    return attackFields;
-  }
-  case KING:
-  {
-    BB king = pieces(activeSide, KING);
-    int kingSquare = 0;
-    kingSquare = pop_lsb(king);
-    BB kingMoves = KING_MOVES_BBS[kingSquare] & ~friendlies;
-    int kingMoveSquare = 0;
-    BB realKingMoves = BB(0);
-    while (kingMoves)
-    {
-      kingMoveSquare = pop_lsb(kingMoves);
-      BB kingAttackers = attackers(kingMoveSquare, activeSide, piecesByType[ALL_PIECES]);
-      if (!kingAttackers)
-        realKingMoves |= (1ULL << kingMoveSquare);
-    }
-    attackFields |= realKingMoves;
-    break;
-  }
-  default: // ALL
-    return BB(0);
-  }
-  return BB(0);
+
+  attackBB |= KING_MOVES_BBS[kingSquare];
+
+  return attackBB;
 }
 
-BB Board::blockers(int square, bool activeSide, BB occupied)
+// if square is attacked provides a BB with alls squares that are attacked on the path to the king
+// including the attacking piece
+// additionally Knights and Pawns are added
+// tracks double checks by reference
+// return FULL BB is square is not attacked
+BB Board::checkedSquares(int square, bool activeSide, int &double_check)
 {
-  BB blockersBB = BB(0);
+  BB checkedBB = BB(0);
+  double_check = 0;
 
-  BB potentialSlidingAttackersBB = potentialSlidingAttackers(square, activeSide);
-  occupied ^= potentialSlidingAttackersBB;
+  BB enemyKnightBB = pieces(!activeSide, KNIGHT);
+  BB enemyPawnBB = pieces(!activeSide, PAWN);
+  // add queen to rooks and bishops as it is a combination of both
+  BB enemyQueenBB = pieces(!activeSide, QUEEN);
+  BB enemyBishopBB = pieces(!activeSide, BISHOP) | enemyQueenBB;
+  BB enemyRookBB = pieces(!activeSide, ROOK) | enemyQueenBB;
 
-  while (potentialSlidingAttackersBB)
+  BB occupiedBB = piecesByType[ALL_PIECES];
+
+  // knight checks
+  BB knightAttacksBB = KNIGHT_MOVE_BBS[square] & enemyKnightBB;
+  double_check += bool(knightAttacksBB);
+  checkedBB |= knightAttacksBB;
+
+  // pawn checks
+  BB pawnAttacksBB = PAWN_ATTACKS_BBS[activeSide][square] & enemyPawnBB;
+  double_check += bool(pawnAttacksBB);
+  checkedBB |= pawnAttacksBB;
+
+  // bishop checks
+  BB bishopAttacksBB = bishop_moves(square, occupiedBB) & enemyBishopBB;
+  if (bishopAttacksBB)
   {
-    BB potentialPinnedBB = in_between(square, pop_lsb(potentialSlidingAttackersBB)) & occupied;
-    // if there ist at most one piece between king and a potential pinned piece it is pinned
-    if (potentialPinnedBB && !pop_last_bb(potentialPinnedBB))
-      blockersBB |= potentialPinnedBB;
+    int bishopSquare = bitScanForward(bishopAttacksBB);
+
+    double_check++;
+    checkedBB |= in_between(square, bishopSquare) | SQUARE_BBS[bishopSquare];
   }
-  return blockersBB;
+
+  BB rookAttacksBB = rook_moves(square, occupiedBB) & enemyRookBB;
+  if (rookAttacksBB)
+  {
+    // immediate can occur on pawn promotion
+    if (popCount(rookAttacksBB) > 1)
+    {
+      double_check = 2;
+      return checkedBB;
+    }
+    int rookSquare = bitScanForward(rookAttacksBB);
+
+    double_check++;
+    checkedBB |= in_between(square, rookSquare) | SQUARE_BBS[rookSquare];
+  }
+
+  if (!checkedBB)
+  {
+    return FULL;
+  }
+
+  return checkedBB;
+}
+
+// path from enemy rooks/queens to pinned pieces
+// keeping in mind double checks
+BB Board::horizontalVerticalPinned(int square, bool activeSide, BB friendliesBB, BB enemiesBB)
+{
+  BB hvPinnedBB = BB(0);
+
+  BB enemyRookBB = pieces(!activeSide, ROOK);
+  BB enemyQueenBB = pieces(!activeSide, QUEEN);
+
+  BB rookAttacksBB = rook_moves(square, enemiesBB) & (enemyRookBB | enemyQueenBB);
+
+  while (rookAttacksBB)
+  {
+    int rookSquare = pop_lsb(rookAttacksBB);
+
+    BB potentialPin = in_between(square, rookSquare) | SQUARE_BBS[rookSquare];
+    if (popCount(potentialPin & friendliesBB) == 1)
+    {
+      hvPinnedBB |= potentialPin;
+    }
+  }
+  return hvPinnedBB;
+}
+
+BB Board::diagonalPinned(int square, bool activeSide, BB friendliesBB, BB enemiesBB)
+{
+  BB diagonalPinnedBB = BB(0);
+
+  BB enemyBishopBB = pieces(!activeSide, BISHOP);
+  BB enemyQueenBB = pieces(!activeSide, QUEEN);
+
+  BB bishopAttacksBB = bishop_moves(square, enemiesBB) & (enemyBishopBB | enemyQueenBB);
+
+  while (bishopAttacksBB)
+  {
+    int bishopSquare = pop_lsb(bishopAttacksBB);
+
+    BB potentialPin = in_between(square, bishopSquare) | SQUARE_BBS[bishopSquare];
+    if (popCount(potentialPin & friendliesBB) == 1)
+    {
+      diagonalPinnedBB |= potentialPin;
+    }
+  }
+  return diagonalPinnedBB;
 }
 
 std::vector<Move> Board::getPV()
@@ -782,248 +797,250 @@ std::vector<Move> Board::getPV()
   return moves;
 }
 
-ValuedMove *Board::generatePseudoLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category)
+ValuedMove *Board::generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category)
 {
-  BB pawnBB = pieces(activeSide, PAWN), rookBB = pieces(activeSide, ROOK), knightBB = pieces(activeSide, KNIGHT), bishopBB = pieces(activeSide, BISHOP), queenBB = pieces(activeSide, QUEEN), kingBB = pieces(activeSide, KING);
+  int double_check = 0;
+
+  BB kingBB = pieces(activeSide, KING);
   int kingSquare = bitScanForward(kingBB);
   BB friendliesBB = piecesBySide[activeSide];
   BB enemiesBB = piecesBySide[!activeSide];
   BB occupiedBB = piecesByType[ALL_PIECES];
-  BB emptyBB = ~occupiedBB;
-  BB kingAttackersBB = attackers(kingSquare, activeSide, occupiedBB);
-  BB targetSquaresBB = ~friendliesBB;
-  BB bb, bb2;
-  int originSquare, targetSquare;
-  if (category == EVASIONS)
-  {
-    int fistKingAttackerSquare = bitScanForward(kingAttackersBB);
-    targetSquaresBB = in_between(kingSquare, fistKingAttackerSquare) | SQUARE_BBS[fistKingAttackerSquare];
-    enemiesBB = kingAttackersBB;
-  }
+  BB enemyAndEmptyBB = ~friendliesBB;
+
+  BB attackedBB = attackedSquares(!activeSide, enemyAndEmptyBB);
+  BB checkedBB = checkedSquares(kingSquare, activeSide, double_check);
+  BB hvPinnedBB = horizontalVerticalPinned(kingSquare, activeSide, friendliesBB, enemiesBB);
+  BB diagonalPinnedBB = diagonalPinned(kingSquare, activeSide, friendliesBB, enemiesBB);
+
+  BB targetSquaresBB;
+
+  if (category == ALL)
+    targetSquaresBB = enemyAndEmptyBB;
   else if (category == ATTACKS)
-  {
     targetSquaresBB = enemiesBB;
-  }
-  else if (category == QUIETS)
-  {
+  else if (category == EVASIONS)
+    targetSquaresBB = checkedBB;
+  else // if (category == QUIETS)
     targetSquaresBB = ~occupiedBB;
-    enemiesBB = BB(0);
-  }
-  // more than one king attacker = only king moves possible
-  if (!pop_last_bb(kingAttackersBB))
-  {
-    // pawn moves
-    // generate vars to handle pawn colors easier
-    BB R3orR6 = activeSide ? RANK_3 : RANK_6;
-    BB promotionRank = activeSide ? RANK_7 : RANK_2;
-    Direction moveDirection = activeSide ? UP : DOWN;
-    int directionFactor = activeSide ? 1 : -1;
-    // normal moves
-    // pawns that can move one/two
-    BB pawnsNotOnPromotionRank = pawnBB & ~promotionRank;
-    if (category != ATTACKS)
-    {
-      bb = move(pawnsNotOnPromotionRank, moveDirection) & emptyBB;
-      bb2 = move(R3orR6 & bb, moveDirection) & emptyBB;
-      if (category == EVASIONS)
-      {
-        bb &= targetSquaresBB;
-        bb2 &= targetSquaresBB;
-      }
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(targetSquare - 8 * directionFactor, targetSquare);
-      }
-      while (bb2)
-      {
-        targetSquare = pop_lsb(bb2);
-        *moveList++ = createMove(targetSquare - (8 << 1) * directionFactor, targetSquare);
-      }
-    }
-    // promotions by move and by capture
-    BB pawnsOnPromotionRank = pawnBB & promotionRank;
-    if (pawnsOnPromotionRank)
-    {
-      bb = move(pawnsOnPromotionRank, moveDirection) & emptyBB;
-      if (category == EVASIONS)
-        bb &= targetSquaresBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        for (PieceType promotion : PROMOTION_OPTIONS)
-          *moveList++ = createMove<PROMOTION>(targetSquare - 8 * directionFactor, targetSquare, promotion);
-      }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        for (PieceType promotion : PROMOTION_OPTIONS)
-          *moveList++ = createMove<PROMOTION>(targetSquare - 9 * directionFactor, targetSquare, promotion);
-      }
-      bb = move(move(pawnsOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        for (PieceType promotion : PROMOTION_OPTIONS)
-          *moveList++ = createMove<PROMOTION>(targetSquare - 7 * directionFactor, targetSquare, promotion);
-      }
-    }
-    if (category != QUIETS)
-    {
-      // pawn captures
-      bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? LEFT : RIGHT) & enemiesBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(targetSquare - 9 * directionFactor, targetSquare);
-      }
-      bb = move(move(pawnsNotOnPromotionRank, moveDirection), activeSide ? RIGHT : LEFT) & enemiesBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
-      }
-      // en passant
-      if (epSquareBB && (targetSquaresBB & move(epSquareBB, activeSide ? DOWN : UP)))
-      {
-        int epSquare = bitScanForward(epSquareBB);
-        bb = pawnsNotOnPromotionRank & PAWN_ATTACKS_BBS[epSquare][!activeSide];
-        while (bb)
-        {
-          targetSquare = pop_lsb(bb);
-          *moveList++ = createMove<EN_PASSANT>(targetSquare, epSquare);
-        }
-      }
-    }
-    // rook moves
-    while (rookBB)
-    {
-      originSquare = pop_lsb(rookBB);
-      bb = rook_moves(originSquare, occupiedBB) & targetSquaresBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(originSquare, targetSquare);
-      }
-    }
-    // bishop moves
-    while (bishopBB)
-    {
-      originSquare = pop_lsb(bishopBB);
-      bb = bishop_moves(originSquare, occupiedBB) & targetSquaresBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(originSquare, targetSquare);
-      }
-    }
-    // queen moves
-    while (queenBB)
-    {
-      originSquare = pop_lsb(queenBB);
-      bb = queen_moves(originSquare, occupiedBB) & targetSquaresBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(originSquare, targetSquare);
-      }
-    }
-    // knight moves
-    while (knightBB)
-    {
-      originSquare = pop_lsb(knightBB);
-      bb = KNIGHT_MOVE_BBS[originSquare] & targetSquaresBB;
-      while (bb)
-      {
-        targetSquare = pop_lsb(bb);
-        *moveList++ = createMove(originSquare, targetSquare);
-      }
-    }
-  }
+
   // king moves
-  bb = KING_MOVES_BBS[kingSquare] & ~friendliesBB;
-  if (category != EVASIONS)
-    bb &= targetSquaresBB;
-  while (bb)
+  BB kingMoves = KING_MOVES_BBS[kingSquare] & targetSquaresBB & ~attackedBB;
+  
+  // ensure that king is not attacked after moving
+  targetSquaresBB &= checkedBB;
+
+  while (kingMoves)
   {
-    targetSquare = pop_lsb(bb);
+    int targetSquare = pop_lsb(kingMoves);
     *moveList++ = createMove(kingSquare, targetSquare);
   }
-  if (category != ATTACKS && category != EVASIONS)
+
+  // castle
+  if (category != ATTACKS && category != EVASIONS &&
+      (kingBB & (activeSide ? RANK_1 : RANK_8)) &&
+      checkedBB == FULL)
   {
-    // castle
     if (activeSide)
     {
       // check if sth is in the way, dont check if is legal to castle
-      if (castleWhiteKingSide && !(WHITE_KING_SIDE_WAY & occupiedBB))
+      if (castleWhiteKingSide && !(WHITE_KING_SIDE_WAY & occupiedBB) && !(attackedBB & WHITE_KING_SIDE_WAY))
         *moveList++ = createMove<CASTLING>(kingSquare, WHITE_KING_SIDE_SQUARE);
-      if (castleWhiteQueenSide && !(WHITE_QUEEN_SIDE_WAY & occupiedBB))
+      if (castleWhiteQueenSide && !(WHITE_QUEEN_SIDE_WAY_OCCUPIED & occupiedBB) && !(attackedBB & WHITE_QUEEN_SIDE_WAY))
         *moveList++ = createMove<CASTLING>(kingSquare, WHITE_QUEEN_SIDE_SQUARE);
     }
     else
     {
-      if (castleBlackKingSide && !(BLACK_KING_SIDE_WAY & occupiedBB))
+      if (castleBlackKingSide && !(BLACK_KING_SIDE_WAY & occupiedBB) && !(attackedBB & BLACK_KING_SIDE_WAY))
         *moveList++ = createMove<CASTLING>(kingSquare, BLACK_KING_SIDE_SQUARE);
-      if (castleBlackQueenSide && !(BLACK_QUEEN_SIDE_WAY & occupiedBB))
+      if (castleBlackQueenSide && !(BLACK_QUEEN_SIDE_WAY_OCCUPIED & occupiedBB) && !(attackedBB & BLACK_QUEEN_SIDE_WAY))
         *moveList++ = createMove<CASTLING>(kingSquare, BLACK_QUEEN_SIDE_SQUARE);
     }
   }
-  return moveList;
-}
 
-ValuedMove *Board::generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category)
-{
-  int kingSquare = bitScanForward(pieces(activeSide, KING));
-  BB blockersBB = blockers(kingSquare, activeSide, piecesByType[ALL_PIECES]);
-  if (category != EVASIONS && kingAttackers())
-    category = EVASIONS;
-  for (auto move : MoveList<PSEUDO_LEGAL_MOVES>(*this, activeSide, category))
+  // if double check only king moves are possible
+  if (double_check > 1)
+    return moveList;
+
+  // remove pinned pieces
+  BB knightBB = pieces(activeSide, KNIGHT) & ~(hvPinnedBB | diagonalPinnedBB);
+  BB bishopBB = pieces(activeSide, BISHOP) & ~hvPinnedBB;
+  BB rookBB = pieces(activeSide, ROOK) & ~diagonalPinnedBB;
+  BB queenBB = pieces(activeSide, QUEEN) & ~(hvPinnedBB & diagonalPinnedBB);
+
+  // pawn moves
+  BB pawnBB = pieces(activeSide, PAWN);
+  // generate vars to handle pawn colors easier
+  BB R3orR6 = activeSide ? RANK_3 : RANK_6;
+  BB R2orR7 = activeSide ? RANK_7 : RANK_2;
+  BB R1orR8 = activeSide ? RANK_8 : RANK_1;
+  Direction moveDirection = activeSide ? UP : DOWN;
+  int directionFactor = activeSide ? 1 : -1;
+
+  // pawns that can move diagonal (attacks)
+  BB diagonalPawnBB = pawnBB & ~hvPinnedBB;
+  BB diagonalUnpinnedPawnBB = diagonalPawnBB & ~diagonalPinnedBB;
+  BB diagonalPinnedPawnBB = pawnBB & diagonalPinnedBB;
+
+  // get bb for pawns that can actually move diagonally
+  // keep in mind that pinned pawns can only move in the direction they are pinned
+  BB diagonalLeftPawnBB = pawn_left_attacks(diagonalUnpinnedPawnBB, activeSide) | (pawn_left_attacks(diagonalPinnedPawnBB, activeSide) & diagonalPinnedBB);
+  BB diagonalRightPawnBB = pawn_right_attacks(diagonalUnpinnedPawnBB, activeSide) | (pawn_right_attacks(diagonalPinnedPawnBB, activeSide) & diagonalPinnedBB);
+  diagonalLeftPawnBB &= enemiesBB & checkedBB;
+  diagonalRightPawnBB &= enemiesBB & checkedBB;
+
+  // pawns that can move one/two
+  BB forwardPawnBB = pawnBB & ~diagonalPinnedBB;
+  BB forwardUnpinnedPawnBB = forwardPawnBB & ~hvPinnedBB;
+  BB forwardPinnedPawnBB = pawnBB & hvPinnedBB;
+
+  BB oneForwardPawnBB = ((move(forwardUnpinnedPawnBB, moveDirection) & ~occupiedBB) | (move(forwardPinnedPawnBB, moveDirection) & ~occupiedBB & hvPinnedBB));
+  BB doubleForwardPawnBB = (move(oneForwardPawnBB & R3orR6, moveDirection) & ~occupiedBB) & checkedBB;
+  oneForwardPawnBB &= checkedBB;
+
+  if ((category != QUIETS) && pawnBB & R2orR7)
   {
-    // only check if move is legal is it is one of:
-    // case 1: piece is pinned
-    // case 2: piece is king
-    // case 3: move is en passant
-    if ((blockersBB && (blockersBB & SQUARE_BBS[originSquare(move)])) || originSquare(move) == kingSquare || moveType(move) == EN_PASSANT)
+    BB promoteLeftPawnBB = diagonalLeftPawnBB & R1orR8;
+    while (promoteLeftPawnBB)
     {
-      if (moveIsLegal(move, activeSide, blockersBB, kingSquare))
-        *moveList++ = move;
+      int targetSquare = pop_lsb(promoteLeftPawnBB);
+      for (PieceType promotion : PROMOTION_OPTIONS)
+        *moveList++ = createMove<PROMOTION>(targetSquare - 9 * directionFactor, targetSquare, promotion);
     }
+    BB promoteRightPawnBB = diagonalRightPawnBB & R1orR8;
+    while (promoteRightPawnBB)
+    {
+      int targetSquare = pop_lsb(promoteRightPawnBB);
+      for (PieceType promotion : PROMOTION_OPTIONS)
+        *moveList++ = createMove<PROMOTION>(targetSquare - 7 * directionFactor, targetSquare, promotion);
+    }
+    BB promoteForwardPawnBB = oneForwardPawnBB & R1orR8;
+    while (promoteForwardPawnBB)
+    {
+      int targetSquare = pop_lsb(promoteForwardPawnBB);
+      for (PieceType promotion : PROMOTION_OPTIONS)
+        *moveList++ = createMove<PROMOTION>(targetSquare - 8 * directionFactor, targetSquare, promotion);
+    }
+  }
+  // remove promoted pawns
+  oneForwardPawnBB &= ~R1orR8;
+  diagonalLeftPawnBB &= ~R1orR8;
+  diagonalRightPawnBB &= ~R1orR8;
+  
+  if (category != ATTACKS)
+  {
+    // single forward pawn moves
+    while (oneForwardPawnBB)
+    {
+      int targetSquare = pop_lsb(oneForwardPawnBB);
+      *moveList++ = createMove(targetSquare - 8 * directionFactor, targetSquare);
+    }
+
+    // double forward pawn moves
+    while (doubleForwardPawnBB)
+    {
+      int targetSquare = pop_lsb(doubleForwardPawnBB);
+      *moveList++ = createMove(targetSquare - (8 << 1) * directionFactor, targetSquare);
+    }
+  }
+  
+  if (category != QUIETS)
+  {
+    // diagonal left pawn attacks
+    while (diagonalLeftPawnBB)
+    {
+      int targetSquare = pop_lsb(diagonalLeftPawnBB);
+      *moveList++ = createMove(targetSquare - 9 * directionFactor, targetSquare);
+    }
+    // diagonal right pawn attacks
+    while (diagonalRightPawnBB)
+    {
+      int targetSquare = pop_lsb(diagonalRightPawnBB);
+      *moveList++ = createMove(targetSquare - 7 * directionFactor, targetSquare);
+    }
+    // en passant
+    if (epSquareBB && (targetSquaresBB & move(epSquareBB, activeSide ? DOWN : UP)))
+    {
+      int epSquare = bitScanForward(epSquareBB);
+      int epPawnSquare = epSquare - 8 * directionFactor;
+
+      if (((epSquareBB | SQUARE_BBS[epPawnSquare]) & checkedBB) != 0)
+      {
+        // check if king is on ep rank and there are enemy queens and rooks left
+        BB enemyQueenRookBB = pieces(!activeSide, QUEEN) | pieces(!activeSide, ROOK);
+        bool potentialKingPin = (int)(kingSquare / 8) == (int)(epPawnSquare / 8) && enemyQueenRookBB;
+
+        BB epBB = PAWN_ATTACKS_BBS[!activeSide][epSquare] & diagonalPawnBB;
+        // may be multiple pawns that can take en passant
+        while (epBB) {
+            int originSquare = pop_lsb(epBB);
+
+            // remove pinned pawns that don't move on the pinned diagonal
+            if (SQUARE_BBS[originSquare] & diagonalPinnedBB && !(diagonalPinnedBB & SQUARE_BBS[epSquare])) continue;
+
+            // check for enemy queen/rook on the same rank as the en passant pawn
+            if (potentialKingPin &&
+                (rook_moves(kingSquare, occupiedBB & ~(SQUARE_BBS[epPawnSquare] | SQUARE_BBS[originSquare])) & enemyQueenRookBB) != 0)
+                break;
+
+            *moveList++ = createMove<EN_PASSANT>(originSquare, epSquare);
+        }
+      }
+    }
+  }
+
+  // knight moves
+  while (knightBB) {
+    int originSquare = pop_lsb(knightBB);
+    BB knightMoves = KNIGHT_MOVE_BBS[originSquare] & targetSquaresBB;
+    while (knightMoves) {
+      int targetSquare = pop_lsb(knightMoves);
+      *moveList++ = createMove(originSquare, targetSquare);
+    }
+  }
+
+  // bishop moves
+  while (bishopBB) {
+    int originSquare = pop_lsb(bishopBB);
+    BB bishopMoves = bishop_moves(originSquare, occupiedBB) & targetSquaresBB;
+    if (diagonalPinnedBB & SQUARE_BBS[originSquare])
+      bishopMoves &= diagonalPinnedBB;
+    while (bishopMoves) {
+      int targetSquare = pop_lsb(bishopMoves);
+      *moveList++ = createMove(originSquare, targetSquare);
+    }
+  }
+  
+  // rook moves
+  while (rookBB) {
+    int originSquare = pop_lsb(rookBB);
+    // check for horizontal/vertical pins
+    BB rookMoves = rook_moves(originSquare, occupiedBB) & targetSquaresBB;
+    if (hvPinnedBB & SQUARE_BBS[originSquare])
+      rookMoves &= hvPinnedBB;
+    while (rookMoves) {
+      int targetSquare = pop_lsb(rookMoves);
+      *moveList++ = createMove(originSquare, targetSquare);
+    }
+  }
+
+  // queen moves
+  while (queenBB) {
+    int originSquare = pop_lsb(queenBB);
+    BB queenMoves = targetSquaresBB;
+    if (diagonalPinnedBB & SQUARE_BBS[originSquare])
+      queenMoves &= bishop_moves(originSquare, occupiedBB) & diagonalPinnedBB;
+    else if (hvPinnedBB & SQUARE_BBS[originSquare])
+      queenMoves &= rook_moves(originSquare, occupiedBB) & hvPinnedBB;
     else
-    {
-      *moveList++ = move;
+      queenMoves &= queen_moves(originSquare, occupiedBB);
+    while (queenMoves) {
+      int targetSquare = pop_lsb(queenMoves);
+      *moveList++ = createMove(originSquare, targetSquare);
     }
   }
-  return moveList;
-}
 
-bool Board::moveIsLegal(const Move checkedMove, bool activeSide, BB blockersBB, int kingSquare)
-{
-  // special case: castle
-  if (moveType(checkedMove) == CASTLING)
-  {
-    for (auto &castle : CASTLING_OPTIONS)
-    {
-      int cSquare = castle[0];
-      BB cWay = castle[1];
-      if (targetSquare(checkedMove) == cSquare)
-        while (cWay)
-          // check is attacked on any square he has to move over in order to castle
-          if (attackers(pop_lsb(cWay), activeSide, piecesByType[ALL_PIECES]))
-            return false;
-    }
-  }
-  // special case: en passant
-  if (moveType(checkedMove) == EN_PASSANT)
-    // if piece is pinned it has to move in the ray it is pinned and after making the move the king cannot be attacked
-    return ((~blockersBB & SQUARE_BBS[originSquare(checkedMove)]) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)]) &&
-           !(blockers(kingSquare, activeSide, piecesByType[ALL_PIECES] ^ move(epSquareBB, activeSide ? DOWN : UP)) & SQUARE_BBS[originSquare(checkedMove)]);
-  // special case: king is moving
-  if (originSquare(checkedMove) == kingSquare)
-    // is king attacked after moving
-    return !(attackers(targetSquare(checkedMove), activeSide, piecesByType[ALL_PIECES] ^ SQUARE_BBS[originSquare(checkedMove)]));
-  // rest is either not a blocker or is moving along the ray of him and the king
-  return (!(blockersBB & SQUARE_BBS[originSquare(checkedMove)])) || LINE_BBS[originSquare(checkedMove)][kingSquare] & SQUARE_BBS[targetSquare(checkedMove)];
+  return moveList;
 }
 
 // used for hash move validation to avoid making moves generated by hash collision of different positions but same hash keys
@@ -1037,7 +1054,7 @@ bool Board::moveIsPseudoLegal(const Move checkedMove)
   // do expensive check for none normal moves
   if (true || moveType(checkedMove) != NORMAL || originPieceType == PAWN)
   {
-    MoveList moveList = MoveList<LEGAL_MOVES>(*this, activeSide, isKingAttacked() ? EVASIONS : ALL);
+    MoveList moveList = MoveList<ALL>(*this, activeSide);
     // is move contained in pseudo legal moves
     return std::find(moveList.begin(), moveList.end(), checkedMove) != moveList.end();
   }
@@ -1095,7 +1112,7 @@ bool Board::hasRepetitions()
 // checks for 50-Move Rule and repetition draws
 bool Board::partialStalemate()
 {
-  if (halfMoves >= 100 && (!kingAttackers() || MoveList<LEGAL_MOVES>(*this, activeSide).size()))
+  if (halfMoves >= 100 && (!kingAttackers() || MoveList(*this, activeSide).size()))
     return true;
 
   return state->repetition;
@@ -1103,7 +1120,7 @@ bool Board::partialStalemate()
 
 bool Board::stalemate()
 {
-  MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide);
+  MoveList moveIterator = MoveList<ALL>(*this, activeSide);
   return moveIterator.size() == 0;
 }
 
@@ -1112,7 +1129,7 @@ bool Board::checkmate()
   BB kingAttackersBB = kingAttackers();
   if (kingAttackersBB)
   {
-    MoveList moveIterator = MoveList<LEGAL_MOVES>(*this, activeSide, EVASIONS);
+    MoveList moveIterator = MoveList<EVASIONS>(*this, activeSide);
     return moveIterator.size() == 0;
   }
   return false;
@@ -1123,7 +1140,7 @@ u64 Board::perft(int depth)
   u64 nodes = 0;
   if (depth == 0)
     return 1ULL;
-  for (auto move : MoveList<LEGAL_MOVES>(*this, activeSide))
+  for (auto move : MoveList<ALL>(*this, activeSide))
   {
     makeMove(move);
     nodes += perft(depth - 1);
@@ -1136,7 +1153,7 @@ std::string Board::divide(int depth)
 {
   std::string resultsString = "";
   u64 nodes = 0;
-  MoveList moveList = MoveList<LEGAL_MOVES>(*this, activeSide);
+  MoveList moveList = MoveList<ALL>(*this, activeSide);
   for (auto move : moveList)
   {
     makeMove(move);

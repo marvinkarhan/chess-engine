@@ -14,7 +14,6 @@
 
 const std::vector<std::string> fens = {
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1",
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
     "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
     "4k3/8/8/8/8/8/8/R3K3 w Q - 0 1",
@@ -97,7 +96,7 @@ void uciPosition(std::istringstream &ss)
 void uciLegalMoves()
 {
   std::cout << "legalmoves ";
-  for (Move move : MoveList<LEGAL_MOVES>(getBoard(), getBoard().activeSide))
+  for (Move move : MoveList<ALL>(getBoard(), getBoard().activeSide))
   {
     const string value = toUciString(move);
     std::cout << value.c_str() << " ";
@@ -143,6 +142,23 @@ void uciPerft(std::istringstream &ss)
   auto endTime = std::chrono::system_clock::now();
   auto timePassed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() + 1;
   std::cout << "info " << "nodes " << nodes << " nps " << nodes * 1000 / timePassed << " time " << timePassed << "ms" << std::endl;
+}
+
+
+void uciDivide(std::istringstream &ss)
+{
+  std::string token, fen;
+
+  ss >> token;
+  int depth = std::stoi(token);
+
+  while (ss >> token)
+    fen += token + " ";
+  if (!fen.empty())
+    getBoard().parseFenString(fen);
+
+  std::string results = getBoard().divide(depth);
+  std::cout << results << std::endl;
 }
 
 void uciBench()
@@ -255,6 +271,8 @@ std::string uciProcessCommand(std::string command)
     uciUnmakeMove();
   else if (token == "perft")
     uciPerft(ss);
+  else if (token == "divide")
+    uciDivide(ss);
   else if (token == "bench")
     uciBench();
   return token;
