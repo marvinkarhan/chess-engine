@@ -36,7 +36,6 @@ enum RepetitionType
 enum MoveGenCategory
 {
   ALL,
-  EVASIONS,
   ATTACKS,
   QUIETS,
 };

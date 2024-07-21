@@ -6,17 +6,12 @@
 enum Stages
 {
   HASH_STAGE,
-  ATTACKS_INIT_STAGE,
+  EVALUATE_STAGE,
   WINNING_EQUAL_ATTACKS_STAGE,
-  KILLERS_INIT_STAGE,
-  KILLERS_STAGE,
+  KILLERS_STAGE_1,
+  KILLERS_STAGE_2,
   QUIETS_INIT_STAGE,
   QUIETS_STAGE,
-  LOSING_ATTACKS_INIT_STAGE,
-  LOSING_ATTACKS_STAGE,
-  EVASION_HASH_STAGE,
-  EVASIONS_INIT_STAGE,
-  EVASIONS_STAGE,
 };
 
 class MovePicker
@@ -29,18 +24,17 @@ public:
 
 private:
   Board &board;
-  ValuedMove *current, *last, *losingCapturesEnd;
+  ValuedMove *current, *last;
   ValuedMove moves[MAX_MOVES];
   Move hashMove;
-  bool onlyWinningEqualAttacks;
-  int stage;
+  bool inQuiesce;
+  int stage = HASH_STAGE;
   ValuedMove *begin() { return current; }
   ValuedMove *end() { return last; }
   // Static Exchange Evaluation (swap variation) to filter winning and equal attacks
   // for more info see https://www.chessprogramming.org/SEE_-_The_Swap_Algorithm
   bool see(Move move);
   // adds a score to every move (current to last)
-  template <MoveGenCategory category>
   void evaluate();
   // searches for a move that satisfies the filter condition
   template <typename condition>

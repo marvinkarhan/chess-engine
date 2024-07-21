@@ -50,9 +50,9 @@ namespace NNUE
         Piece pc = dp.piece[i];
         if (getPieceType(pc) == KING)
           continue;
-        if (dp.from[i] >= 0 && dp.from[i] < 64)
+        if (dp.from[i] < 64)
           removed.push_back(MakeIndex(perspective, dp.from[i], pc, ksq));
-        if (dp.to[i] >= 0 && dp.to[i] < 64)
+        if (dp.to[i] < 64)
           added.push_back(MakeIndex(perspective, dp.to[i], pc, ksq));
       }
     }

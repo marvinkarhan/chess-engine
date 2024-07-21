@@ -112,7 +112,6 @@ public:
   BB diagonalPinned(int square, bool activeSide, BB friendliesBB, BB enemiesBB);
   std::vector<Move> getPV();
   ValuedMove *generateLegalMoves(ValuedMove *moveList, bool activeSide, MoveGenCategory category);
-  bool moveIsPseudoLegal(const Move move);
   inline bool isKingAttacked()
   {
     return bool(kingAttackers());

@@ -152,25 +152,6 @@ inline BB move(BB bb, Direction dir)
   return 0;
 }
 
-inline BB traverse_bb(BB bb, std::vector<Direction> directions, BB friendlies_bb, BB enemies_bb)
-{
-  BB result_bb = 0;
-  for (Direction &dir : directions)
-  {
-    BB square_bb = bb;
-    while (1)
-    {
-      square_bb = move(square_bb, dir);
-      if (square_bb & friendlies_bb)
-        break;
-      result_bb |= square_bb;
-      if (square_bb & enemies_bb || square_bb == 0)
-        break;
-    }
-  }
-  return result_bb;
-}
-
 inline BB rook_moves(int square, BB occupied_bb)
 {
   return Chess_Lookup::Fancy::GetRookAttacks(square, occupied_bb);

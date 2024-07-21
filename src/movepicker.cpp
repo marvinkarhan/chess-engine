@@ -4,103 +4,66 @@
 #include "board.h"
 #include "move.h"
 
-MovePicker::MovePicker(Board &b, Move hMove, bool onlyAttacks /*= false*/) : board(b), hashMove(hMove), onlyWinningEqualAttacks(onlyAttacks)
+MovePicker::MovePicker(Board &b, Move hMove, bool isQuiesce /*= false*/) : board(b), hashMove(hMove), inQuiesce(isQuiesce)
 {
-  
-  if (board.isKingAttacked())
-    if (hMove && b.moveIsPseudoLegal(hMove))
-      stage = EVASION_HASH_STAGE;
-    else
-      stage = EVASIONS_INIT_STAGE;
-  else if (hMove && b.moveIsPseudoLegal(hMove))
-    stage = HASH_STAGE;
+  current = moves;
+  if (isQuiesce)
+    last = board.generateLegalMoves(current, board.activeSide, ATTACKS);
   else
-    stage = ATTACKS_INIT_STAGE;
+    last = board.generateLegalMoves(current, board.activeSide, ALL);
 }
 
 Move MovePicker::nextMove()
 {
   switch (stage)
   {
-  case EVASION_HASH_STAGE:
   case HASH_STAGE:
     stage++;
-    return hashMove;
-  case ATTACKS_INIT_STAGE:
-    current = losingCapturesEnd = moves;
-    last = board.generateLegalMoves(current, board.activeSide, ATTACKS);
-    evaluate<ATTACKS>();
+    if (hashMove != NONE_MOVE && std::find(current, last, hashMove) != last)
+      return hashMove;
+    [[fallthrough]];
+  case EVALUATE_STAGE:
+    evaluate();
     stage++;
     [[fallthrough]];
   case WINNING_EQUAL_ATTACKS_STAGE:
     if (searchBest([&]()
                    {
                      // use see to filter moves and if see eval -> bad move add it to bad moves
-                     return see(*current) ? true : (*losingCapturesEnd++ = *current, false);
+                     return see(*current) && *current != hashMove;
                    }))
       return *(current - 1);
-    if (onlyWinningEqualAttacks)
-    {
-      // stop searching
+    // in qSearch stop searching here
+    if (inQuiesce)
       return NONE_MOVE;
-      // stage = LOSING_ATTACKS_INIT_STAGE;
-      // return nextMove();
-    }
     stage++;
     [[fallthrough]];
-  case KILLERS_INIT_STAGE:
-    // swap pointer to the killer move array
-    current = std::begin(board.killerMoves[board.ply]);
-    last = std::end(board.killerMoves[board.ply]);
+  case KILLERS_STAGE_1:
+    // search killer 1 next
+    if (std::find(current, last, board.killerMoves[board.ply][0].move) != last)
+      return board.killerMoves[board.ply][0].move;
 
     stage++;
     [[fallthrough]];
-  case KILLERS_STAGE:
-    if (searchNext([&]()
-                   { return *current != NONE_MOVE && board.moveIsPseudoLegal(*current); }))
-      return *(current - 1);
+  case KILLERS_STAGE_2:
+    // search killer 2 next
+    if (std::find(current, last, board.killerMoves[board.ply][1].move) != last)
+      return board.killerMoves[board.ply][1].move;
 
     stage++;
     [[fallthrough]];
   case QUIETS_INIT_STAGE:
-    // skip bad captures
-    current = losingCapturesEnd;
-    last = board.generateLegalMoves(current, board.activeSide, QUIETS);
-
-    evaluate<QUIETS>();
     std::sort(current, last);
 
     stage++;
     [[fallthrough]];
   case QUIETS_STAGE:
+    // includes losing attacks as well
     if (searchNext([&]()
-                   { return *current != board.killerMoves[board.ply][0].move &&
+                   { return *current != hashMove &&
+                            *current != board.killerMoves[board.ply][0].move &&
                             *current != board.killerMoves[board.ply][1].move; }))
       return *(current - 1);
-    stage++;
-    [[fallthrough]];
-  case LOSING_ATTACKS_INIT_STAGE:
-    current = moves;
-    last = losingCapturesEnd;
-    stage++;
-    [[fallthrough]];
-  case LOSING_ATTACKS_STAGE:
-    return searchNext([]()
-                      { return true; });
-    // done
-  case EVASIONS_INIT_STAGE:
-    current = moves;
-    last = board.generateLegalMoves(current, board.activeSide, EVASIONS);
-
-    evaluate<EVASIONS>();
-    std::sort(current, last);
-
-    stage++;
-    [[fallthrough]];
-  case EVASIONS_STAGE:
-    return searchBest([]()
-                      { return true; });
-    // done
   }
   return NONE_MOVE; // fallback
 }
@@ -172,28 +135,19 @@ bool MovePicker::see(Move move)
   return bool(gain[0] >= 0);
 }
 
-template <MoveGenCategory category>
 void MovePicker::evaluate()
 {
   for (auto &move : *this)
   {
-    if constexpr (category == ATTACKS)
+    // attacks
+    if (inQuiesce || board.piecePos[targetSquare(move)])
       // order by MVV-LVA
       move.value = mvvLva[board.piecePos[originSquare(move)]][board.piecePos[targetSquare(move)]];
-    else if constexpr (category == QUIETS)
+    //quiets
+    else
       // order by piece square table -> should be replaced by history heuristics later
       move.value = PIECE_SQUARE_TABLES[board.piecePos[originSquare(move)]][63 - originSquare(move)] - PIECE_SQUARE_TABLES[board.piecePos[targetSquare(move)]][63 - targetSquare(move)];
     // move.value = board.historyHeuristicTable[board.piecePos[originSquare(move)]][targetSquare(move)];
-    else // category == EVASIONS
-    {
-      if (board.piecePos[targetSquare(move)] || moveType(move) == EN_PASSANT)
-        // if capture do MVV-LVA
-        move.value = mvvLva[board.piecePos[originSquare(move)]][board.piecePos[targetSquare(move)]];
-      else
-        // order by piece square table -> should be replaced by history heuristics later
-        move.value = PIECE_SQUARE_TABLES[board.piecePos[originSquare(move)]][63 - originSquare(move)] - PIECE_SQUARE_TABLES[board.piecePos[targetSquare(move)]][63 - targetSquare(move)];
-      // move.value = board.historyHeuristicTable[board.piecePos[originSquare(move)]][targetSquare(move)];
-    }
   }
 }
 
