@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+msgfile="$1"
+bench_file="$(git rev-parse --git-path bench_value)"
+[[ -f "$bench_file" ]] || exit 0
+grep -Eiq '^(.*(BENCH|NODES|NPS)[ :=]+[0-9,]+)' "$msgfile" && exit 0
+bench_val="$(cat "$bench_file")"
+printf "\nBENCH: %s\n" "$bench_val" >> "$msgfile"
