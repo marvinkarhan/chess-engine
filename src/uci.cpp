@@ -235,7 +235,10 @@ std::string uciProcessCommand(std::string command)
     getBoard().endTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     getBoard().stopSearch = true;
     std::vector<Move> moves = getBoard().getPV();
-    std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
+    if (moves.size() > 0 && moves[0] != NONE_MOVE)
+      std::cout << "bestmove " << toUciString(moves[0]) << std::endl;
+    else
+      std::cout << "bestmove (none)" << std::endl;
   }
   // following is part of the UCI format but not jet implemented by NoPy++
   else if (token == "setoption")
